@@ -1,0 +1,37 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-btn {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-btn.filled {
+  color: var(--secondary);
+}
+
+.star-btn.half {
+  color: var(--secondary);
+}
+
+.star-btn.empty {
+  color: var(--gray-300);
+}
+
+.star-rating.interactive .star-btn {
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.star-rating.interactive .star-btn:hover {
+  transform: scale(1.2);
+}
+
+.star-rating.readonly .star-btn {
+  cursor: default;
+}
