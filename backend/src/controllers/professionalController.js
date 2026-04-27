@@ -169,4 +169,64 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { createProfile, getProfile, updateProfile };
+const toggleAvailability = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { availability_status } = req.body;
+
+    const result = await query(
+      `UPDATE professionals SET availability_status = $1, updated_at = NOW()
+       WHERE user_id = $2 RETURNING id, availability_status`,
+      [availability_status, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found.' });
+    }
+
+    res.status(200).json({
+      success: true, data: result.rows[0],
+      message: `Availability set to ${availability_status}.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getProfileByUser = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await query(
+      `SELECT p.*, u.name, u.email, u.phone, u.location, u.avatar_url,
+              COALESCE(AVG(r.rating), 0) as average_rating,
+              COUNT(r.id) as review_count
+       FROM professionals p
+       JOIN users u ON p.user_id = u.id
+       LEFT JOIN reviews r ON p.id = r.professional_id
+       WHERE p.user_id = $1
+       GROUP BY p.id, u.name, u.email, u.phone, u.location, u.avatar_url`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found.' });
+    }
+
+    const categories = await query(
+      `SELECT c.id, c.name FROM categories c
+       JOIN professional_categories pc ON c.id = pc.category_id
+       WHERE pc.professional_id = $1`,
+      [result.rows[0].id]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { ...result.rows[0], average_rating: parseFloat(result.rows[0].average_rating), categories: categories.rows },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createProfile, getProfile, updateProfile, toggleAvailability, getProfileByUser };

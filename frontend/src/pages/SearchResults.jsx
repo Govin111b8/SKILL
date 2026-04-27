@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  FiSearch, FiSliders, FiGrid, FiList, FiX, FiStar, FiArrowDown,
+  FiChevronDown, FiFilter,
+} from 'react-icons/fi';
 import { get } from '../api/client';
 import ProfessionalCard from '../components/ProfessionalCard';
+import SearchBar from '../components/SearchBar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './SearchResults.css';
 
 const CATEGORIES = [
   'All', 'Plumbing', 'Electrical', 'Cleaning', 'Tutoring',
-  'Beauty', 'Home Repair', 'Moving', 'Photography', 'Cooking', 'Fitness',
+  'Beauty', 'Home Repair', 'Moving', 'Photography', 'Music', 'Fitness', 'Technology',
+];
+
+const SORT_OPTIONS = [
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'rating', label: 'Top Rated' },
+  { value: 'reviews', label: 'Most Reviewed' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
 ];
 
 function SearchResults() {
@@ -16,6 +29,9 @@ function SearchResults() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewMode, setViewMode] = useState('grid');
+  const [sort, setSort] = useState('relevance');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
@@ -28,9 +44,7 @@ function SearchResults() {
   const query = searchParams.get('q') || '';
   const location = searchParams.get('location') || '';
 
-  useEffect(() => {
-    fetchResults();
-  }, [searchParams, page]);
+  useEffect(() => { fetchResults(); }, [searchParams, page, sort]);
 
   async function fetchResults() {
     setLoading(true);
@@ -39,11 +53,12 @@ function SearchResults() {
       if (query) params.set('q', query);
       if (location) params.set('location', location);
       if (filters.category && filters.category !== 'All') params.set('category', filters.category);
-      if (filters.minRating > 0) params.set('minRating', filters.minRating);
+      if (Number(filters.minRating) > 0) params.set('minRating', filters.minRating);
       if (filters.minPrice) params.set('minPrice', filters.minPrice);
       if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
       if (filters.available) params.set('available', 'true');
       params.set('page', page);
+      if (sort !== 'relevance') params.set('sort', sort);
 
       const data = await get(`/professionals?${params.toString()}`);
       setResults(data.professionals || data.results || []);
@@ -59,7 +74,6 @@ function SearchResults() {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     setPage(1);
-
     const params = new URLSearchParams(searchParams);
     if (value && value !== 'All' && value !== '0' && value !== false) {
       params.set(key, value);
@@ -69,115 +83,195 @@ function SearchResults() {
     setSearchParams(params);
   }
 
+  function clearFilter(key) { handleFilterChange(key, key === 'minRating' ? '0' : key === 'available' ? false : ''); }
+
+  // Active filter chips
+  const activeFilters = [];
+  if (filters.category && filters.category !== 'All') activeFilters.push({ key: 'category', label: filters.category });
+  if (Number(filters.minRating) > 0) activeFilters.push({ key: 'minRating', label: `${filters.minRating}★+ Rating` });
+  if (filters.minPrice) activeFilters.push({ key: 'minPrice', label: `Min $${filters.minPrice}` });
+  if (filters.maxPrice) activeFilters.push({ key: 'maxPrice', label: `Max $${filters.maxPrice}` });
+  if (filters.available) activeFilters.push({ key: 'available', label: 'Available now' });
+
+  const ratingStars = [0, 3, 4, 4.5, 5];
+
+  const sidebar = (
+    <aside className={`sr-sidebar ${sidebarOpen ? 'sr-sidebar--open' : ''}`}>
+      <div className="sr-sidebar-header">
+        <h3><FiSliders size={16} /> Filters</h3>
+        <button className="sr-sidebar-close" onClick={() => setSidebarOpen(false)}><FiX size={18} /></button>
+      </div>
+
+      <div className="filter-group">
+        <label>Category</label>
+        <div className="filter-cat-grid">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              className={`filter-cat-btn ${(filters.category === (cat === 'All' ? '' : cat.toLowerCase())) || (cat === 'All' && !filters.category) ? 'active' : ''}`}
+              onClick={() => handleFilterChange('category', cat === 'All' ? '' : cat.toLowerCase())}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <label>Minimum Rating</label>
+        <div className="filter-rating-btns">
+          {ratingStars.map(r => (
+            <button
+              key={r}
+              className={`filter-rating-btn ${Number(filters.minRating) === r ? 'active' : ''}`}
+              onClick={() => handleFilterChange('minRating', String(r))}
+            >
+              {r === 0 ? 'Any' : (
+                <><FiStar size={12} fill={Number(filters.minRating) === r ? 'white' : '#f59e0b'} color={Number(filters.minRating) === r ? 'white' : '#f59e0b'} /> {r}+</>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <label>Price Range ($/hr)</label>
+        <div className="price-inputs">
+          <input type="number" placeholder="Min" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
+          <span className="price-sep">–</span>
+          <input type="number" placeholder="Max" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <label className="filter-toggle-label">
+          <span>Available Now</span>
+          <div
+            className={`toggle-switch ${filters.available ? 'on' : ''}`}
+            onClick={() => handleFilterChange('available', !filters.available)}
+          >
+            <div className="toggle-thumb" />
+          </div>
+        </label>
+      </div>
+
+      {activeFilters.length > 0 && (
+        <button className="btn btn-outline btn-sm" style={{width:'100%',justifyContent:'center',marginTop:'0.5rem'}}
+          onClick={() => {
+            setFilters({ category: '', minRating: '0', minPrice: '', maxPrice: '', available: false });
+            setSearchParams(new URLSearchParams(query ? { q: query } : {}));
+          }}
+        >
+          <FiX size={13} /> Clear All Filters
+        </button>
+      )}
+    </aside>
+  );
+
   return (
-    <div className="search-results-page">
+    <div className="sr-page">
+      {/* Sticky results toolbar */}
+      <div className="sr-toolbar">
+        <div className="container">
+          <div className="sr-toolbar-inner">
+            <div className="sr-search-mini">
+              <SearchBar initialQuery={query} initialLocation={location} />
+            </div>
+            <div className="sr-toolbar-right">
+              <button className="sr-filter-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                <FiFilter size={16} />
+                Filters
+                {activeFilters.length > 0 && <span className="sr-filter-badge">{activeFilters.length}</span>}
+              </button>
+
+              <div className="sr-sort">
+                <label><FiArrowDown size={14} /></label>
+                <select value={sort} onChange={e => setSort(e.target.value)}>
+                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+
+              <div className="sr-view-toggle">
+                <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')}>
+                  <FiGrid size={16} />
+                </button>
+                <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
+                  <FiList size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Active filter chips */}
+          {activeFilters.length > 0 && (
+            <div className="sr-active-filters">
+              {activeFilters.map(f => (
+                <span key={f.key} className="sr-chip">
+                  {f.label}
+                  <button onClick={() => clearFilter(f.key)}><FiX size={11} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="container">
-        <div className="search-results-layout">
-          <aside className="search-sidebar">
-            <h3>Filters</h3>
+        <div className="sr-layout">
+          {/* Sidebar */}
+          {sidebar}
+          {sidebarOpen && <div className="sr-overlay" onClick={() => setSidebarOpen(false)} />}
 
-            <div className="filter-group">
-              <label>Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat === 'All' ? '' : cat.toLowerCase()}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label>Minimum Rating: {filters.minRating} stars</label>
-              <input
-                type="range"
-                min="0"
-                max="5"
-                step="1"
-                value={filters.minRating}
-                onChange={(e) => handleFilterChange('minRating', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label>Price Range</label>
-              <div className="price-inputs">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={filters.minPrice}
-                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                />
-                <span>–</span>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                />
+          {/* Main */}
+          <div className="sr-main">
+            <div className="sr-results-header">
+              <div>
+                <h2 className="sr-heading">
+                  {query ? <>“{query}”</> : 'All Professionals'}
+                  {location && <span className="sr-location"> in {location}</span>}
+                </h2>
+                <p className="sr-count">{results.length} professional{results.length !== 1 ? 's' : ''} found</p>
               </div>
             </div>
 
-            <div className="filter-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.available}
-                  onChange={(e) => handleFilterChange('available', e.target.checked)}
-                />
-                Available now
-              </label>
-            </div>
-          </aside>
-
-          <div className="search-results-main">
-            <div className="search-results-header">
-              <h2>
-                {query ? `Results for "${query}"` : 'All Professionals'}
-                {location && ` in ${location}`}
-              </h2>
-              <span className="results-count">{results.length} found</span>
-            </div>
-
             {loading ? (
-              <LoadingSpinner />
+              <div className="sr-loading"><LoadingSpinner /></div>
             ) : results.length > 0 ? (
               <>
-                <div className="results-grid">
-                  {results.map((pro) => (
+                <div className={`sr-results-grid ${viewMode === 'list' ? 'sr-results-list' : ''}`}>
+                  {results.map(pro => (
                     <ProfessionalCard key={pro.id} professional={pro} />
                   ))}
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="pagination">
-                    <button
-                      className="btn btn-outline"
-                      disabled={page <= 1}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Previous
+                  <div className="sr-pagination">
+                    <button className="btn btn-outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                      ← Previous
                     </button>
-                    <span className="page-info">
-                      Page {page} of {totalPages}
-                    </span>
-                    <button
-                      className="btn btn-outline"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <button
+                        key={p}
+                        className={`sr-page-btn ${p === page ? 'active' : ''}`}
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                      Next →
                     </button>
                   </div>
                 )}
               </>
             ) : (
-              <div className="no-results">
+              <div className="sr-empty">
+                <div className="sr-empty-icon"><FiSearch size={40} /></div>
                 <h3>No professionals found</h3>
-                <p>Try adjusting your search or filters</p>
+                <p>Try adjusting your search terms or clearing some filters</p>
+                <button className="btn btn-primary" onClick={() => { setFilters({ category: '', minRating: '0', minPrice: '', maxPrice: '', available: false }); setSearchParams(new URLSearchParams()); }}>
+                  Clear All Filters
+                </button>
               </div>
             )}
           </div>

@@ -6,9 +6,22 @@ const {
   createProfile,
   getProfile,
   updateProfile,
+  toggleAvailability,
+  getProfileByUser,
 } = require('../controllers/professionalController');
 
 const router = Router();
+
+// Get own professional profile (for dashboard)
+router.get('/me', authenticate, authorize('professional'), getProfileByUser);
+
+// Toggle availability
+router.put('/me/availability', authenticate, authorize('professional'),
+  validate([
+    body('availability_status').isIn(['available', 'busy', 'offline']).withMessage('Invalid status'),
+  ]),
+  toggleAvailability
+);
 
 router.post(
   '/',

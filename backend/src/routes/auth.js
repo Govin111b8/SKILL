@@ -1,9 +1,12 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
-const { register, login } = require('../controllers/authController');
+const { authenticate } = require('../middleware/auth');
+const { register, login, getMe } = require('../controllers/authController');
 
 const router = Router();
+
+router.get('/me', authenticate, getMe);
 
 router.post(
   '/register',

@@ -18,8 +18,8 @@ export function AuthProvider({ children }) {
 
   async function loadUser() {
     try {
-      const data = await get('/auth/me');
-      setUser(data.user || data);
+      const res = await get('/auth/me');
+      setUser(res.data?.user || res.user || res);
     } catch {
       localStorage.removeItem('token');
       setToken(null);
@@ -29,21 +29,23 @@ export function AuthProvider({ children }) {
   }
 
   async function login(email, password) {
-    const data = await post('/auth/login', { email, password });
-    const newToken = data.token;
+    const res = await post('/auth/login', { email, password });
+    const payload = res.data || res;
+    const newToken = payload.token;
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser(data.user);
-    return data;
+    setUser(payload.user);
+    return payload;
   }
 
   async function register(formData) {
-    const data = await post('/auth/register', formData);
-    const newToken = data.token;
+    const res = await post('/auth/register', formData);
+    const payload = res.data || res;
+    const newToken = payload.token;
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser(data.user);
-    return data;
+    setUser(payload.user);
+    return payload;
   }
 
   function logout() {

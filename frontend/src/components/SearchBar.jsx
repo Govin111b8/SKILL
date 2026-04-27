@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiMapPin, FiX } from 'react-icons/fi';
 import './SearchBar.css';
 
 function SearchBar({ initialQuery = '', initialLocation = '', variant = 'default' }) {
@@ -17,29 +17,38 @@ function SearchBar({ initialQuery = '', initialLocation = '', variant = 'default
   }
 
   return (
-    <form className={`search-bar ${variant}`} onSubmit={handleSubmit}>
-      <div className="search-bar-field">
-        <FiSearch className="search-bar-icon" />
-        <input
-          type="text"
-          placeholder="What service are you looking for?"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search services"
-        />
+    <form className={`search-bar search-bar--${variant}`} onSubmit={handleSubmit}>
+      <div className="sb-fields">
+        <div className="sb-field">
+          <FiSearch className="sb-icon" size={18} />
+          <input
+            type="text"
+            placeholder="What service are you looking for?"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            aria-label="Search services"
+          />
+          {query && (
+            <button type="button" className="sb-clear" onClick={() => setQuery('')} aria-label="Clear">
+              <FiX size={14} />
+            </button>
+          )}
+        </div>
+        <div className="sb-divider" />
+        <div className="sb-field sb-field--location">
+          <FiMapPin className="sb-icon" size={18} />
+          <input
+            type="text"
+            placeholder="City, state or zip"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            aria-label="Location"
+          />
+        </div>
       </div>
-      <div className="search-bar-field">
-        <FiMapPin className="search-bar-icon" />
-        <input
-          type="text"
-          placeholder="Location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          aria-label="Location"
-        />
-      </div>
-      <button type="submit" className="btn btn-primary search-bar-btn">
-        <FiSearch /> Search
+      <button type="submit" className="sb-submit">
+        <FiSearch size={18} />
+        <span>Search</span>
       </button>
     </form>
   );
