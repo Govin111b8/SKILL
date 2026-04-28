@@ -38,6 +38,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveProfile() async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Name cannot be empty'), backgroundColor: Colors.orange));
+      return;
+    }
     setState(() => _saving = true);
     try {
       await ApiService.put('/users/profile', {
@@ -45,7 +49,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'phone': _phoneCtrl.text.trim(),
         'location': _locationCtrl.text.trim(),
       }, auth: true);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green));
+      if (mounted) {
+        // Update local user data in AuthService so UI reflects new name immediately
+        context.read<AuthService>().updateLocalUser({
+          'name': _nameCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+          'location': _locationCtrl.text.trim(),
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green));
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }

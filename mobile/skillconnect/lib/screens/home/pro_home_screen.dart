@@ -45,8 +45,8 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
         BookingService.list(status: 'in_progress'),
       ]);
       _dash = (results[0] as Map<String, dynamic>)['data'];
-      _pending = results[1] as List<Booking>;
-      _active = results[2] as List<Booking>;
+      _pending = (results[1] as List<dynamic>).cast<Booking>();
+      _active = (results[2] as List<dynamic>).cast<Booking>();
     } catch (e) {
       _error = e.toString();
     }

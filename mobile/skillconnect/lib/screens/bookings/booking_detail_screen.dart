@@ -10,8 +10,11 @@ import '../messages/chat_screen.dart';
 import 'bookings_list_screen.dart' show bookingStatusColor, prettyStatus;
 
 class BookingDetailScreen extends StatefulWidget {
-  final String bookingId;
-  const BookingDetailScreen({super.key, required this.bookingId});
+  /// Pass either [bookingId] (fetches from API) or [booking] (uses directly, still refreshes).
+  final String? bookingId;
+  final Booking? booking;
+  const BookingDetailScreen({super.key, this.bookingId, this.booking})
+      : assert(bookingId != null || booking != null, 'Provide bookingId or booking');
 
   @override
   State<BookingDetailScreen> createState() => _BookingDetailScreenState();
@@ -26,13 +29,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (widget.booking != null) {
+      _booking = widget.booking;
+      _loading = false;
+      // Still refresh in background for latest status
+      _refreshSilent();
+    } else {
+      _load();
+    }
+  }
+
+  Future<void> _refreshSilent() async {
+    try {
+      final fresh = await BookingService.get(widget.booking!.id);
+      if (mounted) setState(() => _booking = fresh);
+    } catch (_) {}
   }
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      _booking = await BookingService.get(widget.bookingId);
+      final id = widget.bookingId ?? widget.booking!.id;
+      _booking = await BookingService.get(id);
     } catch (e) {
       _error = e.toString();
     }

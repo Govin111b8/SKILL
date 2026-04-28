@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
@@ -26,12 +27,13 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _maxPrice;
   bool _showFilters = false;
   final _maxPriceCtl = TextEditingController();
+  Timer? _debounce;
 
   // Geo + Availability filters
   bool _availableNow = false;
   bool _nearMe = false;
   double _radiusKm = 25;
-  // Hardcoded demo coords (Hyderabad city center) — in production, use geolocator package
+  // Hardcoded demo coords (Hyderabad city center) — production: use geolocator package
   static const double _defaultLat = 17.385;
   static const double _defaultLng = 78.4867;
 
@@ -43,13 +45,23 @@ class _SearchScreenState extends State<SearchScreen> {
     if (widget.categoryId != null) {
       _search();
     }
+    _searchCtl.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchCtl.removeListener(_onSearchChanged);
     _searchCtl.dispose();
     _maxPriceCtl.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) _search();
+    });
   }
 
   Future<void> _loadCategories() async {
@@ -78,26 +90,33 @@ class _SearchScreenState extends State<SearchScreen> {
         params['radius_km'] = _radiusKm.toStringAsFixed(0);
       }
       final res = await ApiService.get('/search', queryParams: params);
-      _results = (res['data'] as List).map((e) => Professional.fromJson(e)).toList();
-      final pag = res['pagination'];
-      _totalPages = pag['pages'] ?? 1;
+      _results = (res['data'] as List).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
+      final pag = res['pagination'] as Map?;
+      _totalPages = (pag?['pages'] as num?)?.toInt() ?? 1;
       _searched = true;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: $e'), backgroundColor: Colors.red.shade700));
+      }
+      return;
     }
     if (mounted) setState(() => _loading = false);
   }
 
   void _clearFilters() {
+    _debounce?.cancel();
     setState(() {
+      _searchCtl.clear();
       _selectedCategoryId = null;
       _maxPrice = null;
       _maxPriceCtl.clear();
       _availableNow = false;
       _nearMe = false;
       _radiusKm = 25;
+      _results = [];
+      _searched = false;
     });
-    if (_searched) _search();
   }
 
   @override
@@ -174,7 +193,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchCtl.clear(); setState(() {}); })
                         : null,
                   ),
-                  onSubmitted: (_) => _search(),
+                  onSubmitted: (_) { _debounce?.cancel(); _search(); },
                 ),
               ),
               const SizedBox(width: 8),

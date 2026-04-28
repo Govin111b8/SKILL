@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import 'api_config.dart';
 import 'web_client.dart' if (dart.library.io) 'mobile_client.dart';
 
 class ApiService {
+  static const _timeout = Duration(seconds: 20);
   static String get _base => kIsWeb ? ApiConfig.baseUrl : ApiConfig.androidBaseUrl;
 
   static http.Client _createClient() => createPlatformClient();
@@ -28,8 +30,10 @@ class ApiService {
     final client = _createClient();
     try {
       final uri = Uri.parse('$_base$path').replace(queryParameters: queryParams);
-      final response = await client.get(uri, headers: await _headers(auth: auth));
+      final response = await client.get(uri, headers: await _headers(auth: auth)).timeout(_timeout);
       return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException('Request timed out. Check your connection.', 408);
     } finally {
       client.close();
     }
@@ -39,8 +43,10 @@ class ApiService {
     final client = _createClient();
     try {
       final uri = Uri.parse('$_base$path');
-      final response = await client.post(uri, headers: await _headers(auth: auth), body: jsonEncode(body));
+      final response = await client.post(uri, headers: await _headers(auth: auth), body: jsonEncode(body)).timeout(_timeout);
       return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException('Request timed out. Check your connection.', 408);
     } finally {
       client.close();
     }
@@ -50,8 +56,10 @@ class ApiService {
     final client = _createClient();
     try {
       final uri = Uri.parse('$_base$path');
-      final response = await client.put(uri, headers: await _headers(auth: auth), body: jsonEncode(body));
+      final response = await client.put(uri, headers: await _headers(auth: auth), body: jsonEncode(body)).timeout(_timeout);
       return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException('Request timed out. Check your connection.', 408);
     } finally {
       client.close();
     }
@@ -61,19 +69,35 @@ class ApiService {
     final client = _createClient();
     try {
       final uri = Uri.parse('$_base$path');
-      final response = await client.delete(uri, headers: await _headers(auth: auth));
+      final response = await client.delete(uri, headers: await _headers(auth: auth)).timeout(_timeout);
       return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException('Request timed out. Check your connection.', 408);
     } finally {
       client.close();
     }
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.body.isEmpty) {
+      throw ApiException('Empty response from server.', response.statusCode);
+    }
+    Map<String, dynamic> data;
+    try {
+      data = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw ApiException('Invalid response format.', response.statusCode);
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-    throw ApiException(data['message'] ?? 'Something went wrong', response.statusCode);
+    // Extract nested error messages (e.g. from express-validator)
+    final errors = data['errors'];
+    String message = data['message']?.toString() ?? 'Something went wrong';
+    if (errors is List && errors.isNotEmpty) {
+      message = (errors.first as Map?)?['msg']?.toString() ?? message;
+    }
+    throw ApiException(message, response.statusCode);
   }
 }
 

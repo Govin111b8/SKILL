@@ -27,9 +27,12 @@ class RealtimeService {
   bool get isConnected => _channel != null;
 
   void connect(String token) {
+    // Always reset disposed flag when explicitly reconnecting
+    _disposed = false;
     if (_token == token && _channel != null) return;
     _token = token;
-    _disposed = false;
+    _backoffMs = 1000;
+    _reconnectTimer?.cancel();
     _open();
   }
 
@@ -80,12 +83,24 @@ class RealtimeService {
   void disconnect() {
     _disposed = true;
     _token = null;
+    _backoffMs = 1000;
     _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _pingTimer?.cancel();
+    _pingTimer = null;
     try {
       _channel?.sink.close();
     } catch (_) {}
     _channel = null;
+  }
+
+  void connect(String token) {
+    // Always reset disposed flag when explicitly reconnecting
+    _disposed = false;
+    if (_token == token && _channel != null) return;
+    _token = token;
+    _reconnectTimer?.cancel();
+    _open();
   }
 
   String _wsUrl(String token) {

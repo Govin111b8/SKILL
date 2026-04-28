@@ -7,7 +7,6 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/home/pro_home_screen.dart';
-import 'screens/search/search_screen.dart';
 import 'screens/profile/professional_profile_screen.dart';
 import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
