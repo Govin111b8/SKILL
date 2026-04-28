@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
+import '../../widgets/review_prompt.dart';
 import '../../data/services_catalog.dart';
 import '../search/search_screen.dart';
 import 'service_hub_screen.dart';
+import 'category_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openService(int id, String name) {
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => SearchScreen(categoryId: id, categoryName: name),
+      builder: (_) => CategoryDetailScreen(categoryId: id, categoryName: name),
     ));
   }
 
@@ -117,7 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ]),
             ),
-            const SizedBox(height: 24),
+            // Review prompt banner (non-intrusive, only shows if pending)
+            const SizedBox(height: 16),
+            const ReviewPromptBanner(),
+            const SizedBox(height: 8),
             Row(children: [
               const Icon(Icons.apps_rounded, size: 18, color: Color(0xFF6366F1)),
               const SizedBox(width: 6),

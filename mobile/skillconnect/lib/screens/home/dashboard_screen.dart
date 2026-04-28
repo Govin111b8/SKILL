@@ -177,11 +177,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Color _bookingColor(String status) {
+    switch (status) {
+      case 'completed': return Colors.green;
+      case 'cancelled': return Colors.red;
+      case 'disputed': return Colors.deepOrange;
+      case 'in_progress': case 'scheduled': return Colors.blue;
+      case 'accepted': case 'quoted': return Colors.indigo;
+      default: return Colors.grey;
+    }
+  }
+
+  String _money(num v) {
+    final n = v.round();
+    final s = n.toString();
+    final buf = StringBuffer();
+    int c = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buf.write(s[i]);
+      c++;
+      if (c == 3 && i > 0) { buf.write(','); c = 0; }
+      else if (c > 3 && (c - 3) % 2 == 0 && i > 0) { buf.write(','); }
+    }
+    return '₹${buf.toString().split('').reversed.join()}';
+  }
+
   List<Widget> _buildProDashboard(BuildContext context, ColorScheme cs) {
     final stats = _dashData?['stats'] ?? {};
     final profile = _dashData?['profile'];
     final completeness = _dashData?['completeness'] ?? 0;
     final requests = (_dashData?['recentRequests'] as List?) ?? [];
+    final earnings = (_dashData?['earnings'] as Map?) ?? {};
+    final funnel = (_dashData?['funnel'] as Map?) ?? {};
 
     return [
       // Completeness bar
@@ -241,6 +268,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       const SizedBox(height: 16),
+      // Earnings
+      _EarningsCard(
+        lifetime: _money((earnings['lifetime'] ?? 0) as num),
+        thisMonth: _money((earnings['thisMonth'] ?? 0) as num),
+        last7d: _money((earnings['last7d'] ?? 0) as num),
+        pipeline: _money((earnings['pipeline'] ?? 0) as num),
+      ),
+      const SizedBox(height: 12),
+      // Funnel
+      _FunnelCard(funnel: funnel),
+      const SizedBox(height: 16),
       // Recent requests
       Text('Recent Contact Requests', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
@@ -293,14 +331,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final stats = _dashData?['stats'] ?? {};
     final contacts = (_dashData?['recentContacts'] as List?) ?? [];
     final reviews = (_dashData?['reviewsGiven'] as List?) ?? [];
+    final bookings = (_dashData?['recentBookings'] as List?) ?? [];
 
     return [
-      // Stats
-      Row(children: [
-        Expanded(child: _statCard('Contacts', '${stats['totalContacts'] ?? 0}', Icons.phone, cs.primary)),
-        const SizedBox(width: 8),
-        Expanded(child: _statCard('Reviews', '${stats['totalReviews'] ?? 0}', Icons.star, Colors.amber)),
-      ]),
+      // Stats grid (2x3)
+      GridView.count(
+        crossAxisCount: 3,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.3,
+        children: [
+          _statCard('Active', '${stats['activeBookings'] ?? 0}', Icons.work_outline, cs.primary),
+          _statCard('Done', '${stats['completedBookings'] ?? 0}', Icons.check_circle, Colors.green),
+          _statCard('Spent', _money((stats['totalSpent'] ?? 0) as num), Icons.account_balance_wallet, Colors.indigo),
+          _statCard('Saved', '${stats['favorites'] ?? 0}', Icons.favorite, Colors.pink),
+          _statCard('Contacts', '${stats['totalContacts'] ?? 0}', Icons.phone, Colors.teal),
+          _statCard('Reviews', '${stats['totalReviews'] ?? 0}', Icons.star, Colors.amber),
+        ],
+      ),
+      if (bookings.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text('Recent Bookings', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...bookings.take(5).map((b) => Card(
+          margin: const EdgeInsets.only(bottom: 6),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: _bookingColor(b['status'] ?? '').withValues(alpha: 0.15),
+              child: Icon(Icons.work_outline, color: _bookingColor(b['status'] ?? ''), size: 18),
+            ),
+            title: Text(b['title'] ?? 'Booking', maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text('${b['professional_name'] ?? '?'} • ${(b['status'] ?? '').toString().replaceAll('_', ' ')}', style: const TextStyle(fontSize: 12)),
+            trailing: Text(
+              b['final_amount'] != null ? _money(b['final_amount'] as num) : (b['quoted_amount'] != null ? _money(b['quoted_amount'] as num) : ''),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+        )),
+      ],
       const SizedBox(height: 16),
       Text('Recent Contacts', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
@@ -417,6 +487,128 @@ class _AvailabilityCard extends StatelessWidget {
             showSelectedIcon: false,
             style: ButtonStyle(visualDensity: VisualDensity.compact),
           ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Earnings overview: lifetime / month / 7d / pipeline.
+class _EarningsCard extends StatelessWidget {
+  final String lifetime;
+  final String thisMonth;
+  final String last7d;
+  final String pipeline;
+  const _EarningsCard({required this.lifetime, required this.thisMonth, required this.last7d, required this.pipeline});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.account_balance_wallet, color: cs.primary, size: 18),
+            const SizedBox(width: 8),
+            const Text('Earnings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Spacer(),
+            Text('INR', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+          ]),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(child: _metric('This Month', thisMonth, const Color(0xFF10B981))),
+            const SizedBox(width: 8),
+            Expanded(child: _metric('Last 7 Days', last7d, const Color(0xFF3B82F6))),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _metric('Lifetime', lifetime, const Color(0xFF8B5CF6))),
+            const SizedBox(width: 8),
+            Expanded(child: _metric('Pipeline', pipeline, const Color(0xFFF59E0B))),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _metric(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 2),
+        Text(value, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: color)),
+      ]),
+    );
+  }
+}
+
+/// Booking conversion funnel.
+class _FunnelCard extends StatelessWidget {
+  final Map funnel;
+  const _FunnelCard({required this.funnel});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = (funnel['totalBookings'] ?? 0) as int;
+    final stages = <(String, int, Color)>[
+      ('Requested', (funnel['requested'] ?? 0) as int, const Color(0xFF94A3B8)),
+      ('Quoted', (funnel['quoted'] ?? 0) as int, const Color(0xFF8B5CF6)),
+      ('Accepted', (funnel['accepted'] ?? 0) as int, const Color(0xFF6366F1)),
+      ('Scheduled', (funnel['scheduled'] ?? 0) as int, const Color(0xFF3B82F6)),
+      ('In Progress', (funnel['inProgress'] ?? 0) as int, const Color(0xFF0EA5E9)),
+      ('Completed', (funnel['completed'] ?? 0) as int, const Color(0xFF10B981)),
+    ];
+    final maxVal = stages.fold<int>(0, (m, s) => s.$2 > m ? s.$2 : m);
+    final conv = (funnel['conversionPct'] ?? 0).toString();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.bar_chart, color: Color(0xFF6366F1), size: 18),
+            const SizedBox(width: 8),
+            const Text('Booking Funnel', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+              child: Text('$conv% conversion', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w700)),
+            ),
+          ]),
+          const SizedBox(height: 4),
+          Text('$total total bookings', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+          const SizedBox(height: 12),
+          if (total == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: Text('No bookings yet — accept your first request to start tracking.', style: TextStyle(fontSize: 12, color: Colors.grey.shade500))),
+            )
+          else
+            ...stages.map((s) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(children: [
+                SizedBox(width: 88, child: Text(s.$1, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+                Expanded(
+                  child: Stack(children: [
+                    Container(height: 18, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4))),
+                    FractionallySizedBox(
+                      widthFactor: maxVal == 0 ? 0 : (s.$2 / maxVal).clamp(0.02, 1.0),
+                      child: Container(height: 18, decoration: BoxDecoration(color: s.$3, borderRadius: BorderRadius.circular(4))),
+                    ),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(width: 28, child: Text('${s.$2}', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: s.$3))),
+              ]),
+            )),
         ]),
       ),
     );

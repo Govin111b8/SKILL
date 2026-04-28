@@ -6,10 +6,12 @@ import 'services/realtime_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/home/pro_home_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/profile/professional_profile_screen.dart';
 import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
+import 'screens/home/category_detail_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/contacts/my_contacts_screen.dart';
 import 'screens/bookings/bookings_list_screen.dart';
@@ -111,6 +113,15 @@ class SkillConnectApp extends StatelessWidget {
             categoryName: args?['categoryName'],
           ));
         }
+        if (settings.name == '/category') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(builder: (_) => CategoryDetailScreen(
+            categoryId: args['categoryId'] as int,
+            categoryName: args['categoryName']?.toString() ?? '',
+            categoryDescription: args['description']?.toString(),
+            isRoot: args['isRoot'] == true,
+          ));
+        }
         return null;
       },
     );
@@ -127,13 +138,39 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _unread = 0;
-  final _screens = const [
-    HomeScreen(),
-    ServiceHubScreen(),
-    BookingsListScreen(),
-    ThreadsScreen(),
-    DashboardScreen(),
-  ];
+
+  // Screens differ by role — built lazily after first auth check
+  List<Widget>? _screens;
+
+  List<Widget> _buildScreens(bool isPro) => isPro
+      ? const [
+          ProHomeScreen(),       // Home: pro dashboard overview
+          BookingsListScreen(),  // Bookings: all pro bookings
+          ThreadsScreen(),       // Chats
+          DashboardScreen(),     // Profile / settings
+        ]
+      : const [
+          HomeScreen(),          // Home: discover pros
+          ServiceHubScreen(),    // Services: browse categories
+          BookingsListScreen(),  // Bookings
+          ThreadsScreen(),       // Chats
+          DashboardScreen(),     // Profile
+        ];
+
+  List<NavigationDestination> _destinations(bool isPro) => isPro
+      ? const [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+          NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        ]
+      : const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
+          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+          NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        ];
 
   @override
   void initState() {
@@ -151,9 +188,15 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
+    final isPro = auth.isProfessional;
+    final screens = _buildScreens(isPro);
+    // Reset index if it goes out of range when role changes
+    final safeIndex = _index.clamp(0, screens.length - 1);
+
     return Scaffold(
       body: Stack(children: [
-        IndexedStack(index: _index, children: _screens),
+        IndexedStack(index: safeIndex, children: screens),
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           right: 12,
@@ -190,16 +233,10 @@ class _MainShellState extends State<MainShell> {
         ),
       ]),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
+        selectedIndex: safeIndex,
         onDestinationSelected: (i) => setState(() => _index = i),
         animationDuration: const Duration(milliseconds: 400),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
-          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-          NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ],
+        destinations: _destinations(isPro),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/services_catalog.dart';
 import '../search/search_screen.dart';
+import 'category_detail_screen.dart';
 
 /// Service Hub — every service is a "mini-app" inside the unified SkillConnect platform.
 /// Tapping a service opens its themed search experience for that category only.
@@ -10,7 +11,10 @@ class ServiceHubScreen extends StatelessWidget {
   void _open(BuildContext context, int categoryId, String name) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SearchScreen(categoryId: categoryId, categoryName: name)),
+      MaterialPageRoute(builder: (_) => CategoryDetailScreen(
+        categoryId: categoryId,
+        categoryName: name,
+      )),
     );
   }
 

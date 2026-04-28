@@ -2,7 +2,7 @@ const { Router } = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
-const { createReview, getReviews } = require('../controllers/reviewController');
+const { createReview, getReviews, getPendingReviews } = require('../controllers/reviewController');
 
 const router = Router();
 
@@ -21,6 +21,7 @@ router.post(
   createReview
 );
 
+router.get('/pending', authenticate, getPendingReviews);
 router.get('/:professionalId', getReviews);
 
 module.exports = router;

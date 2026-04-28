@@ -33,6 +33,10 @@ curl -s "http://localhost:8000/api/bookings" -H "Authorization: Bearer $TOKEN_C"
 curl -s "http://localhost:8000/api/messages/threads" -H "Authorization: Bearer $TOKEN_C" | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'  threads:  {len(d[\"data\"])} found')"
 curl -s "http://localhost:8000/api/notifications" -H "Authorization: Bearer $TOKEN_C" | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'  notifs:   {len(d[\"data\"])} (unread: {d.get(\"unread_count\",0)})')"
 curl -s "http://localhost:8000/api/search?availability=available&latitude=17.385&longitude=78.4867&radius_km=50" | python3 -c "import sys,json;d=json.load(sys.stdin);print(f'  geo+avail: {len(d[\"data\"])} nearby available pros')"
+TOKEN_P=$(curl -s -X POST http://localhost:8000/api/auth/login -H "Content-Type: application/json" -d '{"email":"pro1@demo.com","password":"demo123"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['data']['token'])" 2>/dev/null || echo "")
+if [ -n "$TOKEN_P" ]; then
+  curl -s "http://localhost:8000/api/dashboard" -H "Authorization: Bearer $TOKEN_P" | python3 -c "import sys,json;d=json.load(sys.stdin)['data'];e=d.get('earnings',{});f=d.get('funnel',{});print(f'  pro analytics: lifetime=\u20b9{e.get(\"lifetime\",0):.0f}, pipeline=\u20b9{e.get(\"pipeline\",0):.0f}, conv={f.get(\"conversionPct\",0)}%')"
+fi
 echo "  ✓ API verified"
 
 # 5. Flutter analyze

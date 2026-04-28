@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
+import '../../widgets/book_now_sheet.dart';
 import '../report/report_screen.dart';
 import '../portfolio/portfolio_screen.dart';
 import '../bookings/booking_detail_screen.dart';
@@ -403,7 +404,16 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
   }
 
   Future<void> _openBookingSheet(BuildContext context) async {
-    final titleCtrl = TextEditingController();
+    final p = _professional!;
+    await showBookNowSheet(
+      context,
+      professionalId: p.id,
+      professionalName: p.name,
+      categories: p.categories.map((c) => {'id': c.id, 'name': c.name}).toList(),
+    );
+  }
+}
+
     final descCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
     DateTime? preferred;

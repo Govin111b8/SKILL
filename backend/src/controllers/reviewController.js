@@ -120,4 +120,27 @@ const getReviews = async (req, res, next) => {
   }
 };
 
-module.exports = { createReview, getReviews };
+module.exports = { createReview, getReviews, getPendingReviews };
+
+// GET /api/reviews/pending — completed bookings the customer hasn't reviewed yet
+async function getPendingReviews(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const rows = await query(
+      `SELECT b.id AS booking_id, b.title, b.completed_at,
+              p.id AS professional_id,
+              u.name AS professional_name, u.avatar_url AS professional_avatar
+       FROM bookings b
+       JOIN professionals p ON b.professional_id = p.id
+       JOIN users u ON p.user_id = u.id
+       WHERE b.customer_id = $1
+         AND b.status = 'completed'
+         AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.booking_id = b.id)
+       ORDER BY b.completed_at DESC`,
+      [userId]
+    );
+    res.json({ success: true, data: rows.rows });
+  } catch (error) {
+    next(error);
+  }
+}
