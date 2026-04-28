@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
+import '../report/report_screen.dart';
+import '../portfolio/portfolio_screen.dart';
 import 'package:intl/intl.dart';
 
 class ProfessionalProfileScreen extends StatefulWidget {
@@ -15,6 +18,7 @@ class ProfessionalProfileScreen extends StatefulWidget {
 class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
   Professional? _professional;
   List<Review> _reviews = [];
+  List<PortfolioItem> _portfolio = [];
   bool _loading = true;
   String? _error;
 
@@ -30,9 +34,11 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       final results = await Future.wait([
         ApiService.get('/professionals/${widget.professionalId}'),
         ApiService.get('/reviews/${widget.professionalId}'),
+        ApiService.get('/portfolio/${widget.professionalId}'),
       ]);
       _professional = Professional.fromJson(results[0]['data']);
       _reviews = (results[1]['data'] as List).map((e) => Review.fromJson(e)).toList();
+      _portfolio = (results[2]['data'] as List).map((e) => PortfolioItem.fromJson(e)).toList();
     } catch (e) {
       _error = e.toString();
     }
@@ -131,6 +137,54 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
+                    // Portfolio preview
+                    if (_portfolio.isNotEmpty) ...[
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('Portfolio (${_portfolio.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        TextButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => PortfolioScreen(professionalId: widget.professionalId),
+                          )),
+                          child: const Text('View All'),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 140,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _portfolio.length.clamp(0, 5),
+                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          itemBuilder: (_, i) {
+                            final item = _portfolio[i];
+                            return Container(
+                              width: 160,
+                              decoration: BoxDecoration(
+                                color: cs.primaryContainer.withAlpha(60),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Expanded(
+                                  child: Container(
+                                    width: 160,
+                                    color: cs.primaryContainer.withAlpha(100),
+                                    child: item.mediaUrl.startsWith('http')
+                                        ? Image.network(item.mediaUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Icon(_portfolioIcon(item.mediaType), color: cs.primary)))
+                                        : Center(child: Icon(_portfolioIcon(item.mediaType), size: 32, color: cs.primary)),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                                ),
+                              ]),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // Reviews
                     Text('Reviews (${_reviews.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
@@ -154,17 +208,112 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
                           ]),
                         ),
                       )),
+                    const SizedBox(height: 16),
+                    // Report button
+                    if (_professional!.userId != null)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => ReportScreen(reportedUserId: _professional!.userId!, reportedUserName: _professional!.name),
+                          )),
+                          icon: Icon(Icons.flag_outlined, color: Colors.grey.shade500, size: 18),
+                          label: Text('Report this professional', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                        ),
+                      ),
+                    const SizedBox(height: 24),
                   ],
                 ),
       floatingActionButton: _professional != null
           ? FloatingActionButton.extended(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact request feature coming soon!')));
-              },
+              onPressed: () => _showContactSheet(context),
               icon: const Icon(Icons.message),
               label: const Text('Contact'),
             )
           : null,
+    );
+  }
+
+  void _showContactSheet(BuildContext context) {
+    final p = _professional!;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Contact ${p.name}', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          if (p.email != null)
+            ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.phone)),
+              title: const Text('Call Directly'),
+              subtitle: const Text('Make a phone call'),
+              onTap: () async {
+                Navigator.pop(context);
+                final url = Uri.parse('tel:${p.email}');
+                if (await canLaunchUrl(url)) await launchUrl(url);
+              },
+            ),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: Colors.green.shade100, child: const Icon(Icons.chat, color: Colors.green)),
+            title: const Text('WhatsApp'),
+            subtitle: const Text('Chat on WhatsApp'),
+            onTap: () async {
+              Navigator.pop(context);
+              final msg = Uri.encodeComponent('Hi ${p.name}, I found you on SkillConnect and I\'m interested in your services.');
+              final url = Uri.parse('https://wa.me/?text=$msg');
+              if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+            },
+          ),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: Colors.blue.shade100, child: Icon(Icons.request_quote, color: Colors.blue.shade700)),
+            title: const Text('Request Quote'),
+            subtitle: const Text('Get a custom estimate'),
+            onTap: () {
+              Navigator.pop(context);
+              _showQuoteDialog(context);
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+
+  void _showQuoteDialog(BuildContext context) {
+    final msgCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Request a Quote'),
+        content: TextField(
+          controller: msgCtrl,
+          maxLines: 4,
+          decoration: const InputDecoration(hintText: 'Describe what you need...', border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              if (msgCtrl.text.trim().length < 10) return;
+              try {
+                await ApiService.post('/contacts', {
+                  'professional_id': _professional!.id,
+                  'contact_type': 'quote_request',
+                  'message': msgCtrl.text.trim(),
+                }, auth: true);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quote request sent!'), backgroundColor: Colors.green));
+                }
+              } catch (e) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+              }
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -178,5 +327,13 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
         Expanded(child: Text(value)),
       ]),
     );
+  }
+
+  IconData _portfolioIcon(String type) {
+    switch (type) {
+      case 'video': return Icons.videocam;
+      case 'certificate': return Icons.verified;
+      default: return Icons.image;
+    }
   }
 }

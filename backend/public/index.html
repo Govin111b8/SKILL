@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkillConnect — Verified Services Discovery Marketplace</title>
+<meta name="description" content="Find verified, trusted skilled professionals — plumbers, electricians, photographers, designers and more. Built on a triple-layer verification system." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#0F172A;color:#F8FAFC;line-height:1.6;overflow-x:hidden}
+  a{text-decoration:none;color:inherit}
+
+  /* Animated background blobs */
+  .blob{position:fixed;border-radius:50%;filter:blur(120px);opacity:.35;z-index:0;pointer-events:none;animation:float 20s ease-in-out infinite}
+  .blob.b1{width:500px;height:500px;background:#6366F1;top:-100px;left:-100px}
+  .blob.b2{width:600px;height:600px;background:#8B5CF6;top:30%;right:-200px;animation-delay:-7s}
+  .blob.b3{width:400px;height:400px;background:#06B6D4;bottom:-100px;left:30%;animation-delay:-14s}
+  @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-40px) scale(1.1)}}
+
+  /* Navbar */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;backdrop-filter:blur(20px);background:rgba(15,23,42,.6);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;letter-spacing:-.5px}
+  .logo-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366F1,#8B5CF6,#06B6D4);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(99,102,241,.45)}
+  .nav-links{display:flex;gap:32px;align-items:center}
+  .nav-links a{font-size:14px;font-weight:500;color:#CBD5E1;transition:color .2s}
+  .nav-links a:hover{color:#fff}
+  .nav-cta{background:linear-gradient(135deg,#6366F1,#8B5CF6);padding:10px 22px;border-radius:10px;font-weight:600;color:#fff!important;font-size:14px;box-shadow:0 4px 14px rgba(99,102,241,.4);transition:transform .2s}
+  .nav-cta:hover{transform:translateY(-2px)}
+  @media(max-width:720px){nav{padding:14px 18px}.nav-links a:not(.nav-cta){display:none}}
+
+  /* Hero */
+  .hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:140px 20px 80px;text-align:center}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:100px;font-size:13px;font-weight:500;color:#A5B4FC;margin-bottom:28px}
+  .badge .dot{width:8px;height:8px;background:#10B981;border-radius:50%;box-shadow:0 0 12px #10B981;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1.hero-title{font-size:clamp(40px,7vw,80px);font-weight:900;letter-spacing:-2px;line-height:1.05;margin-bottom:24px;max-width:900px}
+  .gradient-text{background:linear-gradient(135deg,#6366F1 0%,#8B5CF6 50%,#06B6D4 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero-sub{font-size:clamp(16px,2vw,20px);color:#94A3B8;max-width:640px;margin-bottom:44px;font-weight:400}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:18px 32px;border-radius:14px;font-weight:600;font-size:16px;transition:all .25s;cursor:pointer;border:none}
+  .btn-primary{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;box-shadow:0 12px 32px rgba(99,102,241,.45)}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(99,102,241,.55)}
+  .btn-secondary{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(10px)}
+  .btn-secondary:hover{background:rgba(255,255,255,.14);transform:translateY(-3px)}
+  .btn .icon{font-size:22px}
+  .btn-meta{font-size:11px;opacity:.7;display:block;margin-top:2px}
+  .btn-stack{display:flex;flex-direction:column;align-items:flex-start;line-height:1.2}
+
+  /* Stats strip */
+  .stats{display:flex;gap:48px;justify-content:center;margin-top:64px;flex-wrap:wrap}
+  .stat .num{font-size:36px;font-weight:800;background:linear-gradient(135deg,#6366F1,#06B6D4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .lbl{font-size:13px;color:#94A3B8;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+
+  /* Sections */
+  section{position:relative;z-index:1;padding:100px 20px;max-width:1280px;margin:0 auto}
+  .section-eyebrow{font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#A5B4FC;margin-bottom:16px;text-align:center}
+  .section-title{font-size:clamp(32px,4vw,48px);font-weight:800;letter-spacing:-1px;text-align:center;margin-bottom:20px}
+  .section-sub{font-size:17px;color:#94A3B8;max-width:600px;margin:0 auto 60px;text-align:center}
+
+  /* Categories grid */
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+  .cat-card{position:relative;padding:32px 28px;border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);backdrop-filter:blur(10px)}
+  .cat-card:hover{transform:translateY(-6px);border-color:rgba(99,102,241,.3);box-shadow:0 20px 40px rgba(99,102,241,.15)}
+  .cat-card .cat-bg{position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;opacity:.15;filter:blur(40px)}
+  .cat-card .cat-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:18px;position:relative;z-index:1}
+  .cat-card h3{font-size:20px;font-weight:700;margin-bottom:8px;position:relative;z-index:1}
+  .cat-card p{font-size:14px;color:#94A3B8;margin-bottom:16px;position:relative;z-index:1}
+  .cat-tags{display:flex;flex-wrap:wrap;gap:6px;position:relative;z-index:1}
+  .cat-tag{font-size:11px;padding:4px 10px;background:rgba(255,255,255,.06);border-radius:100px;color:#CBD5E1;font-weight:500}
+
+  /* Mini-app tiles */
+  .mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:32px}
+  .mini-tile{position:relative;padding:20px 14px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);text-align:center;cursor:pointer;transition:all .3s;overflow:hidden}
+  .mini-tile:hover{transform:translateY(-4px);background:rgba(255,255,255,.08);border-color:rgba(139,92,246,.4)}
+  .mini-tile .icon-box{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  .mini-tile h5{font-size:13px;font-weight:700;margin-bottom:4px;color:#F8FAFC}
+  .mini-tile p{font-size:11px;color:#94A3B8;line-height:1.3}
+  .mini-tile .pill{position:absolute;top:8px;right:8px;font-size:9px;padding:2px 7px;background:rgba(16,185,129,.2);color:#6EE7B7;border-radius:100px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+  /* Features */
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+  .feat-card{padding:32px;border-radius:20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(10px);transition:all .3s}
+  .feat-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,.3)}
+  .feat-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:18px;background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.2));border:1px solid rgba(139,92,246,.3)}
+  .feat-card h4{font-size:18px;font-weight:700;margin-bottom:10px}
+  .feat-card p{font-size:14px;color:#94A3B8;line-height:1.6}
+
+  /* Download band */
+  .download-band{position:relative;z-index:1;margin:60px auto;max-width:1200px;padding:60px 40px;border-radius:32px;background:linear-gradient(135deg,#6366F1 0%,#8B5CF6 50%,#06B6D4 100%);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .download-band::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.2),transparent 50%);pointer-events:none}
+  .download-band h2{font-size:clamp(28px,4vw,42px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:16px}
+  .download-band p{font-size:16px;opacity:.9;margin-bottom:28px;max-width:420px}
+  .download-band .cta-row{justify-content:flex-start}
+  .download-band .btn-primary{background:#0F172A;color:#fff}
+  .download-band .btn-secondary{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3)}
+  .phone-mock{position:relative;width:100%;max-width:280px;height:560px;margin:0 auto;border-radius:40px;background:#0F172A;border:6px solid #1E293B;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden;display:flex;flex-direction:column}
+  .phone-mock .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#0F172A;border-radius:0 0 16px 16px;z-index:5}
+  .phone-mock .screen{flex:1;background:linear-gradient(180deg,#1E293B 0%,#0F172A 100%);padding:40px 16px 16px;display:flex;flex-direction:column;gap:10px}
+  .phone-mock .ph-bar{height:14px;background:rgba(255,255,255,.08);border-radius:6px}
+  .phone-mock .ph-card{height:80px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(139,92,246,.3));border-radius:12px;border:1px solid rgba(255,255,255,.1)}
+  .phone-mock .ph-card.sm{height:50px;background:rgba(255,255,255,.05)}
+  @media(max-width:820px){.download-band{grid-template-columns:1fr;text-align:center}.download-band .cta-row{justify-content:center}.phone-mock{display:none}}
+
+  /* Demo creds */
+  .demo-creds{display:flex;gap:16px;justify-content:center;margin-top:40px;flex-wrap:wrap}
+  .cred-card{padding:14px 20px;background:rgba(99,102,241,.08);border:1px dashed rgba(99,102,241,.3);border-radius:12px;font-family:'Courier New',monospace;font-size:13px;color:#A5B4FC}
+  .cred-card strong{color:#C7D2FE;font-weight:700}
+
+  /* Footer */
+  footer{position:relative;z-index:1;padding:60px 20px 40px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:#64748B;font-size:14px}
+  footer .links{display:flex;gap:24px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+  footer .links a{color:#94A3B8;font-size:14px;transition:color .2s}
+  footer .links a:hover{color:#A5B4FC}
+
+  /* Animations */
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}
+  .reveal.in{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span>SkillConnect</span>
+    </div>
+    <div class="nav-links">
+      <a href="#services">Services</a>
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a href="/app/" class="nav-cta">Open App →</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="badge"><span class="dot"></span> Verified · Trusted · Live in your city</div>
+    <h1 class="hero-title">Find <span class="gradient-text">verified pros</span><br/>for every job that matters.</h1>
+    <p class="hero-sub">SkillConnect is the trust-first marketplace where customers discover skilled professionals — plumbers, electricians, photographers, designers and 40+ more — with portfolios, reviews and triple-layer ID verification.</p>
+    <div class="cta-row">
+      <a href="/api/download/apk" class="btn btn-primary">
+        <span class="icon">📱</span>
+        <span class="btn-stack"><span>Download Android APK</span><span class="btn-meta">Latest debug build · 103 MB</span></span>
+      </a>
+      <a href="/app/" class="btn btn-secondary">
+        <span class="icon">🌐</span>
+        <span class="btn-stack"><span>Open Web App</span><span class="btn-meta">Works in any browser</span></span>
+      </a>
+    </div>
+    <div class="demo-creds">
+      <div class="cred-card">👤 Customer: <strong>customer@demo.com</strong> / demo123</div>
+      <div class="cred-card">🔧 Pro: <strong>pro1@demo.com</strong> / demo123</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num">5</div><div class="lbl">Categories</div></div>
+      <div class="stat"><div class="num">40+</div><div class="lbl">Services</div></div>
+      <div class="stat"><div class="num">100%</div><div class="lbl">Verified</div></div>
+      <div class="stat"><div class="num">0%</div><div class="lbl">Commission</div></div>
+    </div>
+  </section>
+
+  <section id="services">
+    <div class="section-eyebrow">All Services · Mini-Apps</div>
+    <h2 class="section-title">Every skill is its <span class="gradient-text">own app</span></h2>
+    <p class="section-sub">40+ specialised services inside one unified platform. Tap any service to launch its dedicated experience — verified pros, portfolios, reviews, contact.</p>
+    <div class="cat-grid" id="catGrid"></div>
+
+    <div style="text-align:center;margin:60px 0 24px"><div class="section-eyebrow">All Mini-Apps</div><h3 style="font-size:28px;font-weight:800;letter-spacing:-1px">Pick your service</h3></div>
+    <div class="mini-grid" id="miniGrid"></div>
+  </section>
+
+  <section id="features">
+    <div class="section-eyebrow">Why SkillConnect</div>
+    <h2 class="section-title">Built on <span class="gradient-text">trust, not luck</span></h2>
+    <p class="section-sub">Every feature designed to remove the friction, opacity and risk from finding skilled help.</p>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">🛡️</div><h4>Triple-Layer Verification</h4><p>Government ID + OTP + Selfie checks. Zero unverified pros visible in search. Your safety, guaranteed.</p></div>
+      <div class="feat-card"><div class="feat-icon">⭐</div><h4>Two-Way Reputation</h4><p>Verified reviews, response time, completed jobs and a transparent reputation score. No fake ratings.</p></div>
+      <div class="feat-card"><div class="feat-icon">🎨</div><h4>Rich Portfolios</h4><p>Photographers, designers and tradespeople showcase real work. Compare quality before you contact.</p></div>
+      <div class="feat-card"><div class="feat-icon">📍</div><h4>Local-First Discovery</h4><p>Geo-aware search with availability filters. Find someone available now, in your radius.</p></div>
+      <div class="feat-card"><div class="feat-icon">💬</div><h4>Direct Contact</h4><p>Call, message or request a quote — without a middleman. No commission cuts for the pro.</p></div>
+      <div class="feat-card"><div class="feat-icon">🔒</div><h4>Privacy by Design</h4><p>End-to-end encrypted contact requests. DPDPA-compliant data export & account deletion built in.</p></div>
+    </div>
+  </section>
+
+  <div id="download" class="download-band">
+    <div>
+      <h2>Carry SkillConnect<br/>in your pocket.</h2>
+      <p>Native Android app with offline-first caching, push notifications, and instant search. Web app works on any device — no install needed.</p>
+      <div class="cta-row">
+        <a href="/api/download/apk" class="btn btn-primary"><span class="icon">⬇️</span> Download APK</a>
+        <a href="/app/" class="btn btn-secondary"><span class="icon">🚀</span> Launch Web App</a>
+      </div>
+    </div>
+    <div class="phone-mock">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="ph-bar" style="width:60%"></div>
+        <div class="ph-card"></div>
+        <div style="display:flex;gap:8px"><div class="ph-card sm" style="flex:1"></div><div class="ph-card sm" style="flex:1"></div><div class="ph-card sm" style="flex:1"></div></div>
+        <div class="ph-card"></div>
+        <div class="ph-card"></div>
+        <div class="ph-card sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="links">
+      <a href="/api/health">API Status</a>
+      <a href="/app/">Web App</a>
+      <a href="/api/download/apk">Android APK</a>
+      <a href="#features">Features</a>
+    </div>
+    <div>SkillConnect © 2026 · Verified Services Discovery Marketplace · Built with ❤️</div>
+  </footer>
+
+<script>
+const CATEGORIES = [
+  { id:1, icon:'🏠', name:'Home Services', color:'#6366F1', desc:'Maintenance, repair & improvement.', tags:['Plumbing','Electrical','Painting','Carpentry','Cleaning','Roofing','HVAC','Pest Control'] },
+  { id:2, icon:'🎉', name:'Event Services', color:'#EC4899', desc:'Plan unforgettable celebrations.', tags:['Photography','Videography','Catering','DJ & Music','Decoration','Event Planning','Venue Rental'] },
+  { id:3, icon:'💆', name:'Personal Services', color:'#F59E0B', desc:'Care, fitness & lifestyle.', tags:['Beauty & Makeup','Hair Styling','Massage','Tutoring','Fitness','Nutrition','Pet Care'] },
+  { id:4, icon:'💻', name:'Technical Services', color:'#06B6D4', desc:'Tech support & development.', tags:['IT Support','Web Dev','Mobile App','CCTV','Phone Repair','Networking','Data Recovery'] },
+  { id:5, icon:'🎨', name:'Creative Services', color:'#8B5CF6', desc:'Design, content & artistry.', tags:['Graphic Design','Interior Design','Content Writing','Video Editing','Animation','Illustration','Voice Over'] },
+];
+const grid = document.getElementById('catGrid');
+CATEGORIES.forEach(c => {
+  const card = document.createElement('a');
+  card.className = 'cat-card reveal';
+  card.href = `/app/#/search?cat=${c.id}`;
+  card.innerHTML = `
+    <div class="cat-bg" style="background:${c.color}"></div>
+    <div class="cat-icon" style="background:linear-gradient(135deg,${c.color}33,${c.color}11);border:1px solid ${c.color}55">${c.icon}</div>
+    <h3>${c.name}</h3>
+    <p>${c.desc}</p>
+    <div class="cat-tags">${c.tags.map(t=>`<span class="cat-tag">${t}</span>`).join('')}</div>
+  `;
+  grid.appendChild(card);
+});
+
+// 40+ mini-app tiles — every service is its own app inside the platform
+const SERVICES = [
+  // Home Services
+  {id:6,name:'Plumbing',emoji:'🔧',tag:'Pipes & leaks',c:['#0EA5E9','#06B6D4']},
+  {id:7,name:'Electrical',emoji:'⚡',tag:'Wiring & safety',c:['#F59E0B','#EAB308']},
+  {id:8,name:'Carpentry',emoji:'🪚',tag:'Woodwork',c:['#92400E','#B45309']},
+  {id:9,name:'Painting',emoji:'🎨',tag:'Interior & exterior',c:['#EC4899','#A855F7']},
+  {id:10,name:'Cleaning',emoji:'🧹',tag:'Deep cleaning',c:['#10B981','#14B8A6']},
+  {id:11,name:'Landscaping',emoji:'🌿',tag:'Gardens & lawns',c:['#22C55E','#16A34A']},
+  {id:12,name:'Pest Control',emoji:'🐜',tag:'Safe removal',c:['#7C2D12','#DC2626']},
+  {id:13,name:'HVAC',emoji:'❄️',tag:'AC & heating',c:['#0284C7','#0EA5E9']},
+  {id:14,name:'Roofing',emoji:'🏠',tag:'Roof repair',c:['#7C3AED','#6D28D9']},
+  {id:15,name:'Appliance Repair',emoji:'🔌',tag:'Fix appliances',c:['#059669','#047857']},
+  // Event
+  {id:16,name:'Catering',emoji:'🍽️',tag:'Event food',c:['#DC2626','#EA580C']},
+  {id:17,name:'Photography',emoji:'📸',tag:'Capture moments',c:['#8B5CF6','#EC4899']},
+  {id:18,name:'Videography',emoji:'🎥',tag:'Cinematic films',c:['#EC4899','#DB2777']},
+  {id:19,name:'DJ & Music',emoji:'🎧',tag:'Live DJs',c:['#6366F1','#8B5CF6']},
+  {id:20,name:'Event Planning',emoji:'📋',tag:'Full management',c:['#F43F5E','#E11D48']},
+  {id:21,name:'Decoration',emoji:'🎀',tag:'Themed decor',c:['#F472B6','#EC4899']},
+  {id:22,name:'MC & Hosting',emoji:'🎤',tag:'Engaging hosts',c:['#7C3AED','#6D28D9']},
+  {id:23,name:'Venue Rental',emoji:'🏛️',tag:'Halls & lawns',c:['#0F766E','#115E59']},
+  // Personal
+  {id:24,name:'Tutoring',emoji:'📚',tag:'Subject experts',c:['#3B82F6','#2563EB']},
+  {id:25,name:'Fitness',emoji:'💪',tag:'Personal trainers',c:['#DC2626','#B91C1C']},
+  {id:26,name:'Beauty & Makeup',emoji:'💄',tag:'Bridal & party',c:['#EC4899','#F472B6']},
+  {id:27,name:'Hair Styling',emoji:'💇',tag:'Cuts & colour',c:['#A855F7','#9333EA']},
+  {id:28,name:'Massage',emoji:'💆‍♀️',tag:'Wellness',c:['#EAB308','#CA8A04']},
+  {id:29,name:'Nutrition',emoji:'🥗',tag:'Meal plans',c:['#22C55E','#16A34A']},
+  {id:30,name:'Life Coaching',emoji:'🌟',tag:'Goals & mindset',c:['#F59E0B','#EAB308']},
+  {id:31,name:'Pet Care',emoji:'🐾',tag:'Grooming & sitting',c:['#EA580C','#DC2626']},
+  // Technical
+  {id:32,name:'IT Support',emoji:'🖥️',tag:'Helpdesk',c:['#06B6D4','#0891B2']},
+  {id:33,name:'Web Development',emoji:'🌐',tag:'Sites & apps',c:['#3B82F6','#2563EB']},
+  {id:34,name:'Mobile Apps',emoji:'📱',tag:'iOS & Android',c:['#8B5CF6','#7C3AED']},
+  {id:35,name:'Data Recovery',emoji:'💾',tag:'Recover files',c:['#0EA5E9','#0284C7']},
+  {id:36,name:'CCTV & Security',emoji:'📹',tag:'Cameras & alarms',c:['#1E40AF','#1E3A8A']},
+  {id:37,name:'Phone Repair',emoji:'📲',tag:'Screens & batteries',c:['#06B6D4','#0EA5E9']},
+  {id:38,name:'Networking',emoji:'📡',tag:'WiFi & LAN',c:['#0284C7','#0369A1']},
+  {id:39,name:'Software Training',emoji:'🎓',tag:'Learn tools',c:['#6366F1','#4F46E5']},
+  // Creative
+  {id:40,name:'Graphic Design',emoji:'🖌️',tag:'Logos & branding',c:['#8B5CF6','#A855F7']},
+  {id:41,name:'Interior Design',emoji:'🛋️',tag:'Spaces',c:['#D946EF','#C026D3']},
+  {id:42,name:'Content Writing',emoji:'✍️',tag:'Blogs & copy',c:['#7C3AED','#6D28D9']},
+  {id:43,name:'Video Editing',emoji:'🎬',tag:'Reels & ads',c:['#EC4899','#DB2777']},
+  {id:44,name:'Animation',emoji:'✨',tag:'2D, 3D & motion',c:['#A855F7','#9333EA']},
+  {id:45,name:'Music Production',emoji:'🎵',tag:'Mixing & mastering',c:['#6366F1','#4F46E5']},
+  {id:46,name:'Voice Over',emoji:'🎙️',tag:'Ads & narration',c:['#F59E0B','#D97706']},
+  {id:47,name:'Illustration',emoji:'🖼️',tag:'Custom art',c:['#EF4444','#DC2626']},
+];
+const miniGrid = document.getElementById('miniGrid');
+SERVICES.forEach(s => {
+  const tile = document.createElement('a');
+  tile.className = 'mini-tile reveal';
+  tile.href = `/app/#/search?cat=${s.id}`;
+  tile.innerHTML = `
+    <span class="pill">Live</span>
+    <div class="icon-box" style="background:linear-gradient(135deg,${s.c[0]},${s.c[1]})">${s.emoji}</div>
+    <h5>${s.name}</h5>
+    <p>${s.tag}</p>
+  `;
+  miniGrid.appendChild(tile);
+});
+
+// Reveal on scroll
+const io = new IntersectionObserver((es) => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), { threshold: 0.1 });
+document.querySelectorAll('.reveal, .feat-card, .cat-card, .mini-tile').forEach(el => { el.classList.add('reveal'); io.observe(el); });
+</script>
+</body>
+</html>

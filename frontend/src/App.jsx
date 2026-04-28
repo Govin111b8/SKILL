@@ -9,6 +9,7 @@ import SearchResults from './pages/SearchResults';
 import ProfessionalProfile from './pages/ProfessionalProfile';
 import Categories from './pages/Categories';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -29,6 +30,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

@@ -97,8 +97,17 @@ function Home() {
   const [topPros, setTopPros] = useState([]);
 
   useEffect(() => {
-    get('/professionals?limit=4').then(d => {
-      setTopPros((d.professionals || d.results || []).slice(0, 4));
+    get('/search?limit=4&sort_by=reputation').then(res => {
+      const items = Array.isArray(res.data) ? res.data : (res.data?.professionals || res.results || []);
+      setTopPros(items.slice(0, 4).map(p => ({
+        ...p,
+        rating: p.average_rating ?? p.rating ?? 0,
+        reviews_count: parseInt(p.review_count || p.reviews_count || 0),
+        available: p.availability_status === 'available',
+        pricing: p.pricing_estimate || p.pricing,
+        verified: p.reputation_score >= 4,
+        categories: p.categories?.map(c => typeof c === 'string' ? c : c.name) || [],
+      })));
     }).catch(() => {});
   }, []);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
+import '../search/search_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -27,6 +28,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
+  void _openCategory(Category cat) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => SearchScreen(categoryId: cat.id, categoryName: cat.name),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,12 +52,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     leading: Icon(icons[i % icons.length], color: Theme.of(context).colorScheme.primary),
                     title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: cat.description != null ? Text(cat.description!, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
-                    children: cat.children.map((sub) => ListTile(
-                      contentPadding: const EdgeInsets.only(left: 72, right: 16),
-                      title: Text(sub.name),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                      onTap: () {}, // TODO: search by subcategory
-                    )).toList(),
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                        title: Text('View all ${cat.name}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () => _openCategory(cat),
+                      ),
+                      ...cat.children.map((sub) => ListTile(
+                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                        title: Text(sub.name),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () => _openCategory(sub),
+                      )),
+                    ],
                   ),
                 );
               },

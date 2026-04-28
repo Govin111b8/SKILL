@@ -10,6 +10,18 @@ import SearchBar from '../components/SearchBar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './SearchResults.css';
 
+function mapProfessional(p) {
+  return {
+    ...p,
+    rating: p.average_rating ?? p.rating ?? 0,
+    reviews_count: parseInt(p.review_count || p.reviews_count || 0),
+    available: p.availability_status === 'available',
+    pricing: p.pricing_estimate || p.pricing,
+    verified: p.reputation_score >= 4,
+    categories: p.categories?.map(c => typeof c === 'string' ? c : c.name) || [],
+  };
+}
+
 const CATEGORIES = [
   'All', 'Plumbing', 'Electrical', 'Cleaning', 'Tutoring',
   'Beauty', 'Home Repair', 'Moving', 'Photography', 'Music', 'Fitness', 'Technology',
@@ -60,9 +72,11 @@ function SearchResults() {
       params.set('page', page);
       if (sort !== 'relevance') params.set('sort', sort);
 
-      const data = await get(`/professionals?${params.toString()}`);
-      setResults(data.professionals || data.results || []);
-      setTotalPages(data.totalPages || 1);
+      const res = await get(`/search?${params.toString()}`);
+      const payload = res.data || res;
+      const items = Array.isArray(payload) ? payload : (payload.professionals || payload.results || []);
+      setResults(items.map(mapProfessional));
+      setTotalPages(res.pagination?.pages || payload.totalPages || 1);
     } catch {
       setResults([]);
     } finally {

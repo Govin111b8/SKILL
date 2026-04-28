@@ -5,9 +5,17 @@ import './ProfessionalCard.css';
 
 function ProfessionalCard({ professional }) {
   const {
-    id, name, headline, photo, rating,
-    reviews_count, location, categories, verified, pricing, available,
+    id, name, headline, photo, location, verified,
   } = professional;
+
+  // Handle both API field names and mapped names
+  const rating = professional.rating ?? professional.average_rating ?? 0;
+  const reviews_count = parseInt(professional.reviews_count || professional.review_count || 0);
+  const available = professional.available ?? (professional.availability_status === 'available');
+  const pricing = professional.pricing || professional.pricing_estimate;
+  const isVerified = verified ?? (parseFloat(professional.reputation_score) >= 4);
+  const rawCategories = professional.categories || [];
+  const categories = rawCategories.map(c => typeof c === 'string' ? c : c.name);
 
   const initial = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
@@ -15,7 +23,7 @@ function ProfessionalCard({ professional }) {
     <div className="pro-card">
       {/* Top badges */}
       <div className="pro-card-badges">
-        {verified && (
+        {isVerified && (
           <span className="pro-badge pro-badge--verified">
             <FiCheck size={10} /> Verified
           </span>

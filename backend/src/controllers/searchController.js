@@ -23,7 +23,7 @@ const search = async (req, res, next) => {
 
     // Base query
     let selectClause = `
-      SELECT p.*, u.name, u.location, u.email,
+      SELECT p.*, u.name, u.location, u.email, u.kyc_level, u.trust_score, u.government_id_verified,
              COALESCE(AVG(r.rating), 0) as average_rating,
              COUNT(DISTINCT r.id) as review_count
     `;
@@ -88,7 +88,7 @@ const search = async (req, res, next) => {
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    const groupByClause = `GROUP BY p.id, u.name, u.location, u.email`;
+    const groupByClause = `GROUP BY p.id, u.name, u.location, u.email, u.kyc_level, u.trust_score, u.government_id_verified`;
 
     // Having clause for min rating
     let havingClause = '';

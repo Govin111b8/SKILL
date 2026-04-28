@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { FiEdit, FiTrash2, FiPlus, FiBarChart2 } from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  FiEdit, FiTrash2, FiPlus, FiBarChart2, FiStar, FiUsers,
+  FiMessageSquare, FiBriefcase, FiSettings, FiToggleLeft,
+  FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
+} from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
 import StarRating from '../components/StarRating';
@@ -8,10 +13,10 @@ import './Dashboard.css';
 
 function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashData, setDashData] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [profileForm, setProfileForm] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -19,34 +24,17 @@ function Dashboard() {
 
   async function fetchDashboard() {
     try {
-      const data = await get('/dashboard');
-      setDashData(data);
-      if (user?.role === 'professional') {
-        setProfileForm(data.profile || {});
-      }
-    } catch {
-      setDashData(null);
+      const res = await get('/dashboard');
+      setDashData(res.data || res);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleProfileSave(e) {
-    e.preventDefault();
-    try {
-      await put('/professionals/profile', profileForm);
-      setEditMode(false);
-      fetchDashboard();
-    } catch {
-      // handle error silently
-    }
-  }
-
-  function handleProfileChange(e) {
-    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
-  }
-
   if (loading) return <LoadingSpinner />;
+  if (error) return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}><p>Error: {error}</p></div>;
 
   const isProfessional = user?.role === 'professional';
 
@@ -54,19 +42,19 @@ function Dashboard() {
     <div className="dashboard-page">
       <div className="container">
         <div className="dashboard-header">
-          <h1>Dashboard</h1>
-          <p>Welcome back, {user?.name || 'User'}!</p>
+          <div>
+            <h1>Welcome, {user?.name?.split(' ')[0] || 'User'}!</h1>
+            <p className="dashboard-subtitle">
+              {isProfessional ? 'Manage your professional profile and track performance' : 'View your activity and manage contacts'}
+            </p>
+          </div>
+          <Link to="/settings" className="btn btn-outline btn-sm">
+            <FiSettings /> Settings
+          </Link>
         </div>
 
         {isProfessional ? (
-          <ProfessionalDashboard
-            data={dashData}
-            editMode={editMode}
-            setEditMode={setEditMode}
-            profileForm={profileForm}
-            handleProfileChange={handleProfileChange}
-            handleProfileSave={handleProfileSave}
-          />
+          <ProfessionalDashboard data={dashData} refresh={fetchDashboard} navigate={navigate} />
         ) : (
           <CustomerDashboard data={dashData} />
         )}
@@ -78,194 +66,217 @@ function Dashboard() {
 function CustomerDashboard({ data }) {
   const contacts = data?.recentContacts || [];
   const reviews = data?.reviewsGiven || [];
-
-  return (
-    <div className="dashboard-grid">
-      <div className="dashboard-card">
-        <h2>Recent Contacts</h2>
-        {contacts.length > 0 ? (
-          <ul className="dashboard-list">
-            {contacts.map((contact, i) => (
-              <li key={i} className="dashboard-list-item">
-                <div>
-                  <strong>{contact.professional_name}</strong>
-                  <span className="list-meta">{contact.category}</span>
-                </div>
-                <span className="list-date">
-                  {new Date(contact.date).toLocaleDateString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No recent contacts</p>
-        )}
-      </div>
-
-      <div className="dashboard-card">
-        <h2>Reviews Given</h2>
-        {reviews.length > 0 ? (
-          <ul className="dashboard-list">
-            {reviews.map((review, i) => (
-              <li key={i} className="dashboard-list-item">
-                <div>
-                  <strong>{review.professional_name}</strong>
-                  <StarRating rating={review.rating} readonly size={12} />
-                </div>
-                <p className="review-snippet">{review.comment}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No reviews yet</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProfessionalDashboard({ data, editMode, setEditMode, profileForm, handleProfileChange, handleProfileSave }) {
   const stats = data?.stats || {};
-  const contacts = data?.recentRequests || [];
-  const portfolio = data?.portfolio || [];
 
   return (
-    <div className="dashboard-content">
+    <>
       <div className="stats-row">
         <div className="stat-box">
-          <FiBarChart2 />
-          <div>
-            <span className="stat-value">{stats.views || 0}</span>
-            <span className="stat-label">Profile Views</span>
-          </div>
+          <div className="stat-icon" style={{ background: '#eef2ff' }}><FiPhone color="#6366f1" /></div>
+          <div><span className="stat-value">{stats.totalContacts || 0}</span><span className="stat-label">Contacts Made</span></div>
         </div>
         <div className="stat-box">
-          <FiBarChart2 />
-          <div>
-            <span className="stat-value">{stats.contacts || 0}</span>
-            <span className="stat-label">Contact Requests</span>
-          </div>
-        </div>
-        <div className="stat-box">
-          <FiBarChart2 />
-          <div>
-            <span className="stat-value">{stats.rating || '0.0'}</span>
-            <span className="stat-label">Average Rating</span>
-          </div>
-        </div>
-        <div className="stat-box">
-          <FiBarChart2 />
-          <div>
-            <span className="stat-value">{stats.reviews || 0}</span>
-            <span className="stat-label">Total Reviews</span>
-          </div>
+          <div className="stat-icon" style={{ background: '#fef3c7' }}><FiStar color="#f59e0b" /></div>
+          <div><span className="stat-value">{stats.totalReviews || 0}</span><span className="stat-label">Reviews Given</span></div>
         </div>
       </div>
-
       <div className="dashboard-grid">
         <div className="dashboard-card">
-          <div className="card-header">
-            <h2>Profile</h2>
-            <button className="btn btn-outline btn-sm" onClick={() => setEditMode(!editMode)}>
-              <FiEdit /> {editMode ? 'Cancel' : 'Edit'}
-            </button>
-          </div>
-
-          {editMode ? (
-            <form onSubmit={handleProfileSave} className="profile-edit-form">
-              <div className="form-group">
-                <label>Headline</label>
-                <input
-                  name="headline"
-                  value={profileForm.headline || ''}
-                  onChange={handleProfileChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Bio</label>
-                <textarea
-                  name="bio"
-                  value={profileForm.bio || ''}
-                  onChange={handleProfileChange}
-                  rows={4}
-                />
-              </div>
-              <div className="form-group">
-                <label>Pricing</label>
-                <input
-                  name="pricing"
-                  value={profileForm.pricing || ''}
-                  onChange={handleProfileChange}
-                  placeholder="e.g., $50/hr"
-                />
-              </div>
-              <div className="form-group">
-                <label>Location</label>
-                <input
-                  name="location"
-                  value={profileForm.location || ''}
-                  onChange={handleProfileChange}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary">Save Changes</button>
-            </form>
-          ) : (
-            <div className="profile-display">
-              <p><strong>Headline:</strong> {profileForm.headline || 'Not set'}</p>
-              <p><strong>Bio:</strong> {profileForm.bio || 'Not set'}</p>
-              <p><strong>Pricing:</strong> {profileForm.pricing || 'Not set'}</p>
-              <p><strong>Location:</strong> {profileForm.location || 'Not set'}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>Recent Requests</h2>
-          </div>
+          <div className="card-header"><h2><FiPhone /> Recent Contacts</h2></div>
           {contacts.length > 0 ? (
             <ul className="dashboard-list">
-              {contacts.map((req, i) => (
-                <li key={i} className="dashboard-list-item">
-                  <div>
-                    <strong>{req.customer_name}</strong>
-                    <span className="list-meta">{req.service}</span>
+              {contacts.map((c) => (
+                <li key={c.id} className="dashboard-list-item">
+                  <div className="list-item-main">
+                    <strong>{c.professional_name}</strong>
+                    <span className="list-meta">{c.headline || c.contact_type}</span>
                   </div>
-                  <span className="list-date">
-                    {new Date(req.date).toLocaleDateString()}
-                  </span>
+                  <div className="list-item-right">
+                    <span className={`status-badge status-badge--${c.status}`}>{c.status}</span>
+                    <span className="list-date">{new Date(c.created_at).toLocaleDateString()}</span>
+                  </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="empty-state">No contact requests yet</p>
+            <div className="empty-state"><FiUsers size={32} /><p>No contacts yet. <Link to="/search">Find a professional</Link></p></div>
           )}
         </div>
-
-        <div className="dashboard-card full-width">
-          <div className="card-header">
-            <h2>Portfolio</h2>
-            <button className="btn btn-outline btn-sm">
-              <FiPlus /> Add Item
-            </button>
-          </div>
-          {portfolio.length > 0 ? (
-            <div className="portfolio-manage-grid">
-              {portfolio.map((item, i) => (
-                <div key={i} className="portfolio-manage-item">
-                  <img src={item.image || item} alt={`Portfolio ${i + 1}`} />
-                  <button className="portfolio-delete">
-                    <FiTrash2 />
-                  </button>
-                </div>
+        <div className="dashboard-card">
+          <div className="card-header"><h2><FiStar /> Reviews Given</h2></div>
+          {reviews.length > 0 ? (
+            <ul className="dashboard-list">
+              {reviews.map((r) => (
+                <li key={r.id} className="dashboard-list-item">
+                  <div className="list-item-main">
+                    <strong>{r.professional_name}</strong>
+                    <StarRating rating={r.rating} readonly size={12} />
+                  </div>
+                  <p className="review-snippet">{r.comment}</p>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <p className="empty-state">Add portfolio items to showcase your work</p>
+            <div className="empty-state"><FiStar size={32} /><p>No reviews yet</p></div>
           )}
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+function ProfessionalDashboard({ data, refresh, navigate }) {
+  const profile = data?.profile;
+  const stats = data?.stats || {};
+  const contacts = data?.recentRequests || [];
+  const portfolio = data?.portfolio || [];
+  const completeness = data?.completeness || 0;
+  const needsProfile = data?.needsProfile;
+  const [editMode, setEditMode] = useState(false);
+  const [availability, setAvailability] = useState(profile?.availability_status || 'offline');
+  const [profileForm, setProfileForm] = useState({
+    headline: profile?.headline || '', bio: profile?.bio || '',
+    pricing_estimate: profile?.pricing_estimate || '', years_of_experience: profile?.years_of_experience || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [showPortfolioForm, setShowPortfolioForm] = useState(false);
+  const [portfolioForm, setPortfolioForm] = useState({ title: '', description: '', media_type: 'image', media_url: '' });
+
+  async function handleAvailabilityToggle() {
+    const next = availability === 'available' ? 'offline' : 'available';
+    try { await put('/professionals/me/availability', { availability_status: next }); setAvailability(next); } catch {}
+  }
+  async function handleProfileSave(e) {
+    e.preventDefault(); setSaving(true);
+    try { await put(`/professionals/${profile.id}`, profileForm); setEditMode(false); refresh(); } catch {}
+    setSaving(false);
+  }
+  async function handleContactAction(contactId, status) {
+    try { await put(`/contacts/${contactId}/status`, { status }); refresh(); } catch {}
+  }
+  async function handleAddPortfolio(e) {
+    e.preventDefault();
+    try { await post('/portfolio', portfolioForm); setPortfolioForm({ title: '', description: '', media_type: 'image', media_url: '' }); setShowPortfolioForm(false); refresh(); } catch {}
+  }
+  async function handleDeletePortfolio(id) {
+    try { await del(`/portfolio/${id}`); refresh(); } catch {}
+  }
+
+  if (needsProfile) {
+    return (
+      <div className="needs-profile-card">
+        <FiBriefcase size={48} />
+        <h2>Complete Your Professional Profile</h2>
+        <p>Set up your profile to appear in search results and receive customer inquiries.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {completeness < 100 && (
+        <div className="completeness-bar">
+          <div className="completeness-info"><span>Profile Completeness</span><strong>{completeness}%</strong></div>
+          <div className="completeness-track"><div className="completeness-fill" style={{ width: `${completeness}%` }} /></div>
+          <p className="completeness-hint">Complete your profile to rank higher in search</p>
+        </div>
+      )}
+      <div className="stats-row">
+        <div className="stat-box"><div className="stat-icon" style={{ background: '#eef2ff' }}><FiEye color="#6366f1" /></div><div><span className="stat-value">{stats.views || 0}</span><span className="stat-label">Views</span></div></div>
+        <div className="stat-box"><div className="stat-icon" style={{ background: '#ecfdf5' }}><FiPhone color="#10b981" /></div><div><span className="stat-value">{stats.contacts || 0}</span><span className="stat-label">Contacts</span></div></div>
+        <div className="stat-box"><div className="stat-icon" style={{ background: '#fef3c7' }}><FiStar color="#f59e0b" /></div><div><span className="stat-value">{stats.rating || '0.0'}</span><span className="stat-label">Rating</span></div></div>
+        <div className="stat-box"><div className="stat-icon" style={{ background: '#fce7f3' }}><FiMessageSquare color="#ec4899" /></div><div><span className="stat-value">{stats.reviews || 0}</span><span className="stat-label">Reviews</span></div></div>
+        <div className="stat-box"><div className="stat-icon" style={{ background: '#e0e7ff' }}><FiCheckCircle color="#4f46e5" /></div><div><span className="stat-value">{stats.completedJobs || 0}</span><span className="stat-label">Jobs Done</span></div></div>
+      </div>
+      <div className="availability-row">
+        <span className="availability-label">
+          {availability === 'available' ? <FiToggleRight size={20} color="#10b981" /> : <FiToggleLeft size={20} color="#94a3b8" />}
+          Status: <strong className={`avail-status avail-status--${availability}`}>{availability}</strong>
+        </span>
+        <button className={`btn btn-sm ${availability === 'available' ? 'btn-outline' : 'btn-primary'}`} onClick={handleAvailabilityToggle}>
+          {availability === 'available' ? 'Go Offline' : 'Go Available'}
+        </button>
+      </div>
+      <div className="dashboard-grid">
+        <div className="dashboard-card">
+          <div className="card-header"><h2><FiBriefcase /> Profile</h2>
+            <button className="btn btn-outline btn-sm" onClick={() => setEditMode(!editMode)}><FiEdit /> {editMode ? 'Cancel' : 'Edit'}</button>
+          </div>
+          {editMode ? (
+            <form onSubmit={handleProfileSave} className="profile-edit-form">
+              <div className="form-group"><label>Headline</label><input value={profileForm.headline} onChange={(e) => setProfileForm({ ...profileForm, headline: e.target.value })} /></div>
+              <div className="form-group"><label>Bio</label><textarea value={profileForm.bio} onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })} rows={4} /></div>
+              <div className="form-row">
+                <div className="form-group"><label>Pricing</label><input value={profileForm.pricing_estimate} onChange={(e) => setProfileForm({ ...profileForm, pricing_estimate: e.target.value })} /></div>
+                <div className="form-group"><label>Experience (yrs)</label><input type="number" value={profileForm.years_of_experience} onChange={(e) => setProfileForm({ ...profileForm, years_of_experience: e.target.value })} min="0" /></div>
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+            </form>
+          ) : (
+            <div className="profile-display">
+              <div className="profile-display-row"><strong>Headline</strong><span>{profile?.headline || 'Not set'}</span></div>
+              <div className="profile-display-row"><strong>Bio</strong><span>{profile?.bio || 'Not set'}</span></div>
+              <div className="profile-display-row"><strong>Pricing</strong><span>{profile?.pricing_estimate ? `₹${profile.pricing_estimate}/hr` : 'Not set'}</span></div>
+              <div className="profile-display-row"><strong>Experience</strong><span>{profile?.years_of_experience ? `${profile.years_of_experience} yrs` : 'Not set'}</span></div>
+              <div className="profile-display-row"><strong>Categories</strong><span>{profile?.categories?.map(c => c.name).join(', ') || 'Not set'}</span></div>
+              <div className="profile-display-row"><strong>Plan</strong><span className={`plan-badge plan-badge--${profile?.subscription_plan}`}>{profile?.subscription_plan}</span></div>
+            </div>
+          )}
+        </div>
+        <div className="dashboard-card">
+          <div className="card-header"><h2><FiUsers /> Contact Requests</h2></div>
+          {contacts.length > 0 ? (
+            <ul className="dashboard-list">
+              {contacts.map((req) => (
+                <li key={req.id} className="dashboard-list-item">
+                  <div className="list-item-main"><strong>{req.customer_name}</strong><span className="list-meta">{req.contact_type} • {req.message || 'No message'}</span></div>
+                  <div className="list-item-right">
+                    {req.status === 'pending' ? (
+                      <div className="action-btns">
+                        <button className="btn btn-sm btn-primary" onClick={() => handleContactAction(req.id, 'accepted')}>Accept</button>
+                        <button className="btn btn-sm btn-outline" onClick={() => handleContactAction(req.id, 'declined')}>Decline</button>
+                      </div>
+                    ) : (<span className={`status-badge status-badge--${req.status}`}>{req.status}</span>)}
+                    <span className="list-date">{new Date(req.created_at).toLocaleDateString()}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (<div className="empty-state"><FiUsers size={32} /><p>No requests yet</p></div>)}
+        </div>
+        <div className="dashboard-card full-width">
+          <div className="card-header"><h2><FiTrendingUp /> Portfolio ({portfolio.length})</h2>
+            <button className="btn btn-outline btn-sm" onClick={() => setShowPortfolioForm(!showPortfolioForm)}><FiPlus /> Add</button>
+          </div>
+          {showPortfolioForm && (
+            <form onSubmit={handleAddPortfolio} className="portfolio-add-form">
+              <div className="form-row">
+                <div className="form-group"><label>Title</label><input value={portfolioForm.title} onChange={(e) => setPortfolioForm({ ...portfolioForm, title: e.target.value })} required /></div>
+                <div className="form-group"><label>Type</label>
+                  <select value={portfolioForm.media_type} onChange={(e) => setPortfolioForm({ ...portfolioForm, media_type: e.target.value })}>
+                    <option value="image">Image</option><option value="video">Video</option><option value="certificate">Certificate</option>
+                  </select></div>
+              </div>
+              <div className="form-group"><label>Media URL</label><input value={portfolioForm.media_url} onChange={(e) => setPortfolioForm({ ...portfolioForm, media_url: e.target.value })} required /></div>
+              <div className="form-group"><label>Description</label><textarea value={portfolioForm.description} onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })} rows={2} /></div>
+              <div className="form-actions"><button type="submit" className="btn btn-primary btn-sm">Save</button><button type="button" className="btn btn-outline btn-sm" onClick={() => setShowPortfolioForm(false)}>Cancel</button></div>
+            </form>
+          )}
+          {portfolio.length > 0 ? (
+            <div className="portfolio-manage-grid">
+              {portfolio.map((item) => (
+                <div key={item.id} className="portfolio-manage-item">
+                  {item.media_type === 'image' ? <img src={item.media_url} alt={item.title || 'Portfolio'} onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || 'P')}&background=eef2ff&color=6366f1&size=200`; }} />
+                    : <div className="portfolio-placeholder"><FiBriefcase size={24} /><span>{item.media_type}</span></div>}
+                  <div className="portfolio-item-info"><strong>{item.title || 'Untitled'}</strong>{item.description && <p>{item.description}</p>}</div>
+                  <button className="portfolio-delete" onClick={() => handleDeletePortfolio(item.id)}><FiTrash2 /></button>
+                </div>
+              ))}
+            </div>
+          ) : (<div className="empty-state"><FiTrendingUp size={32} /><p>Add portfolio items to showcase your work</p></div>)}
+        </div>
+      </div>
+    </>
   );
 }
 
