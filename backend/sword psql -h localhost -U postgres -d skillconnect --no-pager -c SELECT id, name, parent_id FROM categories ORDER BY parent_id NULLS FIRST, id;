@@ -1,0 +1,51 @@
+ id |          name          | parent_id 
+----+------------------------+-----------
+  1 | Home Services          |          
+  2 | Event Services         |          
+  3 | Personal Services      |          
+  4 | Technical Services     |          
+  5 | Creative Services      |          
+  6 | Plumbing               |         1
+  7 | Electrical             |         1
+  8 | Carpentry              |         1
+  9 | Painting               |         1
+ 10 | Cleaning               |         1
+ 11 | Landscaping            |         1
+ 12 | Pest Control           |         1
+ 13 | HVAC                   |         1
+ 14 | Roofing                |         1
+ 15 | Appliance Repair       |         1
+ 16 | Catering               |         2
+ 17 | Photography            |         2
+ 18 | Videography            |         2
+ 19 | DJ & Music             |         2
+ 20 | Event Planning         |         2
+ 21 | Decoration             |         2
+ 22 | MC & Hosting           |         2
+ 23 | Venue Rental           |         2
+ 24 | Tutoring               |         3
+ 25 | Fitness Training       |         3
+ 26 | Beauty & Makeup        |         3
+ 27 | Hair Styling           |         3
+ 28 | Massage Therapy        |         3
+ 29 | Nutrition & Diet       |         3
+ 30 | Life Coaching          |         3
+ 31 | Pet Care               |         3
+ 32 | IT Support             |         4
+ 33 | Web Development        |         4
+ 34 | Mobile App Development |         4
+ 35 | Data Recovery          |         4
+ 36 | CCTV & Security        |         4
+ 37 | Phone Repair           |         4
+ 38 | Networking             |         4
+ 39 | Software Training      |         4
+ 40 | Graphic Design         |         5
+ 41 | Interior Design        |         5
+ 42 | Content Writing        |         5
+ 43 | Video Editing          |         5
+ 44 | Animation              |         5
+ 45 | Music Production       |         5
+ 46 | Voice Over             |         5
+ 47 | Illustration           |         5
+(47 rows)
+

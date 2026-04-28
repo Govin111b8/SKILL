@@ -49,24 +49,23 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is running' });
 });
 
-// APK download
+// APK download — serves the release APK if built, debug APK as fallback
 app.get('/api/download/apk', (req, res) => {
-  const apkPath = path.join(__dirname, '../../mobile/skillconnect/build/app/outputs/flutter-apk/app-debug.apk');
+  const releaseApk = path.join(__dirname, '../../mobile/skillconnect/build/app/outputs/flutter-apk/app-release.apk');
+  const debugApk = path.join(__dirname, '../../mobile/skillconnect/build/app/outputs/flutter-apk/app-debug.apk');
+  const fs = require('fs');
+  const apkPath = fs.existsSync(releaseApk) ? releaseApk : debugApk;
+  if (!fs.existsSync(apkPath)) {
+    return res.status(404).json({ success: false, message: 'APK not yet built' });
+  }
   res.download(apkPath, 'SkillConnect.apk');
 });
 
-// Serve Flutter web app under /app/ (mobile-style app — this is the main app)
+// Serve Flutter web app under /app/ (mobile-style app — this is the primary app)
 const webBuildPath = path.join(__dirname, '../../mobile/skillconnect/build/web');
 app.use('/app', express.static(webBuildPath));
 app.get(/^\/app(\/.*)?$/, (req, res) => {
   res.sendFile(path.join(webBuildPath, 'index.html'));
-});
-
-// Serve React customer web app under /react/
-const reactAppPath = path.join(__dirname, '../public/react');
-app.use('/react', express.static(reactAppPath));
-app.get(/^\/react(\/.*)?$/, (req, res) => {
-  res.sendFile(path.join(reactAppPath, 'index.html'));
 });
 
 // Serve Pro portal under /pro/

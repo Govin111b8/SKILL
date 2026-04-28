@@ -167,8 +167,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               child: ProfessionalCard(
                                 professional: pro,
-                                onTap: () => Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => ProfessionalProfileScreen(professionalId: pro.id))),
                               ),
                             );
                           },
