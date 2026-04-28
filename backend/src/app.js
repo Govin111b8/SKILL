@@ -73,6 +73,13 @@ app.get(/^\/pro(\/.*)?$/, (req, res) => {
   res.sendFile(path.join(proPotalPath, 'index.html'));
 });
 
+// Serve React web app under /webapp/ (customer-facing app)
+const webAppPath = path.join(__dirname, '../public/webapp');
+app.use('/webapp', express.static(webAppPath));
+app.get(/^\/webapp(\/.*)?$/, (req, res) => {
+  res.sendFile(path.join(webAppPath, 'index.html'));
+});
+
 // Root → landing page (handled by static above for index.html)
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));

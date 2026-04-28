@@ -8,13 +8,26 @@
   display: flex;
   align-items: stretch;
   background: rgba(255, 255, 255, 0.97);
-  border-top: 1px solid var(--gray-200);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-top: 1.5px solid var(--gray-200);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.09);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   /* Safe area for iOS home bar */
   padding-bottom: env(safe-area-inset-bottom, 0px);
   height: calc(62px + env(safe-area-inset-bottom, 0px));
+}
+
+/* On desktop, cap width so it doesn't sprawl edge-to-edge */
+@media (min-width: 769px) {
+  .bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 20px 20px 0 0;
+    border-left: 1.5px solid var(--gray-200);
+    border-right: 1.5px solid var(--gray-200);
+  }
 }
 
 .bn-item {
@@ -77,19 +90,4 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1;
-}
-
-/* ── Desktop: hide bottom nav, show as slim auxiliary ── */
-@media (min-width: 769px) {
-  .bottom-nav {
-    display: none;
-  }
-}
-
-/* ── Mobile: ensure main content doesn't hide behind nav ── */
-@media (max-width: 768px) {
-  /* Applied globally via App.css .app-main adjustment */
-  .bottom-nav {
-    display: flex;
-  }
 }

@@ -314,6 +314,11 @@
   .drawer-backdrop { display: block; }
 }
 
+/* Desktop: hide center nav links — bottom nav handles them */
+@media (min-width: 769px) {
+  .navbar-center { display: none; }
+}
+
 @media (max-width: 420px) {
   .navbar-logo span { display: none; }
   .navbar-logo-icon { font-size: 1.8rem; }

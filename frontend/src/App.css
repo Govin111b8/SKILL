@@ -6,13 +6,8 @@
 
 .app-main {
   flex: 1;
-}
-
-/* On mobile, add padding so content isn't hidden behind the bottom nav */
-@media (max-width: 768px) {
-  .app-main {
-    padding-bottom: 62px;
-  }
+  /* Always leave room for the fixed bottom nav (62px + safe-area) */
+  padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Form Styles */
