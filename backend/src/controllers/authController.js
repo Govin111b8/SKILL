@@ -13,7 +13,8 @@ const generateToken = (user) => {
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, role, location } = req.body;
+    const { name, email, password, role, location } = req.body;
+    const phone = req.body.phone || '';
 
     // Check if user already exists
     const existingUser = await query(

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import BottomNav from './components/BottomNav';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -8,6 +9,7 @@ import Register from './pages/Register';
 import SearchResults from './pages/SearchResults';
 import ProfessionalProfile from './pages/ProfessionalProfile';
 import Categories from './pages/Categories';
+import CategoryDetail from './pages/CategoryDetail';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
@@ -25,6 +27,7 @@ function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/professionals/:id" element={<ProfessionalProfile />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/categories/:slug" element={<CategoryDetail />} />
           <Route
             path="/dashboard"
             element={
@@ -45,6 +48,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <BottomNav />
     </div>
   );
 }

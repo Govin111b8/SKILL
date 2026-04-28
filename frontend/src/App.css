@@ -8,6 +8,13 @@
   flex: 1;
 }
 
+/* On mobile, add padding so content isn't hidden behind the bottom nav */
+@media (max-width: 768px) {
+  .app-main {
+    padding-bottom: 62px;
+  }
+}
+
 /* Form Styles */
 .form-group {
   margin-bottom: 1.25rem;

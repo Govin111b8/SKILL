@@ -6,6 +6,13 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'skillconnect',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'password',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected PostgreSQL pool error:', err.message);
 });
 
 const query = (text, params) => pool.query(text, params);

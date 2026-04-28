@@ -164,9 +164,12 @@
     .ie-btns{display:flex;gap:8px;margin-top:8px}
 
     /* ─── MODAL ──────────────────────────────── */
-    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
-    .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative}
+    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative;cursor:default}
     .modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2);line-height:1}
+
+    /* ─── FIELD LABEL ────────────────────────── */
+    .fg-label{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 
     /* ─── RESPONSIVE ─────────────────────────── */
     @media(max-width:768px){
@@ -307,7 +310,7 @@
 </div>
 
 <!-- MODAL -->
-<div id="modal" hidden>
+<div id="modal" hidden onclick="if(event.target===this)cm()">
   <div class="modal-box">
     <button class="modal-close" onclick="cm()">✕</button>
     <div id="mc-modal"></div>
@@ -370,7 +373,7 @@ async function doSignIn() {
   if (!email || !pw) return toast('Fill in all fields', 'err');
   try {
     const r = await P('/auth/login', { email, password: pw });
-    S.tok = r.token; localStorage.setItem('sc_pt', r.token); S.user = r.user;
+    S.tok = r.data.token; localStorage.setItem('sc_pt', r.data.token); S.user = r.data.user;
     await enter();
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -391,7 +394,7 @@ async function w1() {
   if (pw.length < 6) return toast('Password must be 6+ characters', 'err');
   try {
     const r = await P('/auth/register', { name, email, password: pw, role: 'professional' });
-    S.tok = r.token; localStorage.setItem('sc_pt', r.token); S.user = r.user;
+    S.tok = r.data.token; localStorage.setItem('sc_pt', r.data.token); S.user = r.data.user;
     setWStep(2);
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -442,7 +445,7 @@ async function w4() {
 async function enter() {
   try {
     const [pRes, cRes] = await Promise.all([G('/users/profile'), G('/categories')]);
-    S.user = pRes.user || pRes.data;
+    S.user = pRes.data;
     S.cats = flatten(cRes.data || []);
     try { const pr = await G('/professionals/me'); S.pro = pr.data; } catch (_) {}
     document.getElementById('gate').style.display = 'none';
@@ -577,11 +580,9 @@ function renderPf() {
       </div>
     </div>
     <div class="card">
-      <div class="ch"><h3>Availability & Pricing</h3><button class="btn-ghost" onclick="openAvailModal()">✏️ Edit</button></div>
+      <div class="ch"><h3>Availability & Location</h3><button class="btn-ghost" onclick="openAvailModal()">✏️ Edit</button></div>
       <div class="cb" style="display:flex;gap:24px;flex-wrap:wrap">
         <div><div class="fg-label">Status</div>${availBadge(p?.availability_status || 'offline')}</div>
-        <div><div class="fg-label">Rate</div><strong>₹${p?.pricing_estimate || '—'} / visit</strong></div>
-        <div><div class="fg-label">Experience</div><strong>${p?.years_of_experience ?? '—'} yrs</strong></div>
         <div><div class="fg-label">Location</div><strong>${esc(u?.location || '—')}</strong></div>
       </div>
     </div>
@@ -614,7 +615,7 @@ function renderPf() {
   `;
 }
 
-const fgLabel = `<style>.fg-label{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}</style>`;
+// fg-label CSS is defined in the <style> block above
 
 // ══════════════════ BOOKINGS ══════════════════
 function renderBk() {
@@ -913,8 +914,11 @@ function upComp() {
 
 // ══════════════════ UTILS ══════════════════
 function logout() {
-  localStorage.removeItem('sc_pt'); S.tok = null; S.user = null; S.pro = null;
-  document.getElementById('app').hidden = true; document.getElementById('gate').style.display = '';
+  localStorage.removeItem('sc_pt');
+  S.tok = null; S.user = null; S.pro = null;
+  S.stats = null; S.bks = []; S.rvs = []; S.pt = []; S.cats = []; S.wiz = {}; S.view = 'ov';
+  document.getElementById('app').hidden = true;
+  document.getElementById('gate').style.display = '';
 }
 function copyLink() {
   const url = S.pro ? `${window.location.origin}/app/` : window.location.href;

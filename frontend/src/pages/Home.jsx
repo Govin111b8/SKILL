@@ -1,28 +1,10 @@
-import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FiTool, FiZap, FiDroplet, FiBook, FiScissors, FiTruck,
-  FiCamera, FiHome as FiHomeIcon, FiMusic, FiHeart, FiCpu,
-  FiSearch, FiShield, FiStar, FiArrowRight, FiCheck,
+  FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool,
 } from 'react-icons/fi';
-import { get } from '../api/client';
+import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
-import ProfessionalCard from '../components/ProfessionalCard';
 import './Home.css';
-
-const featuredCategories = [
-  { name: 'Plumbing', icon: FiDroplet, color: '#3b82f6', bg: '#eff6ff', slug: 'plumbing' },
-  { name: 'Electrical', icon: FiZap, color: '#f59e0b', bg: '#fffbeb', slug: 'electrical' },
-  { name: 'Home Repair', icon: FiTool, color: '#8b5cf6', bg: '#f5f3ff', slug: 'home-repair' },
-  { name: 'Cleaning', icon: FiHomeIcon, color: '#10b981', bg: '#ecfdf5', slug: 'cleaning' },
-  { name: 'Tutoring', icon: FiBook, color: '#ef4444', bg: '#fef2f2', slug: 'tutoring' },
-  { name: 'Beauty', icon: FiScissors, color: '#ec4899', bg: '#fdf2f8', slug: 'beauty' },
-  { name: 'Photography', icon: FiCamera, color: '#f97316', bg: '#fff7ed', slug: 'photography' },
-  { name: 'Fitness', icon: FiHeart, color: '#14b8a6', bg: '#f0fdfa', slug: 'fitness' },
-  { name: 'Music', icon: FiMusic, color: '#6366f1', bg: '#eef2ff', slug: 'music' },
-  { name: 'Moving', icon: FiTruck, color: '#64748b', bg: '#f8fafc', slug: 'moving' },
-  { name: 'Technology', icon: FiCpu, color: '#0ea5e9', bg: '#f0f9ff', slug: 'technology' },
-];
 
 const trendingSearches = [
   'Plumber near me', 'House cleaning', 'Math tutor', 'Electrician',
@@ -38,22 +20,19 @@ const stats = [
 
 const howItWorks = [
   {
-    step: '01',
-    icon: FiSearch,
+    step: '01', icon: FiSearch,
     title: 'Search & Filter',
     desc: 'Find professionals by skill, location, price, and rating. Hundreds of verified experts ready.',
     color: '#6366f1',
   },
   {
-    step: '02',
-    icon: FiStar,
+    step: '02', icon: FiStar,
     title: 'Compare & Review',
     desc: 'Browse portfolios, read verified reviews, and compare pricing to find your perfect match.',
     color: '#f97316',
   },
   {
-    step: '03',
-    icon: FiCheck,
+    step: '03', icon: FiCheck,
     title: 'Hire & Relax',
     desc: 'Connect directly, schedule your service, and enjoy quality work with our satisfaction guarantee.',
     color: '#10b981',
@@ -62,25 +41,16 @@ const howItWorks = [
 
 const testimonials = [
   {
-    name: 'Sarah M.',
-    role: 'Homeowner',
+    name: 'Sarah M.', role: 'Homeowner', rating: 5, avatar: 'SM',
     text: 'Found an amazing plumber within minutes. Showed up on time, fixed the issue perfectly. 10/10 would use again!',
-    rating: 5,
-    avatar: 'SM',
   },
   {
-    name: 'James T.',
-    role: 'Small Business Owner',
+    name: 'James T.', role: 'Small Business Owner', rating: 5, avatar: 'JT',
     text: "Hired a web developer through SkillConnect. Delivered my site ahead of schedule. Incredibly easy process.",
-    rating: 5,
-    avatar: 'JT',
   },
   {
-    name: 'Priya K.',
-    role: 'Parent',
+    name: 'Priya K.', role: 'Parent', rating: 5, avatar: 'PK',
     text: 'The math tutor we found has been incredible for my daughter. Her grades improved dramatically in just a month!',
-    rating: 5,
-    avatar: 'PK',
   },
 ];
 
@@ -94,49 +64,25 @@ function StarRow({ count }) {
 
 function Home() {
   const navigate = useNavigate();
-  const [topPros, setTopPros] = useState([]);
-
-  useEffect(() => {
-    get('/search?limit=4&sort_by=reputation').then(res => {
-      const items = Array.isArray(res.data) ? res.data : (res.data?.professionals || res.results || []);
-      setTopPros(items.slice(0, 4).map(p => ({
-        ...p,
-        rating: p.average_rating ?? p.rating ?? 0,
-        reviews_count: parseInt(p.review_count || p.reviews_count || 0),
-        available: p.availability_status === 'available',
-        pricing: p.pricing_estimate || p.pricing,
-        verified: p.reputation_score >= 4,
-        categories: p.categories?.map(c => typeof c === 'string' ? c : c.name) || [],
-      })));
-    }).catch(() => {});
-  }, []);
 
   return (
     <div className="home">
-      {/* ─── HERO ─── */}
+      {/* HERO */}
       <section className="hero">
         <div className="hero-blobs">
-          <div className="blob blob-1" />
-          <div className="blob blob-2" />
-          <div className="blob blob-3" />
+          <div className="blob blob-1" /><div className="blob blob-2" /><div className="blob blob-3" />
         </div>
         <div className="hero-content">
-          <div className="hero-badge animate-fade-up">
-            <FiShield size={14} /> Trusted by 25,000+ customers
-          </div>
+          <div className="hero-badge animate-fade-up"><FiShield size={14} /> Trusted by 25,000+ customers</div>
           <h1 className="hero-title animate-fade-up" style={{ animationDelay: '0.1s' }}>
-            Find the <span className="gradient-text">Perfect Professional</span><br />
-            for Any Job
+            Find the <span className="gradient-text">Perfect Professional</span><br />for Any Job
           </h1>
           <p className="hero-subtitle animate-fade-up" style={{ animationDelay: '0.2s' }}>
-            Connect with verified, top-rated local experts — from plumbers and electricians
-            to tutors and photographers. Quality work, every time.
+            Connect with verified, top-rated local experts — from plumbers and electricians to tutors and photographers.
           </p>
-
           <div className="hero-search-wrap animate-fade-up" style={{ animationDelay: '0.3s' }}>
             <SearchBar variant="hero" />
           </div>
-
           <div className="hero-trending animate-fade-up" style={{ animationDelay: '0.4s' }}>
             <span className="trending-label">Trending:</span>
             {trendingSearches.map(t => (
@@ -146,8 +92,6 @@ function Home() {
             ))}
           </div>
         </div>
-
-        {/* Floating cards decoration */}
         <div className="hero-float-cards">
           <div className="float-card">
             <img src="https://ui-avatars.com/api/?name=Sarah+M&background=4f46e5&color=fff&size=40" alt="" />
@@ -166,7 +110,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ─── STATS BAR ─── */}
+      {/* STATS */}
       <section className="stats-bar">
         <div className="container">
           <div className="stats-grid">
@@ -183,37 +127,40 @@ function Home() {
         </div>
       </section>
 
-      {/* ─── CATEGORIES ─── */}
+      {/* ALL SERVICES */}
       <section className="section categories-section">
         <div className="container">
           <div className="section-header">
             <div>
               <span className="section-eyebrow">Browse by Service</span>
-              <h2 className="section-title">Popular Categories</h2>
+              <h2 className="section-title">All Services</h2>
+              <p className="section-subtitle" style={{ marginTop: '0.25rem' }}>
+                Tap any category to explore sub-services and find the right professional
+              </p>
             </div>
-            <Link to="/categories" className="btn btn-outline btn-sm">
-              All Categories <FiArrowRight size={14} />
-            </Link>
           </div>
           <div className="home-categories-grid">
-            {featuredCategories.map(cat => (
-              <Link
-                key={cat.slug}
-                to={`/search?category=${cat.slug}`}
-                className="home-cat-card"
-                style={{ '--cat-color': cat.color, '--cat-bg': cat.bg }}
-              >
-                <div className="home-cat-icon">
-                  <cat.icon size={24} />
-                </div>
-                <span className="home-cat-name">{cat.name}</span>
-              </Link>
-            ))}
+            {categoriesData.map(cat => {
+              const CatIcon = cat.icon;
+              return (
+                <Link
+                  key={cat.slug}
+                  to={`/categories/${cat.slug}`}
+                  className="home-cat-card"
+                  style={{ '--cat-color': cat.color, '--cat-bg': cat.bg }}
+                >
+                  <div className="home-cat-icon"><CatIcon size={26} /></div>
+                  <span className="home-cat-name">{cat.name}</span>
+                  <span className="home-cat-sub-count">{cat.subcategories.length} services</span>
+                  {cat.popular && <span className="home-cat-pop-dot" />}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ─── HOW IT WORKS ─── */}
+      {/* HOW IT WORKS */}
       <section className="section how-section">
         <div className="container">
           <div className="section-header center">
@@ -225,9 +172,7 @@ function Home() {
             {howItWorks.map((step, i) => (
               <div key={i} className="how-card" style={{ '--step-color': step.color }}>
                 <div className="how-step-num">{step.step}</div>
-                <div className="how-icon">
-                  <step.icon size={26} />
-                </div>
+                <div className="how-icon"><step.icon size={26} /></div>
                 <h3>{step.title}</h3>
                 <p>{step.desc}</p>
                 {i < howItWorks.length - 1 && <div className="how-connector" />}
@@ -237,29 +182,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ─── TOP PROFESSIONALS ─── */}
-      {topPros.length > 0 && (
-        <section className="section top-pros-section">
-          <div className="container">
-            <div className="section-header">
-              <div>
-                <span className="section-eyebrow">Featured Talent</span>
-                <h2 className="section-title">Top-Rated Professionals</h2>
-              </div>
-              <Link to="/search" className="btn btn-outline btn-sm">
-                View All <FiArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="top-pros-grid">
-              {topPros.map(pro => (
-                <ProfessionalCard key={pro.id} professional={pro} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── TESTIMONIALS ─── */}
+      {/* TESTIMONIALS */}
       <section className="section testimonials-section">
         <div className="container">
           <div className="section-header center">
@@ -270,7 +193,7 @@ function Home() {
             {testimonials.map((t, i) => (
               <div key={i} className="testimonial-card">
                 <StarRow count={t.rating} />
-                <p className="testimonial-text">“{t.text}”</p>
+                <p className="testimonial-text">"{t.text}"</p>
                 <div className="testimonial-author">
                   <div className="testimonial-avatar">{t.avatar}</div>
                   <div>
@@ -284,13 +207,12 @@ function Home() {
         </div>
       </section>
 
-      {/* ─── CTA BANNER ─── */}
+      {/* CTA */}
       <section className="cta-section">
         <div className="container">
           <div className="cta-inner">
             <div className="cta-blobs">
-              <div className="cta-blob cta-blob-1" />
-              <div className="cta-blob cta-blob-2" />
+              <div className="cta-blob cta-blob-1" /><div className="cta-blob cta-blob-2" />
             </div>
             <div className="cta-content">
               <h2>Are You a Skilled Professional?</h2>

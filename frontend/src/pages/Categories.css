@@ -183,7 +183,9 @@
 }
 
 .cat-sub-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   padding: 0.25rem 0.65rem;
   background: var(--cat-bg, var(--primary-50));
   color: var(--cat-color, var(--primary));

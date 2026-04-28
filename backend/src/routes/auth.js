@@ -16,11 +16,11 @@ router.post(
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters'),
-    body('phone').trim().notEmpty().withMessage('Phone number is required'),
+    body('phone').optional({ checkFalsy: true }).trim(),
     body('role')
       .isIn(['customer', 'professional'])
       .withMessage('Role must be customer or professional'),
-    body('location').trim().notEmpty().withMessage('Location is required'),
+    body('location').optional({ checkFalsy: true }).trim(),
   ]),
   register
 );

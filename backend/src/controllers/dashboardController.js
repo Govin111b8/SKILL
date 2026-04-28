@@ -122,9 +122,9 @@ async function getProfessionalDashboard(userId, res, next) {
           categories: categories.rows,
         },
         stats: {
-          views: Math.floor(Math.random() * 200) + 50, // placeholder
+          views: parseInt(contactCount.rows[0].count),
           contacts: parseInt(contactCount.rows[0].count),
-          rating: parseFloat(reviewStats.rows[0].avg_rating).toFixed(1),
+          rating: parseFloat(parseFloat(reviewStats.rows[0].avg_rating).toFixed(1)),
           reviews: parseInt(reviewStats.rows[0].review_count),
           completedJobs: prof.completed_jobs || 0,
           responseTime: prof.response_time_hours || null,
