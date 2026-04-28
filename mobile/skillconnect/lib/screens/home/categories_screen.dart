@@ -60,7 +60,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 final icon = iconList[i % iconList.length];
                 final proCount = cat.children.fold<int>(0, (s, c) => s + (c.children.length + 1));
                 return GestureDetector(
-                  onTap: () => _openCategory(cat, isRoot: cat.children.isNotEmpty),
+                  onTap: () => _openCategory(cat, isRoot: cat.parentId == null),
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color, color.withAlpha(200)]),

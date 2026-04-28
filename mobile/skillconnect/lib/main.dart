@@ -16,6 +16,7 @@ import 'screens/contacts/my_contacts_screen.dart';
 import 'screens/bookings/bookings_list_screen.dart';
 import 'screens/messages/threads_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
+import 'screens/search/search_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -7,7 +7,6 @@ import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../bookings/booking_detail_screen.dart';
-import '../profile/professional_profile_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.

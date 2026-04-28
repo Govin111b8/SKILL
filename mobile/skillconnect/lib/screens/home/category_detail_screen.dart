@@ -67,14 +67,13 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   Future<void> _loadCategory() async {
     try {
       final res = await ApiService.get('/categories/${widget.categoryId}');
-      _category = res['data'];
-      final subs = (_category?['subcategories'] as List?) ?? [];
-      // If root category (has subcategories), show sub grid; also load pros
+      if (mounted) setState(() { _category = res['data']; });
       await _loadPros(reset: true);
     } catch (e) {
-      _error = e.toString();
+      if (mounted) setState(() { _error = e.toString(); });
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _loadPros({bool reset = false}) async {
