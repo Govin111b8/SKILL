@@ -1,0 +1,24 @@
+ id |        name        | parent_id 
+----+--------------------+-----------
+  5 | Creative Services  |          
+  2 | Event Services     |          
+  1 | Home Services      |          
+  3 | Personal Services  |          
+  4 | Technical Services |          
+ 15 | Appliance Repair   |         1
+  8 | Carpentry          |         1
+ 10 | Cleaning           |         1
+  7 | Electrical         |         1
+ 13 | HVAC               |         1
+ 11 | Landscaping        |         1
+  9 | Painting           |         1
+ 12 | Pest Control       |         1
+  6 | Plumbing           |         1
+ 14 | Roofing            |         1
+ 16 | Catering           |         2
+ 19 | DJ & Music         |         2
+ 21 | Decoration         |         2
+ 20 | Event Planning     |         2
+ 22 | MC & Hosting       |         2
+(20 rows)
+

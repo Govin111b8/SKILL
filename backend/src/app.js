@@ -66,6 +66,13 @@ app.get(/^\/app(\/.*)?$/, (req, res) => {
   res.sendFile(path.join(webBuildPath, 'index.html'));
 });
 
+// Serve Pro portal under /pro/
+const proPotalPath = path.join(__dirname, '../public/pro');
+app.use('/pro', express.static(proPotalPath));
+app.get(/^\/pro(\/.*)?$/, (req, res) => {
+  res.sendFile(path.join(proPotalPath, 'index.html'));
+});
+
 // Root → landing page (handled by static above for index.html)
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));

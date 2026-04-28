@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillConnect Pro — Professional Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --p:    #4f46e5; --p-lt: #ede9fe; --p-dk: #3730a3;
+      --cyan: #06b6d4; --cyan-lt: #ecfeff;
+      --ok:   #10b981; --warn: #f59e0b; --err: #ef4444;
+      --tx:   #111827; --tx2: #6b7280; --bd: #e5e7eb;
+      --bg:   #f3f2f0; --card: #fff; --sw: 240px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5}
+    a{color:var(--p);text-decoration:none}
+
+    /* ─── TOPBAR ─────────────────────────────── */
+    .bar{position:fixed;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:100}
+    .logo{font-size:18px;font-weight:800;background:linear-gradient(120deg,var(--p),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+    .logo s{font-weight:300;text-decoration:none}
+    .sp{flex:1}
+    .uinfo{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+    .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+    .btn-g{background:none;border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;color:var(--tx2);font-size:13px;font-family:inherit}
+    .btn-g:hover{background:var(--bg)}
+
+    /* ─── LAYOUT ─────────────────────────────── */
+    #app{padding-top:52px;display:flex;min-height:100vh}
+    .side{width:var(--sw);flex-shrink:0;position:fixed;top:52px;bottom:0;left:0;background:var(--card);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:16px 0;overflow-y:auto}
+    .ni{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--tx2);font-weight:500;font-size:13.5px;border-left:3px solid transparent;transition:.15s}
+    .ni:hover{background:var(--bg);color:var(--tx)}
+    .ni.on{background:var(--p-lt);color:var(--p);border-left-color:var(--p);font-weight:600}
+    .ni .ic{font-size:17px;width:20px;text-align:center}
+    .main{margin-left:var(--sw);flex:1;padding:24px;max-width:860px}
+
+    /* ─── CARD ───────────────────────────────── */
+    .card{background:var(--card);border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:16px}
+    .ch{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+    .ch h3{font-size:15px;font-weight:600}
+    .cb{padding:20px}
+
+    /* ─── PROFILE HEADER ─────────────────────── */
+    .ph-card{background:var(--card);border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:16px}
+    .ph-cover{height:100px;background:linear-gradient(120deg,var(--p) 0%,var(--cyan) 100%)}
+    .ph-body{padding:0 20px 20px}
+    .ph-av{width:80px;height:80px;border-radius:50%;border:4px solid #fff;background:linear-gradient(135deg,var(--p),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;margin-top:-40px;margin-bottom:8px}
+    .ph-name{font-size:20px;font-weight:700}
+    .ph-hl{color:var(--tx2);font-size:14px;margin-top:2px}
+    .ph-meta{display:flex;gap:16px;color:var(--tx2);font-size:13px;margin-top:10px;flex-wrap:wrap}
+
+    /* ─── STATS GRID ─────────────────────────── */
+    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+    .sc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center}
+    .sc .v{font-size:24px;font-weight:700;color:var(--p)}
+    .sc .l{font-size:11px;font-weight:500;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+
+    /* ─── COMPLETENESS BAR ───────────────────── */
+    .comp{padding:14px 20px;border-top:1px solid var(--bd)}
+    .comp .lbl{display:flex;justify-content:space-between;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--tx2)}
+    .comp .bar{height:6px;background:var(--bd);border-radius:99px;overflow:hidden}
+    .comp .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--cyan));transition:width .5s}
+
+    /* ─── BADGES ─────────────────────────────── */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+    .b-ok{background:#d1fae5;color:#065f46}
+    .b-warn{background:#fef3c7;color:#92400e}
+    .b-gray{background:#f3f4f6;color:#6b7280}
+    .b-blue{background:var(--p-lt);color:var(--p)}
+
+    /* ─── FORM ───────────────────────────────── */
+    .fg{margin-bottom:14px}
+    .fg label{display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+    .fc{width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .15s;background:#fff}
+    .fc:focus{outline:none;border-color:var(--p)}
+    textarea.fc{min-height:80px;resize:vertical}
+
+    /* ─── BUTTONS ────────────────────────────── */
+    .btn{padding:9px 18px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+    .btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--p-dk)}
+    .btn-o{background:#fff;color:var(--p);border:1.5px solid var(--p)}.btn-o:hover{background:var(--p-lt)}
+    .btn-ok{background:var(--ok);color:#fff}
+    .btn-err{background:var(--err);color:#fff}
+    .btn-s{padding:5px 12px;font-size:12px}
+    .btn-ghost{background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px 8px;border-radius:6px;font-size:13px;font-family:inherit}
+    .btn-ghost:hover{background:var(--bg);color:var(--p)}
+
+    /* ─── CHIPS ──────────────────────────────── */
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500;background:var(--p-lt);color:var(--p);cursor:pointer;border:1.5px solid transparent;transition:.15s}
+    .chip.on{background:var(--p);color:#fff}
+    .chip-c{background:var(--cyan-lt);color:#0e7490}
+
+    /* ─── BOOKING CARD ───────────────────────── */
+    .bc{padding:14px 20px;border-bottom:1px solid var(--bd)}
+    .bc:last-child{border-bottom:0}
+    .bc-top{display:flex;justify-content:space-between;align-items:flex-start}
+    .bc-title{font-weight:600;font-size:14px}
+    .bc-detail{font-size:13px;color:var(--tx2);margin-top:4px}
+    .bc-actions{display:flex;gap:8px;margin-top:10px}
+
+    /* ─── REVIEWS ────────────────────────────── */
+    .rv{padding:14px;border-bottom:1px solid var(--bd)}
+    .rv:last-child{border-bottom:0}
+    .stars{color:#f59e0b;letter-spacing:2px;font-size:15px}
+
+    /* ─── PORTFOLIO GRID ─────────────────────── */
+    .pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+    .pi{border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--card)}
+    .pi-thumb{height:110px;background:linear-gradient(135deg,var(--p-lt),var(--cyan-lt));display:flex;align-items:center;justify-content:center;font-size:30px}
+    .pi-info{padding:10px}
+    .pi-info .t{font-size:13px;font-weight:600}
+    .pi-info .d{font-size:12px;color:var(--tx2);margin-top:2px}
+    .pi-add{border:2px dashed var(--bd);border-radius:10px;height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--tx2);transition:.15s}
+    .pi-add:hover{border-color:var(--p);color:var(--p)}
+
+    /* ─── TOAST ──────────────────────────────── */
+    #toast{position:fixed;top:62px;right:20px;z-index:999;background:#fff;border:1px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.12);display:flex;align-items:center;gap:10px;transform:translateX(130%);transition:transform .3s;max-width:320px}
+    #toast.show{transform:translateX(0)}
+    #toast.ok{border-left:3px solid var(--ok)}
+    #toast.err{border-left:3px solid var(--err)}
+
+    /* ─── GATE ───────────────────────────────── */
+    #gate{display:flex;flex-direction:column;min-height:100vh}
+    .hero{background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 60%,#0c4a6e 100%);padding:80px 40px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px}
+    .hero h1{font-size:42px;font-weight:800;color:#fff;max-width:600px;line-height:1.2}
+    .hero h1 em{background:linear-gradient(120deg,#a78bfa,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-style:normal}
+    .hero p{color:#94a3b8;font-size:17px;max-width:480px}
+    .hero .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+    .btn-hero{padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+    .btn-hp{background:linear-gradient(120deg,var(--p),#7c3aed);color:#fff}
+    .btn-hs{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.2)}
+
+    .features{padding:40px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;background:#fff}
+    .feat{flex:1;min-width:180px;max-width:260px;padding:20px;border-radius:12px;border:1px solid var(--bd);text-align:center}
+    .feat .ico{font-size:28px;margin-bottom:10px}
+    .feat h3{font-size:14px;font-weight:600;margin-bottom:6px}
+    .feat p{font-size:13px;color:var(--tx2)}
+
+    /* ─── AUTH PANEL ─────────────────────────── */
+    .ap{max-width:420px;margin:40px auto;padding:32px;background:var(--card);border-radius:16px;border:1px solid var(--bd);box-shadow:0 4px 30px rgba(0,0,0,.08)}
+    .at{display:flex;gap:4px;margin-bottom:24px;background:var(--bg);padding:4px;border-radius:10px}
+    .at-tab{flex:1;text-align:center;padding:8px;border-radius:7px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--tx2)}
+    .at-tab.on{background:#fff;color:var(--tx);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+    /* ─── WIZARD ─────────────────────────────── */
+    .wiz-prog{display:flex;gap:4px;margin-bottom:20px}
+    .wp{flex:1;height:3px;background:var(--bd);border-radius:99px;transition:background .3s}
+    .wp.done{background:var(--p)}.wp.cur{background:var(--cyan)}
+
+    /* ─── AVAILABILITY ───────────────────────── */
+    .avs{display:flex;gap:8px;flex-wrap:wrap}
+    .av-opt{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--bd);background:#fff;transition:.15s}
+    .av-opt.available{border-color:var(--ok);background:#d1fae5;color:#065f46}
+    .av-opt.busy{border-color:var(--warn);background:#fef3c7;color:#92400e}
+    .av-opt.offline{border-color:var(--bd);background:var(--bg);color:var(--tx2)}
+
+    /* ─── INLINE EDITOR ──────────────────────── */
+    .ie{display:none}
+    .ie.open{display:block}
+    .ie-btns{display:flex;gap:8px;margin-top:8px}
+
+    /* ─── MODAL ──────────────────────────────── */
+    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+    .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative}
+    .modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2);line-height:1}
+
+    /* ─── RESPONSIVE ─────────────────────────── */
+    @media(max-width:768px){
+      .side{display:none}
+      .main{margin-left:0;padding:16px}
+      .sg{grid-template-columns:repeat(2,1fr)}
+      .hero{padding:50px 20px}
+      .hero h1{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ══════════════════ GATE ══════════════════ -->
+<div id="gate">
+  <nav class="bar">
+    <div class="logo">SkillConnect <s>Pro</s></div>
+    <div class="sp"></div>
+    <button class="btn-g" onclick="showSI()">Sign In</button>
+    <button class="btn btn-p btn-s" onclick="showSU()">Join Free</button>
+  </nav>
+
+  <div class="hero">
+    <h1>Build your <em>professional brand</em> and grow your income</h1>
+    <p>Join skilled professionals on SkillConnect — India's fastest-growing services marketplace</p>
+    <div class="ctas">
+      <button class="btn-hero btn-hp" onclick="showSU()">🚀 Join as Professional — Free</button>
+      <button class="btn-hero btn-hs" onclick="showSI()">Sign In to Dashboard</button>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feat"><div class="ico">🎯</div><h3>Get Found by Clients</h3><p>Appear in searches when customers need your skills</p></div>
+    <div class="feat"><div class="ico">⭐</div><h3>Build Your Reputation</h3><p>Collect verified reviews, build trust, command better rates</p></div>
+    <div class="feat"><div class="ico">💼</div><h3>LinkedIn for Trades</h3><p>Complete profile with portfolio, skills, certifications and more</p></div>
+    <div class="feat"><div class="ico">📊</div><h3>Track Your Growth</h3><p>View earnings, job stats, and ratings from your dashboard</p></div>
+  </div>
+
+  <!-- Auth panel -->
+  <div id="auth-panel" style="display:none;padding:0 20px 60px">
+    <div class="ap">
+      <!-- Sign In -->
+      <div id="si-pane">
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Welcome back</h2>
+        <p style="color:var(--tx2);font-size:13px;margin-bottom:20px">Sign in to your professional dashboard</p>
+        <div class="fg"><label>Email</label><input class="fc" type="email" id="si-email" placeholder="you@example.com" autocomplete="email"></div>
+        <div class="fg"><label>Password</label><input class="fc" type="password" id="si-pw" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="doSignIn()">Sign In →</button>
+        <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--tx2)">No account? <a href="#" onclick="showSU()">Join free</a></p>
+      </div>
+
+      <!-- Sign Up Wizard -->
+      <div id="su-pane" style="display:none">
+        <div class="wiz-prog" id="wiz-dots">
+          <div class="wp cur"></div><div class="wp"></div><div class="wp"></div><div class="wp"></div>
+        </div>
+
+        <!-- Step 1 -->
+        <div id="ws1">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Create your account</h2>
+          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 1 of 4 — Basic information</p>
+          <div class="fg"><label>Full Name</label><input class="fc" id="r-name" placeholder="e.g. Ravi Kumar"></div>
+          <div class="fg"><label>Email</label><input class="fc" type="email" id="r-email" placeholder="you@example.com"></div>
+          <div class="fg"><label>Password</label><input class="fc" type="password" id="r-pw" placeholder="Min. 6 characters"></div>
+          <button class="btn btn-p" style="width:100%" onclick="w1()">Continue →</button>
+          <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--tx2)">Have an account? <a href="#" onclick="showSI()">Sign in</a></p>
+        </div>
+
+        <!-- Step 2: Categories -->
+        <div id="ws2" style="display:none">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Your specializations</h2>
+          <p style="color:var(--tx2);font-size:13px;margin-bottom:14px">Step 2 of 4 — Select all your skills</p>
+          <div id="cat-chips" class="chips" style="max-height:260px;overflow-y:auto;padding:4px 0;gap:6px"></div>
+          <button class="btn btn-p" style="width:100%;margin-top:16px" onclick="w2()">Continue →</button>
+        </div>
+
+        <!-- Step 3: Pro details -->
+        <div id="ws3" style="display:none">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Professional details</h2>
+          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 3 of 4 — Tell clients about you</p>
+          <div class="fg"><label>Professional Headline</label><input class="fc" id="r-hl" placeholder="e.g. Expert Plumber · 5 yrs experience"></div>
+          <div class="fg"><label>City / Location</label><input class="fc" id="r-loc" placeholder="e.g. Mumbai, Maharashtra"></div>
+          <div class="fg"><label>Years of Experience</label><input class="fc" type="number" id="r-exp" placeholder="5" min="0" max="60"></div>
+          <button class="btn btn-p" style="width:100%" onclick="w3()">Continue →</button>
+        </div>
+
+        <!-- Step 4: Bio + pricing -->
+        <div id="ws4" style="display:none">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">About & pricing</h2>
+          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 4 of 4 — Almost there!</p>
+          <div class="fg"><label>Professional Bio</label><textarea class="fc" id="r-bio" rows="3" placeholder="Describe your expertise and what makes you stand out..."></textarea></div>
+          <div class="fg"><label>Hourly Rate / Visit Rate (₹)</label><input class="fc" type="number" id="r-price" placeholder="e.g. 500"></div>
+          <button class="btn btn-p" style="width:100%" id="wfin-btn" onclick="w4()">Create Profile →</button>
+        </div>
+
+        <!-- Step 5: Done -->
+        <div id="ws5" style="display:none;text-align:center;padding:20px 0">
+          <div style="font-size:50px;margin-bottom:16px">🎉</div>
+          <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">You're live!</h2>
+          <p style="color:var(--tx2);font-size:14px;margin-bottom:20px">Your professional profile is ready. Start attracting clients!</p>
+          <button class="btn btn-p" style="width:100%" onclick="enter()">Go to Dashboard →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- #gate -->
+
+<!-- ══════════════════ APP ══════════════════ -->
+<div id="app" hidden>
+  <nav class="bar">
+    <div class="logo">SkillConnect <s>Pro</s></div>
+    <div class="sp"></div>
+    <div class="uinfo">
+      <div class="av" id="t-av">?</div>
+      <span id="t-name">…</span>
+    </div>
+    <button class="btn-g btn-s" onclick="logout()">Logout</button>
+  </nav>
+
+  <aside class="side">
+    <div class="ni on" id="n-ov" onclick="go('ov')"><span class="ic">🏠</span> Overview</div>
+    <div class="ni" id="n-pf" onclick="go('pf')"><span class="ic">👤</span> My Profile</div>
+    <div class="ni" id="n-bk" onclick="go('bk')">
+      <span class="ic">📅</span> Bookings
+      <span id="bk-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto"></span>
+    </div>
+    <div class="ni" id="n-rv" onclick="go('rv')"><span class="ic">⭐</span> Reviews</div>
+    <div class="ni" id="n-pt" onclick="go('pt')"><span class="ic">💼</span> Portfolio</div>
+    <div style="flex:1"></div>
+    <div class="comp">
+      <div class="lbl"><span>Profile Strength</span><strong id="cp-pct">0%</strong></div>
+      <div class="bar"><div class="fill" id="cp-bar" style="width:0%"></div></div>
+    </div>
+  </aside>
+
+  <main class="main" id="mc"></main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" hidden>
+  <div class="modal-box">
+    <button class="modal-close" onclick="cm()">✕</button>
+    <div id="mc-modal"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════ CONFIG ══════════════════
+const API = window.location.origin + '/api';
+const S = {
+  tok: localStorage.getItem('sc_pt'),
+  user: null, pro: null, cats: [],
+  stats: null, bks: [], rvs: [], pt: [],
+  view: 'ov', wiz: {}
+};
+
+// ══════════════════ HTTP ══════════════════
+async function req(m, p, b) {
+  const r = await fetch(API + p, {
+    method: m,
+    headers: { 'Content-Type': 'application/json', ...(S.tok ? { Authorization: `Bearer ${S.tok}` } : {}) },
+    ...(b ? { body: JSON.stringify(b) } : {})
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.message || d.errors?.[0]?.msg || 'Error');
+  return d;
+}
+const G = p => req('GET', p);
+const P = (p, b) => req('POST', p, b);
+const U = (p, b) => req('PUT', p, b);
+const D = p => req('DELETE', p);
+
+// ══════════════════ TOAST ══════════════════
+let _tt;
+function toast(msg, t = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = (t === 'ok' ? '✅ ' : '❌ ') + msg;
+  el.className = 'show ' + t;
+  clearTimeout(_tt); _tt = setTimeout(() => el.className = '', 3500);
+}
+
+// ══════════════════ GATE UI ══════════════════
+function showSI() {
+  document.getElementById('auth-panel').style.display = 'block';
+  document.getElementById('si-pane').style.display = 'block';
+  document.getElementById('su-pane').style.display = 'none';
+  document.getElementById('auth-panel').scrollIntoView({ behavior: 'smooth' });
+}
+function showSU() {
+  loadCats();
+  document.getElementById('auth-panel').style.display = 'block';
+  document.getElementById('si-pane').style.display = 'none';
+  document.getElementById('su-pane').style.display = 'block';
+  document.getElementById('auth-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ══════════════════ SIGN IN ══════════════════
+async function doSignIn() {
+  const email = v('si-email'), pw = v('si-pw');
+  if (!email || !pw) return toast('Fill in all fields', 'err');
+  try {
+    const r = await P('/auth/login', { email, password: pw });
+    S.tok = r.token; localStorage.setItem('sc_pt', r.token); S.user = r.user;
+    await enter();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ══════════════════ WIZARD ══════════════════
+function setWStep(n) {
+  [1,2,3,4,5].forEach(i => {
+    const el = document.getElementById(`ws${i}`);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  });
+  const dots = document.querySelectorAll('.wp');
+  dots.forEach((d, i) => { d.className = 'wp' + (i < n-1 ? ' done' : i === n-1 ? ' cur' : ''); });
+}
+
+async function w1() {
+  const name = v('r-name'), email = v('r-email'), pw = v('r-pw');
+  if (!name || !email || !pw) return toast('Fill in all fields', 'err');
+  if (pw.length < 6) return toast('Password must be 6+ characters', 'err');
+  try {
+    const r = await P('/auth/register', { name, email, password: pw, role: 'professional' });
+    S.tok = r.token; localStorage.setItem('sc_pt', r.token); S.user = r.user;
+    setWStep(2);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function w2() {
+  S.wiz.cats = [...document.querySelectorAll('.cchip.on')].map(el => parseInt(el.dataset.id));
+  if (!S.wiz.cats.length) return toast('Select at least one category', 'err');
+  setWStep(3);
+}
+
+function w3() {
+  const hl = v('r-hl'), loc = v('r-loc'), exp = parseInt(v('r-exp')) || 0;
+  if (!hl) return toast('Headline is required', 'err');
+  Object.assign(S.wiz, { hl, loc, exp }); setWStep(4);
+}
+
+async function w4() {
+  const bio = v('r-bio'), price = parseFloat(v('r-price')) || 0;
+  if (!bio) return toast('Bio is required', 'err');
+  const btn = document.getElementById('wfin-btn');
+  btn.textContent = 'Creating profile…'; btn.disabled = true;
+
+  // Geolocation (optional)
+  let lat = 0, lon = 0;
+  try {
+    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 }));
+    lat = pos.coords.latitude; lon = pos.coords.longitude;
+  } catch (_) {}
+
+  // Update user location
+  if (S.wiz.loc) { try { await U('/users/profile', { name: S.user.name, location: S.wiz.loc }); } catch (_) {} }
+
+  try {
+    const r = await P('/professionals', {
+      headline: S.wiz.hl, bio,
+      years_of_experience: S.wiz.exp, pricing_estimate: price,
+      service_location_radius_km: 25, latitude: lat, longitude: lon,
+      category_ids: S.wiz.cats
+    });
+    S.pro = r.data; setWStep(5);
+  } catch (e) {
+    toast(e.message, 'err');
+    btn.textContent = 'Create Profile →'; btn.disabled = false;
+  }
+}
+
+// ══════════════════ ENTER DASHBOARD ══════════════════
+async function enter() {
+  try {
+    const [pRes, cRes] = await Promise.all([G('/users/profile'), G('/categories')]);
+    S.user = pRes.user || pRes.data;
+    S.cats = flatten(cRes.data || []);
+    try { const pr = await G('/professionals/me'); S.pro = pr.data; } catch (_) {}
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').hidden = false;
+    document.getElementById('t-name').textContent = S.user?.name || 'Pro';
+    document.getElementById('t-av').textContent = (S.user?.name || 'P')[0].toUpperCase();
+    await Promise.all([loadStats(), loadBks()]);
+    go('ov');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function flatten(tree, out = []) {
+  tree.forEach(n => { out.push(n); if (n.children) flatten(n.children, out); });
+  return out;
+}
+
+// ══════════════════ DATA LOADERS ══════════════════
+async function loadCats() {
+  try {
+    const r = await fetch(API + '/categories');
+    const d = await r.json();
+    const ch = document.getElementById('cat-chips'); ch.innerHTML = '';
+    flatten(d.data || []).forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'chip cchip'; el.dataset.id = c.id;
+      el.textContent = c.name;
+      el.onclick = () => el.classList.toggle('on');
+      ch.appendChild(el);
+    });
+  } catch (_) {}
+}
+
+async function loadStats() { try { const r = await G('/dashboard'); S.stats = r.data || r; } catch (_) { S.stats = {}; } }
+async function loadBks() { try { const r = await G('/bookings'); S.bks = r.data || []; } catch (_) { S.bks = []; } }
+async function loadRvs() {
+  if (!S.pro) return;
+  try { const r = await G(`/reviews/${S.pro.id}`); S.rvs = r.data || []; } catch (_) { S.rvs = []; }
+}
+async function loadPt() {
+  if (!S.pro) return;
+  try { const r = await G(`/portfolio/${S.pro.id}`); S.pt = r.data || []; } catch (_) { S.pt = []; }
+}
+
+// ══════════════════ VIEW ROUTER ══════════════════
+function go(view) {
+  S.view = view;
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  const nav = document.getElementById(`n-${view}`);
+  if (nav) nav.classList.add('on');
+  const mc = document.getElementById('mc');
+  mc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--tx2)">Loading…</div>';
+  const newReqs = (S.bks || []).filter(b => b.status === 'requested').length;
+  const badge = document.getElementById('bk-badge');
+  if (newReqs > 0) { badge.textContent = newReqs; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+  switch(view) {
+    case 'ov': renderOv(); break;
+    case 'pf': renderPf(); break;
+    case 'bk': loadBks().then(renderBk); break;
+    case 'rv': loadRvs().then(renderRv); break;
+    case 'pt': loadPt().then(renderPt); break;
+  }
+  upComp();
+}
+
+// ══════════════════ OVERVIEW ══════════════════
+function renderOv() {
+  const st = S.stats || {}, pr = S.pro, u = S.user;
+  const rating = parseFloat(pr?.average_rating || 0).toFixed(1);
+  const jobs = pr?.completed_jobs || 0;
+  const earn = st?.earnings?.thisMonth || st?.total_earnings || 0;
+  const rvCount = pr?.review_count || st?.review_count || 0;
+  const pending = (S.bks || []).filter(b => b.status === 'requested');
+
+  document.getElementById('mc').innerHTML = `
+    ${phHtml(u, pr, false)}
+    <div class="sg">
+      <div class="sc"><div class="v">⭐ ${rating}</div><div class="l">Avg Rating</div></div>
+      <div class="sc"><div class="v">${jobs}</div><div class="l">Jobs Done</div></div>
+      <div class="sc"><div class="v">₹${fmtN(earn)}</div><div class="l">This Month</div></div>
+      <div class="sc"><div class="v">${rvCount}</div><div class="l">Reviews</div></div>
+    </div>
+    ${pending.length ? `
+    <div class="card">
+      <div class="ch"><h3>🔔 New Requests (${pending.length})</h3><button class="btn btn-o btn-s" onclick="go('bk')">View All</button></div>
+      <div>${pending.slice(0,3).map(b => bcHtml(b)).join('')}</div>
+    </div>` : ''}
+    <div class="card">
+      <div class="ch"><h3>⚡ Quick Actions</h3></div>
+      <div class="cb" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-o btn-s" onclick="openAvailModal()">📍 Availability</button>
+        <button class="btn btn-o btn-s" onclick="go('pf')">✏️ Edit Profile</button>
+        <button class="btn btn-o btn-s" onclick="go('pt')">📷 Portfolio</button>
+        <button class="btn btn-o btn-s" onclick="copyLink()">🔗 Share Profile</button>
+        ${S.pro ? `<a href="/app/" target="_blank" class="btn btn-o btn-s" style="color:var(--p)">👁 View Public Profile</a>` : ''}
+      </div>
+    </div>
+    ${!S.pro ? `<div class="card" style="border:2px dashed var(--p);background:var(--p-lt)">
+      <div class="cb" style="text-align:center">
+        <div style="font-size:28px">⚠️</div>
+        <h3 style="margin:8px 0 4px">Profile Incomplete</h3>
+        <p style="color:var(--tx2);font-size:13px;margin-bottom:12px">You're registered but haven't created your professional profile yet.</p>
+        <button class="btn btn-p" onclick="showSU()">Complete Profile Setup</button>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ══════════════════ PROFILE ══════════════════
+function renderPf() {
+  const u = S.user, p = S.pro;
+  document.getElementById('mc').innerHTML = `
+    ${phHtml(u, p, true)}
+    <div class="card">
+      <div class="ch"><h3>About</h3><button class="btn-ghost" onclick="show('bio-e')">✏️ Edit</button></div>
+      <div class="cb">
+        <div id="bio-d" style="color:var(--tx2);line-height:1.7">${esc(p?.bio || 'No bio yet. Click Edit to add your professional summary.')}</div>
+        <div id="bio-e" class="ie">
+          <textarea class="fc" id="bio-in" rows="4">${esc(p?.bio || '')}</textarea>
+          <div class="ie-btns"><button class="btn btn-p btn-s" onclick="saveBio()">Save</button><button class="btn-ghost btn-s" onclick="hide('bio-e','bio-d')">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3>Headline</h3><button class="btn-ghost" onclick="show('hl-e')">✏️ Edit</button></div>
+      <div class="cb">
+        <div id="hl-d" style="font-size:15px;font-weight:500">${esc(p?.headline || '—')}</div>
+        <div id="hl-e" class="ie">
+          <input class="fc" id="hl-in" value="${esc(p?.headline || '')}">
+          <div class="ie-btns"><button class="btn btn-p btn-s" onclick="saveHl()">Save</button><button class="btn-ghost btn-s" onclick="hide('hl-e','hl-d')">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3>Availability & Pricing</h3><button class="btn-ghost" onclick="openAvailModal()">✏️ Edit</button></div>
+      <div class="cb" style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><div class="fg-label">Status</div>${availBadge(p?.availability_status || 'offline')}</div>
+        <div><div class="fg-label">Rate</div><strong>₹${p?.pricing_estimate || '—'} / visit</strong></div>
+        <div><div class="fg-label">Experience</div><strong>${p?.years_of_experience ?? '—'} yrs</strong></div>
+        <div><div class="fg-label">Location</div><strong>${esc(u?.location || '—')}</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3>Pricing & Experience</h3><button class="btn-ghost" onclick="show('px-e')">✏️ Edit</button></div>
+      <div class="cb" id="px-d">
+        <div style="display:flex;gap:32px;flex-wrap:wrap">
+          <div><div class="fg-label">Rate (₹)</div><strong>${p?.pricing_estimate ?? '—'}</strong></div>
+          <div><div class="fg-label">Experience</div><strong>${p?.years_of_experience ?? '—'} years</strong></div>
+        </div>
+      </div>
+      <div class="cb ie" id="px-e">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><label>Rate (₹)</label><input class="fc" id="px-rate" type="number" value="${p?.pricing_estimate || ''}"></div>
+          <div class="fg"><label>Years Exp.</label><input class="fc" id="px-exp" type="number" value="${p?.years_of_experience || ''}"></div>
+        </div>
+        <div class="ie-btns"><button class="btn btn-p btn-s" onclick="savePx()">Save</button><button class="btn-ghost btn-s" onclick="hide('px-e','px-d')">Cancel</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3>Categories & Skills</h3><button class="btn-ghost" onclick="openCatModal()">✏️ Edit</button></div>
+      <div class="cb">
+        <div class="chips">
+          ${(p?.categories || []).length > 0
+            ? p.categories.map(c => `<span class="chip chip-c">${esc(c.name || c)}</span>`).join('')
+            : '<span style="color:var(--tx2);font-size:13px">No categories selected yet</span>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+const fgLabel = `<style>.fg-label{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}</style>`;
+
+// ══════════════════ BOOKINGS ══════════════════
+function renderBk() {
+  const req = (S.bks || []).filter(b => b.status === 'requested');
+  const act = (S.bks || []).filter(b => ['quoted','accepted','scheduled','in_progress'].includes(b.status));
+  const past = (S.bks || []).filter(b => ['completed','cancelled','declined','refunded','disputed'].includes(b.status));
+  document.getElementById('mc').innerHTML = `
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Bookings</h2><p style="color:var(--tx2);margin-top:4px">Manage your service requests and active jobs</p></div>
+    ${req.length ? `<div class="card"><div class="ch"><h3>🔔 New Requests (${req.length})</h3></div><div>${req.map(b => bcHtml(b, true)).join('')}</div></div>` : ''}
+    ${act.length ? `<div class="card"><div class="ch"><h3>⚙️ Active Jobs (${act.length})</h3></div><div>${act.map(b => bcHtml(b, false, true)).join('')}</div></div>` : ''}
+    <div class="card">
+      <div class="ch"><h3>📋 Past Bookings (${past.length})</h3></div>
+      <div>${past.length ? past.map(b => bcHtml(b)).join('') : '<p style="padding:20px;color:var(--tx2)">No past bookings yet</p>'}</div>
+    </div>
+  `;
+}
+
+// ══════════════════ REVIEWS ══════════════════
+function renderRv() {
+  const rvs = S.rvs || [];
+  const avg = rvs.length ? (rvs.reduce((a, r) => a + (r.rating || 0), 0) / rvs.length).toFixed(1) : '—';
+  const avgNum = parseFloat(avg) || 0;
+  document.getElementById('mc').innerHTML = `
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Reviews</h2></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="cb" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="font-size:48px;font-weight:800;color:var(--p)">${avg}</div>
+          <div class="stars">${'★'.repeat(Math.round(avgNum))}${'☆'.repeat(5-Math.round(avgNum))}</div>
+          <div style="font-size:13px;color:var(--tx2);margin-top:4px">${rvs.length} review${rvs.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="flex:1;min-width:160px">
+          ${[5,4,3,2,1].map(n => {
+            const cnt = rvs.filter(r => Math.round(r.rating) === n).length;
+            const pct = rvs.length ? Math.round(cnt / rvs.length * 100) : 0;
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px">
+              <span>${n}★</span>
+              <div style="flex:1;height:6px;background:var(--bd);border-radius:99px"><div style="width:${pct}%;height:100%;background:var(--warn);border-radius:99px"></div></div>
+              <span style="color:var(--tx2)">${cnt}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      ${rvs.length ? rvs.map(r => `
+        <div class="rv">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-weight:600;font-size:14px">${esc(r.reviewer_name || r.user_name || 'Anonymous')}</div>
+              <div class="stars" style="font-size:13px">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</div>
+            </div>
+            <div style="font-size:12px;color:var(--tx2)">${fmtD(r.created_at)}</div>
+          </div>
+          ${r.comment ? `<p style="margin-top:8px;font-size:13.5px">${esc(r.comment)}</p>` : ''}
+        </div>`).join('')
+      : '<div style="padding:24px;text-align:center;color:var(--tx2)">No reviews yet. Complete your first job to get your first review! ⭐</div>'}
+    </div>
+  `;
+}
+
+// ══════════════════ PORTFOLIO ══════════════════
+function renderPt() {
+  const items = S.pt || [];
+  document.getElementById('mc').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div><h2 style="font-size:20px;font-weight:700">Portfolio</h2><p style="color:var(--tx2);font-size:13.5px;margin-top:4px">Showcase your best work to win more clients</p></div>
+      <button class="btn btn-p btn-s" onclick="openAddPt()">+ Add Work</button>
+    </div>
+    <div class="pg">
+      ${items.map(i => `
+        <div class="pi">
+          <div class="pi-thumb">${emoji(i.title)}</div>
+          <div class="pi-info">
+            <div class="t">${esc(i.title || 'Untitled')}</div>
+            <div class="d">${esc((i.description || '').substring(0,60))}${(i.description||'').length>60?'…':''}</div>
+            <button class="btn-ghost" style="color:var(--err);margin-top:6px;font-size:12px" onclick="delPt('${i.id}')">🗑 Remove</button>
+          </div>
+        </div>`).join('')}
+      <div class="pi-add" onclick="openAddPt()">
+        <span style="font-size:30px">📷</span>
+        <span style="font-size:13px;font-weight:500">Add Portfolio Item</span>
+      </div>
+    </div>
+    ${!items.length ? '<p style="color:var(--tx2);font-size:13.5px;margin-top:16px;text-align:center">Upload photos and descriptions of past work to attract more clients.</p>' : ''}
+  `;
+}
+
+// ══════════════════ SUB-RENDERERS ══════════════════
+function phHtml(u, p, editable) {
+  const name = u?.name || '—';
+  const hl = p?.headline || 'Professional on SkillConnect';
+  const rating = parseFloat(p?.average_rating || 0).toFixed(1);
+  const jobs = p?.completed_jobs || 0;
+  const avail = p?.availability_status || 'offline';
+  return `
+    <div class="ph-card">
+      <div class="ph-cover"></div>
+      <div class="ph-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div class="ph-av">${name[0]?.toUpperCase() || '?'}</div>
+          ${editable ? `<button class="btn btn-o btn-s" style="margin-bottom:4px" onclick="show('hl-e')">✏️ Edit Headline</button>` : ''}
+        </div>
+        <div class="ph-name">${esc(name)}</div>
+        <div class="ph-hl">${esc(hl)}</div>
+        <div class="ph-meta">
+          ${u?.location ? `<span>📍 ${esc(u.location)}</span>` : ''}
+          <span>⭐ ${rating}</span>
+          <span>✅ ${jobs} jobs done</span>
+          ${availBadge(avail)}
+        </div>
+        ${u?.government_id_verified ? '<span class="badge b-ok" style="margin-top:8px">✓ ID Verified</span>' : ''}
+      </div>
+    </div>`;
+}
+
+function bcHtml(b, showAccept = false, showProgress = false) {
+  const stMap = { requested:'b-warn', quoted:'b-blue', accepted:'b-ok', scheduled:'b-ok', in_progress:'b-ok', completed:'b-ok', cancelled:'b-gray', declined:'b-gray', refunded:'b-gray', disputed:'b-warn' };
+  const cls = stMap[b.status] || 'b-gray';
+  const stLabel = { requested:'New Request', quoted:'Quote Sent', accepted:'Accepted', scheduled:'Scheduled', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled', declined:'Declined', refunded:'Refunded' };
+  return `
+    <div class="bc">
+      <div class="bc-top">
+        <div>
+          <div class="bc-title">${esc(b.title || 'Service Request')}</div>
+          <div class="bc-detail">👤 ${esc(b.customer_name || b.user_name || 'Customer')} · ${fmtD(b.created_at)}</div>
+          ${b.description ? `<div class="bc-detail" style="margin-top:2px">"${esc(b.description.substring(0,100))}"</div>` : ''}
+          ${b.service_address ? `<div class="bc-detail">📍 ${esc(b.service_address)}</div>` : ''}
+        </div>
+        <span class="badge ${cls}">${stLabel[b.status] || b.status}</span>
+      </div>
+      ${showAccept ? `<div class="bc-actions">
+        <button class="btn btn-p btn-s" onclick="transBook('${b.id}','quoted')">✅ Accept & Quote</button>
+        <button class="btn btn-err btn-s" onclick="transBook('${b.id}','cancelled')">❌ Decline</button>
+      </div>` : ''}
+      ${showProgress && (b.status === 'accepted' || b.status === 'scheduled') ? `<div class="bc-actions">
+        <button class="btn btn-ok btn-s" onclick="transBook('${b.id}','in_progress')">▶️ Start Job</button>
+      </div>` : ''}
+      ${showProgress && b.status === 'in_progress' ? `<div class="bc-actions">
+        <button class="btn btn-ok btn-s" onclick="transBook('${b.id}','completed')">🏁 Mark Complete</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function availBadge(s) {
+  const m = { available: ['b-ok','🟢 Available'], busy: ['b-warn','🟡 Busy'], offline: ['b-gray','⚫ Offline'] };
+  const [c, t] = m[s] || m.offline;
+  return `<span class="badge ${c}">${t}</span>`;
+}
+
+// ══════════════════ INLINE EDIT HELPERS ══════════════════
+function show(eId) {
+  document.getElementById(eId).classList.add('open');
+  // Hide paired display el
+  const dId = eId.replace('-e','-d');
+  const dEl = document.getElementById(dId);
+  if (dEl) dEl.style.display = 'none';
+}
+function hide(eId, dId) {
+  document.getElementById(eId).classList.remove('open');
+  if (dId) { const d = document.getElementById(dId); if (d) d.style.display = ''; }
+}
+
+async function saveBio() {
+  const bio = v('bio-in');
+  if (!bio) return toast('Bio cannot be empty', 'err');
+  try {
+    await U(`/professionals/${S.pro.id}`, { bio }); S.pro.bio = bio;
+    document.getElementById('bio-d').textContent = bio; hide('bio-e','bio-d');
+    toast('Bio updated!'); upComp();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function saveHl() {
+  const headline = v('hl-in');
+  if (!headline) return toast('Headline required','err');
+  try {
+    await U(`/professionals/${S.pro.id}`, { headline }); S.pro.headline = headline;
+    document.getElementById('hl-d').textContent = headline; hide('hl-e','hl-d');
+    toast('Headline updated!'); upComp();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function savePx() {
+  const pricing_estimate = parseFloat(v('px-rate')), years_of_experience = parseInt(v('px-exp'));
+  if (isNaN(pricing_estimate)) return toast('Enter a valid rate','err');
+  try {
+    await U(`/professionals/${S.pro.id}`, { pricing_estimate, years_of_experience });
+    S.pro.pricing_estimate = pricing_estimate; S.pro.years_of_experience = years_of_experience;
+    hide('px-e','px-d'); toast('Updated!'); upComp(); renderPf();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+// ══════════════════ BOOKING ACTIONS ══════════════════
+async function transBook(id, to) {
+  try {
+    await P(`/bookings/${id}/transition`, { to });
+    toast(`Booking ${to === 'quoted' ? 'accepted' : to}!`);
+    await loadBks(); go('bk');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+// ══════════════════ MODALS ══════════════════
+function om(html) { document.getElementById('mc-modal').innerHTML = html; document.getElementById('modal').hidden = false; }
+function cm() { document.getElementById('modal').hidden = true; }
+
+function openAvailModal() {
+  const cur = S.pro?.availability_status || 'offline';
+  om(`
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:16px">Update Availability</h3>
+    <div class="avs">
+      ${['available','busy','offline'].map(s =>
+        `<div class="av-opt ${s} ${cur===s?s:''}" onclick="setAvail('${s}')">${{available:'🟢 Available',busy:'🟡 Busy',offline:'⚫ Offline'}[s]}</div>`
+      ).join('')}
+    </div>
+    <p style="font-size:12px;color:var(--tx2);margin-top:12px">Clients can only book you when you're set to Available.</p>
+  `);
+}
+
+async function setAvail(status) {
+  try {
+    await U('/professionals/me/availability', { availability_status: status });
+    if (S.pro) S.pro.availability_status = status;
+    toast(`Status: ${status}`); cm(); upComp();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+function openAddPt() {
+  om(`
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:16px">Add Portfolio Item</h3>
+    <div class="fg"><label>Title</label><input class="fc" id="pt-t" placeholder="e.g. Complete Bathroom Renovation"></div>
+    <div class="fg"><label>Description</label><textarea class="fc" id="pt-d" rows="3" placeholder="Describe the work you did, challenges solved…"></textarea></div>
+    <div class="fg"><label>Media URL (image / video link)</label><input class="fc" id="pt-u" placeholder="https://…"></div>
+    <div class="fg"><label>Type</label>
+      <select class="fc" id="pt-type">
+        <option value="image">📷 Image</option>
+        <option value="video">🎬 Video</option>
+        <option value="certificate">🏆 Certificate</option>
+      </select>
+    </div>
+    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="addPt()">Add to Portfolio</button>
+  `);
+}
+
+async function addPt() {
+  const title = v('pt-t'), description = v('pt-d'), media_url = v('pt-u'), media_type = v('pt-type') || 'image';
+  if (!title || !description) return toast('Title and description are required','err');
+  try {
+    await P('/portfolio', { title, description, media_url: media_url || 'https://placehold.co/400x300', media_type });
+    toast('Portfolio item added!'); cm(); await loadPt(); renderPt();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function delPt(id) {
+  if (!confirm('Remove this portfolio item?')) return;
+  try { await D(`/portfolio/${id}`); toast('Removed'); await loadPt(); renderPt(); } catch (e) { toast(e.message,'err'); }
+}
+
+function openCatModal() {
+  const sel = new Set((S.pro?.categories || []).map(c => c.id || c));
+  om(`
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:14px">Update Categories & Skills</h3>
+    <div class="chips" style="max-height:300px;overflow-y:auto">
+      ${S.cats.map(c => `<div class="chip cchip ${sel.has(c.id)?'on':''}" data-id="${c.id}" onclick="this.classList.toggle('on')">${esc(c.name)}</div>`).join('')}
+    </div>
+    <button class="btn btn-p btn-s" style="margin-top:16px;width:100%" onclick="saveCats()">Save Categories</button>
+  `);
+}
+
+async function saveCats() {
+  const ids = [...document.querySelectorAll('#mc-modal .chip.on')].map(el => parseInt(el.dataset.id));
+  if (!ids.length) return toast('Select at least one','err');
+  try {
+    await U(`/professionals/${S.pro.id}`, { category_ids: ids });
+    const r = await G('/professionals/me'); S.pro = r.data;
+    toast('Categories updated!'); cm(); renderPf(); upComp();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+// ══════════════════ COMPLETENESS ══════════════════
+function upComp() {
+  if (!S.pro) return;
+  const u = S.user, p = S.pro;
+  let pct = 0;
+  if (u?.name) pct += 10;
+  if (p.headline) pct += 15;
+  if (p.bio) pct += 15;
+  if (u?.location) pct += 10;
+  if ((p.categories || []).length > 0) pct += 20;
+  if (p.pricing_estimate) pct += 10;
+  if ((S.pt || []).length > 0) pct += 10;
+  if (p.years_of_experience) pct += 10;
+  document.getElementById('cp-pct').textContent = pct + '%';
+  document.getElementById('cp-bar').style.width = pct + '%';
+}
+
+// ══════════════════ UTILS ══════════════════
+function logout() {
+  localStorage.removeItem('sc_pt'); S.tok = null; S.user = null; S.pro = null;
+  document.getElementById('app').hidden = true; document.getElementById('gate').style.display = '';
+}
+function copyLink() {
+  const url = S.pro ? `${window.location.origin}/app/` : window.location.href;
+  navigator.clipboard.writeText(url).then(() => toast('Profile link copied!')).catch(() => toast(url));
+}
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtD(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); } catch(_){return '';} }
+function fmtN(n) { return Number(n||0).toLocaleString('en-IN'); }
+function emoji(t='') {
+  const m = ['plumb','electric','paint','clean','garden','landscap','car','auto','cook','food','weld','ac','applian','tile','carpent','design','photo'];
+  const e = ['🔧','⚡','🎨','🧹','🌿','🌿','🚗','🚗','👨‍🍳','👨‍🍳','⚙️','❄️','🏠','🏗️','🪵','✏️','📸'];
+  const i = m.findIndex(k => t.toLowerCase().includes(k));
+  return i >= 0 ? e[i] : '💼';
+}
+
+// ══════════════════ INIT ══════════════════
+(async function init() {
+  if (S.tok) {
+    try { await enter(); } catch (_) { localStorage.removeItem('sc_pt'); S.tok = null; }
+  }
+})();
+</script>
+</body>
+</html>
