@@ -27,6 +27,14 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _showFilters = false;
   final _maxPriceCtl = TextEditingController();
 
+  // Geo + Availability filters
+  bool _availableNow = false;
+  bool _nearMe = false;
+  double _radiusKm = 25;
+  // Hardcoded demo coords (Hyderabad city center) — in production, use geolocator package
+  static const double _defaultLat = 17.385;
+  static const double _defaultLng = 78.4867;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +71,12 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_searchCtl.text.trim().isNotEmpty) params['q'] = _searchCtl.text.trim();
       if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
       if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
+      if (_availableNow) params['availability'] = 'available';
+      if (_nearMe) {
+        params['latitude'] = _defaultLat.toString();
+        params['longitude'] = _defaultLng.toString();
+        params['radius_km'] = _radiusKm.toStringAsFixed(0);
+      }
       final res = await ApiService.get('/search', queryParams: params);
       _results = (res['data'] as List).map((e) => Professional.fromJson(e)).toList();
       final pag = res['pagination'];
@@ -79,6 +93,9 @@ class _SearchScreenState extends State<SearchScreen> {
       _selectedCategoryId = null;
       _maxPrice = null;
       _maxPriceCtl.clear();
+      _availableNow = false;
+      _nearMe = false;
+      _radiusKm = 25;
     });
     if (_searched) _search();
   }
@@ -86,7 +103,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final hasFilters = _selectedCategoryId != null || (_maxPrice != null && _maxPrice!.isNotEmpty);
+    final hasFilters = _selectedCategoryId != null || (_maxPrice != null && _maxPrice!.isNotEmpty) || _availableNow || _nearMe;
     final svc = widget.categoryId != null ? findServiceById(widget.categoryId!) : null;
     final hub = widget.categoryId != null ? findHubById(widget.categoryId!) : null;
     final themeColors = svc?.gradient ?? hub?.gradient ?? const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
@@ -194,10 +211,47 @@ class _SearchScreenState extends State<SearchScreen> {
                 // Max price
                 TextField(
                   controller: _maxPriceCtl,
-                  decoration: const InputDecoration(labelText: 'Max Price (\$)', prefixIcon: Icon(Icons.attach_money), isDense: true),
+                  decoration: const InputDecoration(labelText: 'Max Price (₹)', prefixIcon: Icon(Icons.attach_money), isDense: true),
                   keyboardType: TextInputType.number,
                   onChanged: (v) => _maxPrice = v,
                 ),
+                const SizedBox(height: 14),
+                // Available Now toggle
+                SwitchListTile(
+                  dense: true,
+                  value: _availableNow,
+                  onChanged: (v) => setState(() => _availableNow = v),
+                  title: const Text('Available Now', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Only show pros currently online'),
+                  secondary: Icon(Icons.circle, size: 14, color: _availableNow ? Colors.green : Colors.grey.shade400),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 8),
+                // Near Me toggle + radius
+                SwitchListTile(
+                  dense: true,
+                  value: _nearMe,
+                  onChanged: (v) => setState(() => _nearMe = v),
+                  title: const Text('Near Me', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Professionals within radius'),
+                  secondary: Icon(Icons.location_on, color: _nearMe ? cs.primary : Colors.grey.shade400),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (_nearMe) ...[                  
+                  Row(children: [
+                    const SizedBox(width: 4),
+                    const Icon(Icons.straighten, size: 16),
+                    Expanded(child: Slider(
+                      value: _radiusKm,
+                      min: 5,
+                      max: 100,
+                      divisions: 19,
+                      label: '${_radiusKm.toStringAsFixed(0)} km',
+                      onChanged: (v) => setState(() => _radiusKm = v),
+                    )),
+                    Text('${_radiusKm.toStringAsFixed(0)} km', style: TextStyle(fontWeight: FontWeight.w600, color: cs.primary)),
+                  ]),
+                ],
                 const SizedBox(height: 10),
                 Row(children: [
                   TextButton(onPressed: _clearFilters, child: const Text('Clear Filters')),
@@ -213,7 +267,7 @@ class _SearchScreenState extends State<SearchScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              for (final s in [('reputation', 'Top Rated'), ('rating', 'Highest Rating'), ('experience', 'Most Experienced')])
+              for (final s in [('reputation', 'Top Rated'), ('rating', 'Highest Rating'), ('experience', 'Most Experienced'), if (_nearMe) ('distance', 'Nearest')])
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
@@ -242,10 +296,32 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 if (_maxPrice != null && _maxPrice!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Chip(
+                      label: Text('Max ₹$_maxPrice', style: const TextStyle(fontSize: 12)),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () { setState(() { _maxPrice = null; _maxPriceCtl.clear(); }); if (_searched) _search(); },
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                if (_availableNow)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Chip(
+                      avatar: const Icon(Icons.circle, size: 10, color: Colors.green),
+                      label: const Text('Available Now', style: TextStyle(fontSize: 12)),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () { setState(() => _availableNow = false); if (_searched) _search(); },
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                if (_nearMe)
                   Chip(
-                    label: Text('Max \$$_maxPrice', style: const TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.location_on, size: 14),
+                    label: Text('Within ${_radiusKm.toStringAsFixed(0)} km', style: const TextStyle(fontSize: 12)),
                     deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () { setState(() { _maxPrice = null; _maxPriceCtl.clear(); }); if (_searched) _search(); },
+                    onDeleted: () { setState(() => _nearMe = false); if (_searched) _search(); },
                     visualDensity: VisualDensity.compact,
                   ),
               ]),

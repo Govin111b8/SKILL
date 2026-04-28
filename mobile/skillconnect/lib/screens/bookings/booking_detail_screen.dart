@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../messages/chat_screen.dart';
 import 'bookings_list_screen.dart' show bookingStatusColor, prettyStatus;
@@ -59,7 +61,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         actions.add(_Action('Decline', 'cancelled', Icons.close, danger: true, askReason: true));
       } else if (s == 'requested' || s == 'accepted' || s == 'scheduled') {
         actions.add(_Action('Cancel', 'cancelled', Icons.cancel, danger: true, askReason: true));
-      } else if (s == 'in_progress' || s == 'completed') {
+      } else if (s == 'completed') {
+        actions.add(_Action('Rate & Review', '__review__', Icons.star));
+        actions.add(_Action('Raise Dispute', 'disputed', Icons.report_problem, danger: true, askReason: true));
+      } else if (s == 'in_progress') {
         actions.add(_Action('Raise Dispute', 'disputed', Icons.report_problem, danger: true, askReason: true));
       }
     }
@@ -67,6 +72,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   }
 
   Future<void> _runAction(_Action a) async {
+    if (a.to == '__review__') {
+      await _showReviewDialog();
+      return;
+    }
     final payload = <String, dynamic>{};
     String? note;
 
@@ -124,6 +133,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       await _load();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Updated to ${prettyStatus(a.to)}'), backgroundColor: Colors.green));
+      // Auto-prompt customer to review when they observe a completed status
+      if (mounted && !context.read<AuthService>().isProfessional && _booking?.status == 'completed') {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _showReviewDialog());
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('$e'), backgroundColor: Colors.red));
@@ -254,6 +267,54 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       Expanded(child: Text(v, style: const TextStyle(fontSize: 13))),
     ]),
   );
+
+  Future<void> _showReviewDialog() async {
+    if (_booking == null) return;
+    double rating = 5;
+    final ctrl = TextEditingController();
+    bool submitting = false;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (_, setS) => AlertDialog(
+        title: const Text('Rate your experience'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Center(child: RatingBar.builder(
+            initialRating: rating, minRating: 1, allowHalfRating: false, itemCount: 5, itemSize: 36,
+            itemBuilder: (_, __) => const Icon(Icons.star, color: Colors.amber),
+            onRatingUpdate: (v) => setS(() => rating = v),
+          )),
+          const SizedBox(height: 16),
+          TextField(controller: ctrl, maxLines: 3,
+              decoration: const InputDecoration(hintText: 'Share details (optional)')),
+        ]),
+        actions: [
+          TextButton(onPressed: submitting ? null : () => Navigator.pop(ctx, false), child: const Text('Later')),
+          FilledButton(
+            onPressed: submitting ? null : () async {
+              setS(() => submitting = true);
+              try {
+                await ApiService.post('/reviews', {
+                  'professional_id': _booking!.professionalId,
+                  'booking_id': _booking!.id,
+                  'rating': rating.toInt(),
+                  if (ctrl.text.trim().isNotEmpty) 'comment': ctrl.text.trim(),
+                }, auth: true);
+                if (ctx.mounted) Navigator.pop(ctx, true);
+              } catch (e) {
+                setS(() => submitting = false);
+                if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.red));
+              }
+            },
+            child: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Submit'),
+          ),
+        ],
+      )),
+    );
+    if (ok == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Thanks for your feedback!'), backgroundColor: Colors.green));
+    }
+  }
 }
 
 class _Action {

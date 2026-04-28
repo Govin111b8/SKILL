@@ -11,11 +11,12 @@ router.post(
   authenticate,
   validate([
     body('professional_id').trim().notEmpty().withMessage('Professional ID is required'),
-    body('contact_id').trim().notEmpty().withMessage('Contact ID is required'),
+    body('contact_id').optional({ nullable: true }).isString(),
+    body('booking_id').optional({ nullable: true }).isString(),
     body('rating')
       .isInt({ min: 1, max: 5 })
       .withMessage('Rating must be between 1 and 5'),
-    body('comment').trim().notEmpty().withMessage('Comment is required'),
+    body('comment').optional({ nullable: true }).isString(),
   ]),
   createReview
 );

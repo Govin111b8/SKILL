@@ -3,8 +3,11 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
+import '../../services/booking_service.dart';
 import '../report/report_screen.dart';
 import '../portfolio/portfolio_screen.dart';
+import '../bookings/booking_detail_screen.dart';
+import '../messages/chat_screen.dart';
 import 'package:intl/intl.dart';
 
 class ProfessionalProfileScreen extends StatefulWidget {
@@ -20,6 +23,8 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
   List<Review> _reviews = [];
   List<PortfolioItem> _portfolio = [];
   bool _loading = true;
+  bool _favorited = false;
+  bool _favBusy = false;
   String? _error;
 
   @override
@@ -39,17 +44,54 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       _professional = Professional.fromJson(results[0]['data']);
       _reviews = (results[1]['data'] as List).map((e) => Review.fromJson(e)).toList();
       _portfolio = (results[2]['data'] as List).map((e) => PortfolioItem.fromJson(e)).toList();
+      // Best-effort: check if favorited (silent on error — e.g. customer not logged in)
+      try {
+        final favs = await NotificationsService.listFavorites();
+        _favorited = favs.any((f) => (f as Map)['id']?.toString() == widget.professionalId);
+      } catch (_) {}
     } catch (e) {
       _error = e.toString();
     }
     if (mounted) setState(() => _loading = false);
   }
 
+  Future<void> _toggleFavorite() async {
+    if (_favBusy || _professional == null) return;
+    setState(() => _favBusy = true);
+    try {
+      final newState = await NotificationsService.toggleFavorite(_professional!.id);
+      if (!mounted) return;
+      setState(() => _favorited = newState);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(newState ? 'Added to favorites' : 'Removed from favorites'),
+        duration: const Duration(seconds: 1),
+      ));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('$e'), backgroundColor: Colors.red));
+    }
+    if (mounted) setState(() => _favBusy = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Professional Profile')),
+      appBar: AppBar(title: const Text('Professional Profile'), actions: [
+        if (_professional != null)
+          IconButton(
+            tooltip: _favorited ? 'Remove from favorites' : 'Add to favorites',
+            onPressed: _favBusy ? null : _toggleFavorite,
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                _favorited ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(_favorited),
+                color: _favorited ? Colors.red : null,
+              ),
+            ),
+          ),
+      ]),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -224,11 +266,21 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
                   ],
                 ),
       floatingActionButton: _professional != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showContactSheet(context),
-              icon: const Icon(Icons.message),
-              label: const Text('Contact'),
-            )
+          ? Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+              FloatingActionButton.small(
+                heroTag: 'chat-pro',
+                onPressed: () => _openChat(context),
+                tooltip: 'Chat',
+                child: const Icon(Icons.chat_bubble_outline),
+              ),
+              const SizedBox(height: 10),
+              FloatingActionButton.extended(
+                heroTag: 'book-pro',
+                onPressed: () => _openBookingSheet(context),
+                icon: const Icon(Icons.event_note),
+                label: const Text('Book Now'),
+              ),
+            ])
           : null,
     );
   }
@@ -335,5 +387,109 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       case 'certificate': return Icons.verified;
       default: return Icons.image;
     }
+  }
+
+  Future<void> _openChat(BuildContext context) async {
+    try {
+      final t = await MessagingService.openThread(professionalId: _professional!.id);
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ChatScreen(threadId: t.id, otherName: _professional!.name),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _openBookingSheet(BuildContext context) async {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final addrCtrl = TextEditingController();
+    DateTime? preferred;
+    int? categoryId;
+    final p = _professional!;
+    if (p.categories.length == 1) categoryId = p.categories.first.id;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetCtx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(builder: (_, setSheetState) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 12),
+          Text('Book ${p.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          if (p.categories.length > 1) ...[
+            DropdownButtonFormField<int>(
+              value: categoryId,
+              decoration: const InputDecoration(labelText: 'Service category'),
+              items: p.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+              onChanged: (v) => setSheetState(() => categoryId = v),
+            ),
+            const SizedBox(height: 12),
+          ],
+          TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'What do you need? *', hintText: 'e.g. Fix kitchen sink leak')),
+          const SizedBox(height: 12),
+          TextField(controller: descCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'Description', hintText: 'More details...')),
+          const SizedBox(height: 12),
+          TextField(controller: addrCtrl, decoration: const InputDecoration(labelText: 'Service address (optional)')),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final d = await showDatePicker(context: sheetCtx,
+                  firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)),
+                  initialDate: DateTime.now().add(const Duration(days: 1)));
+              if (d != null) setSheetState(() => preferred = d);
+            },
+            icon: const Icon(Icons.event),
+            label: Text(preferred == null ? 'Preferred date (optional)' : DateFormat('MMM d, y').format(preferred!)),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: () async {
+              if (titleCtrl.text.trim().length < 5) {
+                ScaffoldMessenger.of(sheetCtx).showSnackBar(const SnackBar(content: Text('Please enter what you need (5+ chars)')));
+                return;
+              }
+              try {
+                final booking = await BookingService.create(
+                  professionalId: p.id,
+                  title: titleCtrl.text.trim(),
+                  description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                  serviceAddress: addrCtrl.text.trim().isEmpty ? null : addrCtrl.text.trim(),
+                  categoryId: categoryId,
+                  preferredDate: preferred,
+                );
+                if (!sheetCtx.mounted) return;
+                Navigator.pop(sheetCtx);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Booking request sent!'), backgroundColor: Colors.green));
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => BookingDetailScreen(bookingId: booking.id)));
+              } catch (e) {
+                if (!sheetCtx.mounted) return;
+                ScaffoldMessenger.of(sheetCtx).showSnackBar(SnackBar(
+                    content: Text('$e'), backgroundColor: Colors.red));
+              }
+            },
+            icon: const Icon(Icons.send),
+            label: const Text('Send Booking Request'),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () { Navigator.pop(sheetCtx); _showContactSheet(context); },
+            icon: const Icon(Icons.alternate_email, size: 18),
+            label: const Text('Other contact options'),
+          ),
+        ])),
+      ),
+    );
   }
 }

@@ -161,5 +161,71 @@ describe('Search Endpoints', () => {
         expect.any(Array)
       );
     });
+
+    it('should filter by availability status', async () => {
+      query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+      query.mockResolvedValueOnce({
+        rows: [
+          { id: 'prof-1', name: 'Available Pro', average_rating: 4.5, review_count: '10' },
+        ],
+      });
+
+      const res = await request(app).get('/api/search').query({ availability: 'available' });
+
+      expect(res.statusCode).toBe(200);
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('availability_status'),
+        expect.arrayContaining(['available'])
+      );
+    });
+
+    it('should combine geo + availability filters', async () => {
+      query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+      query.mockResolvedValueOnce({
+        rows: [
+          { id: 'prof-1', name: 'Near & Available', average_rating: 4.0, review_count: '5', distance: 3.4 },
+        ],
+      });
+
+      const res = await request(app).get('/api/search').query({
+        latitude: 17.385,
+        longitude: 78.4867,
+        radius_km: 25,
+        availability: 'available',
+        sort_by: 'distance',
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data[0].distance).toBe(3.4);
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('availability_status'),
+        expect.arrayContaining(['available'])
+      );
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('distance ASC'),
+        expect.any(Array)
+      );
+    });
+
+    it('should sort by distance when coords provided', async () => {
+      query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
+      query.mockResolvedValueOnce({
+        rows: [
+          { id: 'prof-1', name: 'Nearby', average_rating: 4.0, review_count: '3', distance: 1.2 },
+        ],
+      });
+
+      const res = await request(app).get('/api/search').query({
+        latitude: 17.385,
+        longitude: 78.4867,
+        sort_by: 'distance',
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('distance ASC'),
+        expect.any(Array)
+      );
+    });
   });
 });

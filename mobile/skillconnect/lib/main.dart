@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
+import 'services/booking_service.dart';
+import 'services/realtime_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -10,6 +12,9 @@ import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/contacts/my_contacts_screen.dart';
+import 'screens/bookings/bookings_list_screen.dart';
+import 'screens/messages/threads_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,12 +126,69 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
-  final _screens = const [HomeScreen(), ServiceHubScreen(), SearchScreen(), DashboardScreen()];
+  int _unread = 0;
+  final _screens = const [
+    HomeScreen(),
+    ServiceHubScreen(),
+    BookingsListScreen(),
+    ThreadsScreen(),
+    DashboardScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshUnread();
+    RealtimeService.instance.stream.listen((_) { if (mounted) _refreshUnread(); });
+  }
+
+  Future<void> _refreshUnread() async {
+    try {
+      final n = await NotificationsService.unreadCount();
+      if (mounted) setState(() => _unread = n);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _index, children: _screens),
+      body: Stack(children: [
+        IndexedStack(index: _index, children: _screens),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 8,
+          right: 12,
+          child: Material(
+            color: Colors.white,
+            shape: const CircleBorder(),
+            elevation: 2,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                _refreshUnread();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Stack(clipBehavior: Clip.none, children: [
+                  const Icon(Icons.notifications_outlined, size: 22),
+                  if (_unread > 0)
+                    Positioned(
+                      right: -4, top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        constraints: const BoxConstraints(minWidth: 18),
+                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)),
+                        child: Text(_unread > 99 ? '99+' : '$_unread',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
@@ -134,7 +196,8 @@ class _MainShellState extends State<MainShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
-          NavigationDestination(icon: Icon(Icons.search_outlined), selectedIcon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
           NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

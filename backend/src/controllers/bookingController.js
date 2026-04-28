@@ -21,6 +21,14 @@ const FSM = {
   refunded:    [],
 };
 
+// Role gating: which transitions only one side can perform
+const PRO_ONLY = ['quoted', 'in_progress', 'completed'];
+const CUSTOMER_ONLY = ['accepted'];
+
+exports.FSM = FSM;
+exports.PRO_ONLY = PRO_ONLY;
+exports.CUSTOMER_ONLY = CUSTOMER_ONLY;
+
 exports.create = async (req, res, next) => {
   try {
     if (req.user.role !== 'customer') return res.status(403).json({ success: false, message: 'Only customers can create bookings' });
@@ -130,10 +138,8 @@ exports.transition = async (req, res, next) => {
     }
 
     // Role gating per transition
-    const proOnly = ['quoted', 'in_progress', 'completed'];
-    const custOnly = ['accepted'];
-    if (proOnly.includes(to) && !isPro) return res.status(403).json({ success: false, message: 'Pro action only' });
-    if (custOnly.includes(to) && !isCust) return res.status(403).json({ success: false, message: 'Customer action only' });
+    if (PRO_ONLY.includes(to) && !isPro) return res.status(403).json({ success: false, message: 'Pro action only' });
+    if (CUSTOMER_ONLY.includes(to) && !isCust) return res.status(403).json({ success: false, message: 'Customer action only' });
 
     // Build SET clause
     const sets = [`status = $1::booking_status`, `updated_at = NOW()`];

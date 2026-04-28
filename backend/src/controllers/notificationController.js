@@ -31,11 +31,16 @@ exports.listFavorites = async (req, res, next) => {
   try {
     const r = await query(
       `SELECT f.created_at, p.id, p.headline, p.pricing_estimate, p.reputation_score,
-              p.availability_status, u.name, u.location, u.avatar_url, u.kyc_level, u.trust_score
+              p.availability_status, p.years_of_experience, p.completed_jobs,
+              u.name, u.location, u.avatar_url, u.kyc_level, u.trust_score, u.government_id_verified,
+              COALESCE(AVG(rv.rating), 0)::float AS average_rating,
+              COUNT(DISTINCT rv.id)::int AS review_count
        FROM favorites f
        JOIN professionals p ON f.professional_id = p.id
        JOIN users u ON p.user_id = u.id
+       LEFT JOIN reviews rv ON rv.professional_id = p.id
        WHERE f.user_id = $1
+       GROUP BY f.created_at, p.id, u.id
        ORDER BY f.created_at DESC LIMIT 200`,
       [req.user.id]
     );

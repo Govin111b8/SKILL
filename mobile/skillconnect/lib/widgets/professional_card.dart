@@ -80,7 +80,15 @@ class ProfessionalCard extends StatelessWidget {
                       Row(children: [
                         Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade400),
                         const SizedBox(width: 3),
-                        Text(professional.location!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Expanded(child: Text(professional.location!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        if (professional.distance != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withAlpha(20), borderRadius: BorderRadius.circular(8)),
+                            child: Text('${professional.distance!.toStringAsFixed(1)} km', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF06B6D4))),
+                          ),
+                        ],
                       ]),
                     ],
                   ],

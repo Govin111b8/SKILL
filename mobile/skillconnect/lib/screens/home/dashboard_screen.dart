@@ -7,6 +7,7 @@ import '../kyc/kyc_screen.dart';
 import '../contacts/my_contacts_screen.dart';
 import '../profile/edit_professional_profile_screen.dart';
 import '../portfolio/portfolio_screen.dart';
+import '../favorites/favorites_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -114,6 +115,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(children: [
                   _actionButton(Icons.mail, 'Contacts', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyContactsScreen()))),
                   const SizedBox(width: 8),
+                  if (!isPro) ...[
+                    _actionButton(Icons.favorite, 'Saved', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
+                    const SizedBox(width: 8),
+                  ],
                   _actionButton(Icons.verified_user_rounded, 'KYC', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),
                   const SizedBox(width: 8),
                   _actionButton(Icons.settings, 'Settings', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))),
@@ -197,6 +202,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       if (completeness < 100) const SizedBox(height: 12),
+      // Availability quick toggle
+      _AvailabilityCard(
+        current: profile?['availability_status']?.toString() ?? 'offline',
+        onChanged: (status) async {
+          try {
+            await ApiService.put('/professionals/me/availability', {'availability_status': status}, auth: true);
+            await _load();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('You are now $status'),
+                backgroundColor: status == 'available' ? Colors.green : (status == 'busy' ? Colors.orange : Colors.grey.shade700),
+                duration: const Duration(seconds: 1),
+              ));
+            }
+          } catch (e) {
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('$e'), backgroundColor: Colors.red));
+          }
+        },
+      ),
+      const SizedBox(height: 12),
       // Stats grid
       GridView.count(
         crossAxisCount: 3,
@@ -211,9 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _statCard('Rating', '${stats['rating'] ?? '0.0'}', Icons.star, Colors.amber),
           _statCard('Reviews', '${stats['reviews'] ?? 0}', Icons.rate_review, Colors.pink),
           _statCard('Jobs', '${stats['completedJobs'] ?? 0}', Icons.check_circle, Colors.indigo),
-          _statCard(profile?['availability_status'] == 'available' ? 'Online' : 'Offline',
-            profile?['availability_status'] == 'available' ? '●' : '○',
-            Icons.circle, profile?['availability_status'] == 'available' ? Colors.green : Colors.grey),
+          _statCard('Trust', '${profile?['trust_score'] ?? 0}', Icons.verified_user, Colors.teal),
         ],
       ),
       const SizedBox(height: 16),
@@ -342,6 +366,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 4),
           Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
           Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Quick toggle for a professional's availability_status (available / busy / offline).
+class _AvailabilityCard extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChanged;
+  const _AvailabilityCard({required this.current, required this.onChanged});
+
+  static const _opts = [
+    ('available', 'Online', Icons.circle, Color(0xFF10B981)),
+    ('busy', 'Busy', Icons.do_not_disturb_on, Color(0xFFF59E0B)),
+    ('offline', 'Offline', Icons.power_settings_new, Color(0xFF94A3B8)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cur = _opts.firstWhere((o) => o.$1 == current, orElse: () => _opts[2]);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(cur.$3, color: cur.$4, size: 18),
+            const SizedBox(width: 8),
+            const Text('Availability', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: cur.$4.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+              child: Text(cur.$2, style: TextStyle(color: cur.$4, fontSize: 12, fontWeight: FontWeight.w700)),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          SegmentedButton<String>(
+            segments: [
+              for (final o in _opts)
+                ButtonSegment<String>(
+                  value: o.$1,
+                  label: Text(o.$2, style: const TextStyle(fontSize: 12)),
+                  icon: Icon(o.$3, size: 14, color: o.$4),
+                ),
+            ],
+            selected: {current},
+            onSelectionChanged: (s) => onChanged(s.first),
+            showSelectedIcon: false,
+            style: ButtonStyle(visualDensity: VisualDensity.compact),
+          ),
         ]),
       ),
     );
