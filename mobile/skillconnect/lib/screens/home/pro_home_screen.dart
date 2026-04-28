@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../bookings/booking_detail_screen.dart';
+import '../notifications/notifications_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -23,16 +25,23 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
   List<Booking> _active = [];
   bool _loading = true;
   String? _error;
+  StreamSubscription<Map<String, dynamic>>? _wsSub;
 
   @override
   void initState() {
     super.initState();
     _load();
-    RealtimeService.instance.stream.listen((ev) {
+    _wsSub = RealtimeService.instance.stream.listen((ev) {
       if (!mounted) return;
       final t = ev['type']?.toString() ?? '';
       if (t == 'notification' || t.startsWith('booking_')) _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -44,8 +53,8 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
         BookingService.list(status: 'in_progress'),
       ]);
       _dash = (results[0] as Map<String, dynamic>)['data'];
-      _pending = (results[1] as List<dynamic>).cast<Booking>();
-      _active = (results[2] as List<dynamic>).cast<Booking>();
+      _pending = results[1] as List<Booking>;
+      _active = results[2] as List<Booking>;
     } catch (e) {
       _error = e.toString();
     }
@@ -73,6 +82,10 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
           const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
         ]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          ),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
         ],
       ),

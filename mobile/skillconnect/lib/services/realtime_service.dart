@@ -94,15 +94,6 @@ class RealtimeService {
     _channel = null;
   }
 
-  void connect(String token) {
-    // Always reset disposed flag when explicitly reconnecting
-    _disposed = false;
-    if (_token == token && _channel != null) return;
-    _token = token;
-    _reconnectTimer?.cancel();
-    _open();
-  }
-
   String _wsUrl(String token) {
     if (kIsWeb) {
       // Same-origin: derive from current location

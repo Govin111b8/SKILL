@@ -4,9 +4,9 @@ import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
 import '../../widgets/review_prompt.dart';
 import '../../data/services_catalog.dart';
-import '../search/search_screen.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
+import '../notifications/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,16 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final popularServices = [
-      kServices.firstWhere((s) => s.id == 6),
-      kServices.firstWhere((s) => s.id == 7),
-      kServices.firstWhere((s) => s.id == 17),
-      kServices.firstWhere((s) => s.id == 10),
-      kServices.firstWhere((s) => s.id == 33),
-      kServices.firstWhere((s) => s.id == 26),
-      kServices.firstWhere((s) => s.id == 24),
-      kServices.firstWhere((s) => s.id == 25),
-    ];
+    final popularIds = [6, 7, 17, 10, 33, 26, 24, 25];
+    final popularServices = popularIds
+        .map((id) => findServiceById(id))
+        .whereType<ServiceDef>()
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
         ]),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
         ],
       ),

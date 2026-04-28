@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
-    setState(() => _saving = false);
+    if (mounted) setState(() => _saving = false);
   }
 
   Future<void> _changePassword() async {
@@ -81,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
-    setState(() => _saving = false);
+    if (mounted) setState(() => _saving = false);
   }
 
   @override
@@ -175,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           FilledButton(
             onPressed: () async {
               try {
-                await ApiService.put('/users/account', {}, auth: true);
+                await ApiService.delete('/users/account', auth: true);
                 if (mounted) {
                   context.read<AuthService>().logout();
                   Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);

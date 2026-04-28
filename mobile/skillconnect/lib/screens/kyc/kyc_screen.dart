@@ -26,7 +26,7 @@ class _KycScreenState extends State<KycScreen> {
     try {
       final r = await ApiService.get('/kyc/me', auth: true);
       _myDocs = r['data'] ?? [];
-      _summary = (r['user'] ?? {}) as Map<String, dynamic>;
+      _summary = (r['user'] as Map<String, dynamic>?) ?? {};
     } catch (e) { _error = e.toString(); }
     if (mounted) setState(() => _loading = false);
   }

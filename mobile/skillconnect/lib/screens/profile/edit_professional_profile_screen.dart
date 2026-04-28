@@ -45,6 +45,11 @@ class _EditProfessionalProfileScreenState extends State<EditProfessionalProfileS
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Headline and bio are required'), backgroundColor: Colors.orange));
       return;
     }
+    final pricing = double.tryParse(_pricingCtrl.text) ?? 0;
+    if (pricing <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid starting price greater than ₹0'), backgroundColor: Colors.orange));
+      return;
+    }
 
     setState(() => _saving = true);
     try {
@@ -53,7 +58,7 @@ class _EditProfessionalProfileScreenState extends State<EditProfessionalProfileS
         'headline': _headlineCtrl.text.trim(),
         'bio': _bioCtrl.text.trim(),
         'years_of_experience': int.tryParse(_experienceCtrl.text) ?? 0,
-        'pricing_estimate': double.tryParse(_pricingCtrl.text) ?? 0,
+        'pricing_estimate': pricing,
         'service_location_radius_km': double.tryParse(_radiusCtrl.text) ?? 25,
       }, auth: true);
 
@@ -65,11 +70,12 @@ class _EditProfessionalProfileScreenState extends State<EditProfessionalProfileS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green));
         Navigator.pop(context, true);
+        return;
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
-    setState(() => _saving = false);
+    if (mounted) setState(() => _saving = false);
   }
 
   @override
@@ -125,7 +131,7 @@ class _EditProfessionalProfileScreenState extends State<EditProfessionalProfileS
                 const SizedBox(height: 12),
                 TextField(
                   controller: _pricingCtrl,
-                  decoration: const InputDecoration(labelText: 'Starting Price (\$)', prefixIcon: Icon(Icons.attach_money)),
+                  decoration: const InputDecoration(labelText: 'Starting Price (₹)', prefixIcon: Icon(Icons.currency_rupee)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),

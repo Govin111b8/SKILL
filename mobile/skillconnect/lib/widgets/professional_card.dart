@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../models/models.dart';
+import '../screens/profile/professional_profile_screen.dart';
 import 'trust_badge.dart';
 
 class ProfessionalCard extends StatelessWidget {
@@ -13,7 +14,9 @@ class ProfessionalCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/professional', arguments: professional.id),
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => ProfessionalProfileScreen(professionalId: professional.id),
+        )),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -72,7 +75,7 @@ class ProfessionalCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(color: cs.primary.withAlpha(15), borderRadius: BorderRadius.circular(8)),
-                          child: Text('From \$${professional.pricingEstimate}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+                          child: Text('From ₹${professional.pricingEstimate}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
                         ),
                     ]),
                     if (professional.location != null) ...[

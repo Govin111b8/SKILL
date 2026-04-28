@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
 import '../../services/booking_service.dart';
@@ -19,6 +20,7 @@ class _BookingsListScreenState extends State<BookingsListScreen> {
   bool _loading = true;
   String? _error;
   String _filter = 'all';
+  StreamSubscription<Map<String, dynamic>>? _wsSub;
 
   static const _filters = [
     ('all', 'All'),
@@ -35,11 +37,17 @@ class _BookingsListScreenState extends State<BookingsListScreen> {
   void initState() {
     super.initState();
     _load();
-    RealtimeService.instance.stream.listen((event) {
+    _wsSub = RealtimeService.instance.stream.listen((event) {
       if (!mounted) return;
       final t = event['type']?.toString() ?? '';
       if (t.startsWith('booking_')) _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {

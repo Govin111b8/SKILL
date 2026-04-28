@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../../models/models.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
@@ -16,12 +17,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<AppNotification> _items = [];
   bool _loading = true;
   String? _error;
+  StreamSubscription<Map<String, dynamic>>? _wsSub;
 
   @override
   void initState() {
     super.initState();
     _load();
-    RealtimeService.instance.stream.listen((e) { if (mounted) _load(); });
+    _wsSub = RealtimeService.instance.stream.listen((e) { if (mounted) _load(); });
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {

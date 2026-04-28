@@ -55,15 +55,18 @@ app.get('/api/download/apk', (req, res) => {
   res.download(apkPath, 'SkillConnect.apk');
 });
 
-// Serve marketing landing page at root
-const publicPath = path.join(__dirname, '../public');
-app.use(express.static(publicPath));
-
-// Serve Flutter web app under /app/ (same port — no CORS issues)
+// Serve Flutter web app under /app/ (mobile-style app — this is the main app)
 const webBuildPath = path.join(__dirname, '../../mobile/skillconnect/build/web');
 app.use('/app', express.static(webBuildPath));
 app.get(/^\/app(\/.*)?$/, (req, res) => {
   res.sendFile(path.join(webBuildPath, 'index.html'));
+});
+
+// Serve React customer web app under /react/
+const reactAppPath = path.join(__dirname, '../public/react');
+app.use('/react', express.static(reactAppPath));
+app.get(/^\/react(\/.*)?$/, (req, res) => {
+  res.sendFile(path.join(reactAppPath, 'index.html'));
 });
 
 // Serve Pro portal under /pro/
@@ -73,17 +76,14 @@ app.get(/^\/pro(\/.*)?$/, (req, res) => {
   res.sendFile(path.join(proPotalPath, 'index.html'));
 });
 
-// Serve React web app under /webapp/ (customer-facing app)
-const webAppPath = path.join(__dirname, '../public/webapp');
-app.use('/webapp', express.static(webAppPath));
-app.get(/^\/webapp(\/.*)?$/, (req, res) => {
-  res.sendFile(path.join(webAppPath, 'index.html'));
+// Root → redirect to Flutter mobile app
+const publicPath = path.join(__dirname, '../public');
+app.get('/', (req, res) => {
+  res.redirect(301, '/app/');
 });
 
-// Root → landing page (handled by static above for index.html)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
+// Serve other public static files (excluding index.html at root)
+app.use(express.static(publicPath));
 
 // Error handler
 app.use(errorHandler);
