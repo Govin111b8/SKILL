@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
+import 'realtime_service.dart';
 
 class AuthService extends ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -19,6 +20,7 @@ class AuthService extends ChangeNotifier {
     _token = prefs.getString('auth_token');
     final userData = prefs.getString('user_data');
     if (userData != null) _user = jsonDecode(userData);
+    if (_token != null) RealtimeService.instance.connect(_token!);
     notifyListeners();
   }
 
@@ -74,6 +76,7 @@ class AuthService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('user_data');
+    RealtimeService.instance.disconnect();
     _user = null;
     _token = null;
     notifyListeners();
@@ -85,5 +88,6 @@ class AuthService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     await prefs.setString('user_data', jsonEncode(user));
+    RealtimeService.instance.connect(token);
   }
 }

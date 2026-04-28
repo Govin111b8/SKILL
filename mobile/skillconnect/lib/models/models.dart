@@ -190,3 +190,179 @@ class Review {
     createdAt: _toDate(json['created_at']),
   );
 }
+
+class Booking {
+  final String id;
+  final String customerId;
+  final String professionalId;
+  final int? categoryId;
+  final String title;
+  final String? description;
+  final String? serviceAddress;
+  final DateTime? scheduledFor;
+  final double? quotedAmount;
+  final double? finalAmount;
+  final String currency;
+  final String status;
+  final String? cancellationReason;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  // Joined fields
+  final String? customerName;
+  final String? customerAvatar;
+  final String? professionalName;
+  final String? professionalAvatar;
+  final String? categoryName;
+  final List<BookingStatusLog> statusLog;
+
+  Booking({
+    required this.id, required this.customerId, required this.professionalId,
+    this.categoryId, required this.title, this.description, this.serviceAddress,
+    this.scheduledFor, this.quotedAmount, this.finalAmount, this.currency = 'INR',
+    required this.status, this.cancellationReason, this.startedAt, this.completedAt,
+    required this.createdAt, required this.updatedAt,
+    this.customerName, this.customerAvatar, this.professionalName, this.professionalAvatar,
+    this.categoryName, this.statusLog = const [],
+  });
+
+  factory Booking.fromJson(Map<String, dynamic> json) => Booking(
+    id: json['id']?.toString() ?? '',
+    customerId: json['customer_id']?.toString() ?? '',
+    professionalId: json['professional_id']?.toString() ?? '',
+    categoryId: json['category_id'] == null ? null : _toInt(json['category_id']),
+    title: json['title']?.toString() ?? '',
+    description: _toStringOrNull(json['description']),
+    serviceAddress: _toStringOrNull(json['service_address']),
+    scheduledFor: json['scheduled_for'] == null ? null : _toDate(json['scheduled_for']),
+    quotedAmount: json['quoted_amount'] == null ? null : _toDouble(json['quoted_amount']),
+    finalAmount: json['final_amount'] == null ? null : _toDouble(json['final_amount']),
+    currency: json['currency']?.toString() ?? 'INR',
+    status: json['status']?.toString() ?? 'requested',
+    cancellationReason: _toStringOrNull(json['cancellation_reason']),
+    startedAt: json['started_at'] == null ? null : _toDate(json['started_at']),
+    completedAt: json['completed_at'] == null ? null : _toDate(json['completed_at']),
+    createdAt: _toDate(json['created_at']),
+    updatedAt: _toDate(json['updated_at']),
+    customerName: _toStringOrNull(json['customer_name']),
+    customerAvatar: _toStringOrNull(json['customer_avatar']),
+    professionalName: _toStringOrNull(json['professional_name']),
+    professionalAvatar: _toStringOrNull(json['professional_avatar']),
+    categoryName: _toStringOrNull(json['category_name']),
+    statusLog: (json['status_log'] as List?)?.map((e) => BookingStatusLog.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+  );
+}
+
+class BookingStatusLog {
+  final String id;
+  final String? fromStatus;
+  final String toStatus;
+  final String? note;
+  final String? changedByName;
+  final DateTime createdAt;
+
+  BookingStatusLog({required this.id, this.fromStatus, required this.toStatus, this.note, this.changedByName, required this.createdAt});
+
+  factory BookingStatusLog.fromJson(Map<String, dynamic> json) => BookingStatusLog(
+    id: json['id']?.toString() ?? '',
+    fromStatus: _toStringOrNull(json['from_status']),
+    toStatus: json['to_status']?.toString() ?? '',
+    note: _toStringOrNull(json['note']),
+    changedByName: _toStringOrNull(json['changed_by_name']),
+    createdAt: _toDate(json['created_at']),
+  );
+}
+
+class MessageThread {
+  final String id;
+  final String customerId;
+  final String professionalId;
+  final String? bookingId;
+  final int customerUnread;
+  final int proUnread;
+  final String? lastMessage;
+  final String? lastSenderId;
+  final DateTime? lastMessageAt;
+  final String? otherName;
+  final String? otherAvatar;
+  final String? bookingTitle;
+
+  MessageThread({
+    required this.id, required this.customerId, required this.professionalId, this.bookingId,
+    this.customerUnread = 0, this.proUnread = 0, this.lastMessage, this.lastSenderId,
+    this.lastMessageAt, this.otherName, this.otherAvatar, this.bookingTitle,
+  });
+
+  factory MessageThread.fromJson(Map<String, dynamic> json) => MessageThread(
+    id: json['id']?.toString() ?? '',
+    customerId: json['customer_id']?.toString() ?? '',
+    professionalId: json['professional_id']?.toString() ?? '',
+    bookingId: _toStringOrNull(json['booking_id']),
+    customerUnread: _toInt(json['customer_unread']),
+    proUnread: _toInt(json['pro_unread']),
+    lastMessage: _toStringOrNull(json['last_message']),
+    lastSenderId: _toStringOrNull(json['last_sender_id']),
+    lastMessageAt: json['last_message_at'] == null ? null : _toDate(json['last_message_at']),
+    otherName: _toStringOrNull(json['other_name']),
+    otherAvatar: _toStringOrNull(json['other_avatar']),
+    bookingTitle: _toStringOrNull(json['booking_title']),
+  );
+}
+
+class ChatMessage {
+  final String id;
+  final String threadId;
+  final String senderId;
+  final String body;
+  final String messageType;
+  final DateTime? readAt;
+  final DateTime createdAt;
+  final String? senderName;
+
+  ChatMessage({
+    required this.id, required this.threadId, required this.senderId,
+    required this.body, this.messageType = 'text', this.readAt, required this.createdAt,
+    this.senderName,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    id: json['id']?.toString() ?? '',
+    threadId: json['thread_id']?.toString() ?? '',
+    senderId: json['sender_id']?.toString() ?? '',
+    body: json['body']?.toString() ?? '',
+    messageType: json['message_type']?.toString() ?? 'text',
+    readAt: json['read_at'] == null ? null : _toDate(json['read_at']),
+    createdAt: _toDate(json['created_at']),
+    senderName: _toStringOrNull(json['sender_name']),
+  );
+}
+
+class AppNotification {
+  final String id;
+  final String type;
+  final String title;
+  final String? body;
+  final String? relatedId;
+  final Map<String, dynamic> data;
+  final DateTime? readAt;
+  final DateTime createdAt;
+
+  AppNotification({
+    required this.id, required this.type, required this.title, this.body,
+    this.relatedId, this.data = const {}, this.readAt, required this.createdAt,
+  });
+
+  bool get isUnread => readAt == null;
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+    id: json['id']?.toString() ?? '',
+    type: json['type']?.toString() ?? '',
+    title: json['title']?.toString() ?? '',
+    body: _toStringOrNull(json['body']),
+    relatedId: _toStringOrNull(json['related_id']),
+    data: (json['data'] as Map<String, dynamic>?) ?? const {},
+    readAt: json['read_at'] == null ? null : _toDate(json['read_at']),
+    createdAt: _toDate(json['created_at']),
+  );
+}

@@ -30,29 +30,33 @@ async function getOrCreateThread({ customerId, professionalId, bookingId = null 
 // List all threads for current user
 exports.listThreads = async (req, res, next) => {
   try {
-    let where, params;
-    if (req.user.role === 'professional') {
+    let where, params, isPro = req.user.role === 'professional';
+    let proRowId = null;
+    if (isPro) {
       const p = await query('SELECT id FROM professionals WHERE user_id = $1', [req.user.id]);
       if (!p.rows.length) return res.json({ success: true, data: [] });
+      proRowId = p.rows[0].id;
       where = `t.professional_id = $1`;
-      params = [p.rows[0].id];
+      params = [proRowId];
     } else {
       where = `t.customer_id = $1`;
       params = [req.user.id];
     }
     const r = await query(
       `SELECT t.*,
-              uc.name AS customer_name, uc.avatar_url AS customer_avatar,
-              up.name AS pro_name, up.avatar_url AS pro_avatar,
+              CASE WHEN $2::boolean THEN uc.name ELSE up.name END AS other_name,
+              CASE WHEN $2::boolean THEN uc.avatar_url ELSE up.avatar_url END AS other_avatar,
+              b.title AS booking_title,
               (SELECT body FROM messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-              (SELECT sender_id FROM messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender
+              (SELECT sender_id FROM messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender_id
        FROM message_threads t
        JOIN users uc ON t.customer_id = uc.id
        JOIN professionals p ON t.professional_id = p.id
        JOIN users up ON p.user_id = up.id
+       LEFT JOIN bookings b ON t.booking_id = b.id
        WHERE ${where}
-       ORDER BY t.last_message_at DESC LIMIT 100`,
-      params
+       ORDER BY t.last_message_at DESC NULLS LAST LIMIT 100`,
+      [...params, isPro]
     );
     res.json({ success: true, data: r.rows });
   } catch (e) { next(e); }
@@ -60,12 +64,31 @@ exports.listThreads = async (req, res, next) => {
 
 exports.openThread = async (req, res, next) => {
   try {
-    if (req.user.role !== 'customer') return res.status(403).json({ success: false, message: 'Customer action' });
-    const { professional_id, booking_id } = req.body;
-    if (!professional_id) return res.status(400).json({ success: false, message: 'professional_id required' });
+    const { professional_id, customer_id, booking_id } = req.body;
+    let proId = professional_id;
+    let custId = customer_id;
+
+    if (req.user.role === 'customer') {
+      custId = req.user.id;
+      if (!proId) return res.status(400).json({ success: false, message: 'professional_id required' });
+    } else if (req.user.role === 'professional') {
+      // Pro opening a thread with a customer (typically tied to a booking)
+      const p = await query('SELECT id FROM professionals WHERE user_id = $1', [req.user.id]);
+      if (!p.rows.length) return res.status(400).json({ success: false, message: 'Professional record not found' });
+      proId = p.rows[0].id;
+      if (!custId && booking_id) {
+        const b = await query('SELECT customer_id FROM bookings WHERE id = $1 AND professional_id = $2', [booking_id, proId]);
+        if (!b.rows.length) return res.status(404).json({ success: false, message: 'Booking not found' });
+        custId = b.rows[0].customer_id;
+      }
+      if (!custId) return res.status(400).json({ success: false, message: 'customer_id or booking_id required' });
+    } else {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
     const thread = await getOrCreateThread({
-      customerId: req.user.id,
-      professionalId: professional_id,
+      customerId: custId,
+      professionalId: proId,
       bookingId: booking_id || null,
     });
     res.json({ success: true, data: thread });
