@@ -99,9 +99,9 @@ class _BookingsListScreenState extends State<BookingsListScreen> {
               itemBuilder: (_, __) => const SkeletonBookingCard(),
             )
           : _error != null
-              ? _ErrorView(error: _error!, onRetry: _load)
+              ? RefreshIndicator(onRefresh: _load, child: ListView(children: [_ErrorView(error: _error!, onRetry: _load)]))
               : _items.isEmpty
-                  ? _EmptyView(isPro: isPro, filter: _filter)
+                  ? RefreshIndicator(onRefresh: _load, child: ListView(children: [_EmptyView(isPro: isPro, filter: _filter)]))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.separated(

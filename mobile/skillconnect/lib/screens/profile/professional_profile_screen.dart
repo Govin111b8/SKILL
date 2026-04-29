@@ -305,22 +305,23 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
   }
 
   Future<void> _openChat(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final t = await MessagingService.openThread(professionalId: _professional!.id);
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(
+      Navigator.push(this.context, MaterialPageRoute(
         builder: (_) => ChatScreen(threadId: t.id, otherName: _professional!.name),
       ));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.red));
+      messenger.showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _openBookingSheet(BuildContext context) async {
     final p = _professional!;
     await showBookNowSheet(
-      context,
+      this.context,
       professionalId: p.id,
       professionalName: p.name,
       categories: p.categories.map((c) => {'id': c.id, 'name': c.name}).toList(),

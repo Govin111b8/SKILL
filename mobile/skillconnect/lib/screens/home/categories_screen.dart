@@ -22,6 +22,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Future<void> _load() async {
+    if (mounted) setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiService.get('/categories');
       _categories = (res['data'] as List).map((e) => Category.fromJson(e)).toList();

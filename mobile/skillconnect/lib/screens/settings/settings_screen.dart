@@ -166,22 +166,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Delete Account?'),
         content: const Text('This will permanently delete your account and all associated data. This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
+              final nav = Navigator.of(ctx);
+              final messenger = ScaffoldMessenger.of(context);
               try {
                 await ApiService.delete('/users/account', auth: true);
+                if (!ctx.mounted) return;
+                nav.pop();
                 if (mounted) {
                   context.read<AuthService>().logout();
                   Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
                 }
               } catch (e) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                if (!ctx.mounted) return;
+                nav.pop();
+                messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
               }
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),

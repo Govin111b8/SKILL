@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../settings/settings_screen.dart';
@@ -39,17 +40,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _updateContactStatus(String contactId, String status) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await ApiService.put('/contacts/$contactId/status', {'status': status}, auth: true);
       _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        messenger.showSnackBar(SnackBar(
           content: Text('Contact ${status == 'accepted' ? 'accepted' : 'declined'}'),
           backgroundColor: status == 'accepted' ? Colors.green : Colors.orange,
         ));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
   }
 
@@ -189,17 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _money(num v) {
-    final n = v.round();
-    final s = n.toString();
-    final buf = StringBuffer();
-    int c = 0;
-    for (int i = s.length - 1; i >= 0; i--) {
-      buf.write(s[i]);
-      c++;
-      if (c == 3 && i > 0) { buf.write(','); c = 0; }
-      else if (c > 3 && (c - 3) % 2 == 0 && i > 0) { buf.write(','); }
-    }
-    return '₹${buf.toString().split('').reversed.join()}';
+    return NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(v);
   }
 
   List<Widget> _buildProDashboard(BuildContext context, ColorScheme cs) {
@@ -233,18 +225,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _AvailabilityCard(
         current: profile?['availability_status']?.toString() ?? 'offline',
         onChanged: (status) async {
+          final messenger = ScaffoldMessenger.of(context);
           try {
             await ApiService.put('/professionals/me/availability', {'availability_status': status}, auth: true);
             await _load();
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              messenger.showSnackBar(SnackBar(
                 content: Text('You are now $status'),
                 backgroundColor: status == 'available' ? Colors.green : (status == 'busy' ? Colors.orange : Colors.grey.shade700),
                 duration: const Duration(seconds: 1),
               ));
             }
           } catch (e) {
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            if (mounted) messenger.showSnackBar(SnackBar(
               content: Text('$e'), backgroundColor: Colors.red));
           }
         },

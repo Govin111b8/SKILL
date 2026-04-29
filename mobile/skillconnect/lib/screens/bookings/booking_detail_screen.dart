@@ -186,7 +186,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
+              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600)),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(onPressed: _load, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+                ])))
               : RefreshIndicator(onRefresh: _load, child: _buildBody(isPro)),
     );
   }

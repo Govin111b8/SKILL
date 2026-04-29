@@ -164,7 +164,7 @@ class _Group {
 
 class _GroupHeader extends StatelessWidget {
   final String label;
-  const _GroupHeader(this.label, {super.key});
+  const _GroupHeader(this.label);
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),

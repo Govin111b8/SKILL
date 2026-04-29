@@ -8,6 +8,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
+import '../search/search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -114,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('Verified · Reviewed · Zero commission', style: TextStyle(color: Colors.white.withAlpha(210), fontSize: 12, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 14),
                   GestureDetector(
-                    onTap: () { HapticFeedback.lightImpact(); Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())); },
+                    onTap: () { HapticFeedback.lightImpact(); Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())); },
                     child: Container(
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 14),

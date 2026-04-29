@@ -96,10 +96,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     'media_type': mediaType,
                     'media_url': urlCtrl.text.trim(),
                   }, auth: true);
+                  if (!ctx.mounted) return;
                   Navigator.pop(ctx);
                   _load();
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item added!'), backgroundColor: Colors.green));
                 } catch (e) {
+                  if (!ctx.mounted) return;
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
                 }
               },

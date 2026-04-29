@@ -159,7 +159,7 @@ class _ContactTile extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
               child: Text(contact.message!, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
             ),
           ],

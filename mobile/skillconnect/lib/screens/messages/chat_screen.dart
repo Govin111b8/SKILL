@@ -150,7 +150,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         )),
                   SafeArea(top: false, child: Container(
                     padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-                    decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Colors.grey.shade200))),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+                    ),
                     child: Row(children: [
                       Expanded(child: TextField(
                         controller: _ctrl,
@@ -188,14 +191,14 @@ class _Bubble extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 3),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isMe ? cs.primary : Colors.white,
+            color: isMe ? cs.primary : cs.surfaceContainerHighest,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(16),
               topRight: const Radius.circular(16),
               bottomLeft: Radius.circular(isMe ? 16 : 4),
               bottomRight: Radius.circular(isMe ? 4 : 16),
             ),
-            border: isMe ? null : Border.all(color: Colors.grey.shade200),
+            border: isMe ? null : Border.all(color: cs.outlineVariant),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(message.body, style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 14.5)),

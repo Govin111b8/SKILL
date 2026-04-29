@@ -126,8 +126,8 @@ class _BookNowSheetState extends State<_BookNowSheet> {
       minChildSize: 0.5,
       maxChildSize: 0.97,
       builder: (context, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(children: [
@@ -168,7 +168,7 @@ class _BookNowSheetState extends State<_BookNowSheet> {
                         hintText: 'Select service type',
                         prefixIcon: const Icon(Icons.category_outlined),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                        filled: true, fillColor: const Color(0xFFF1F5F9),
+                      filled: true, fillColor: cs.surfaceContainerHighest,
                       ),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Not specified')),
@@ -213,7 +213,7 @@ class _BookNowSheetState extends State<_BookNowSheet> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: cs.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(children: [
@@ -233,7 +233,7 @@ class _BookNowSheetState extends State<_BookNowSheet> {
                         onTap: _pickTime,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14)),
+                          decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
                           child: Row(children: [
                             Icon(Icons.access_time, size: 18, color: cs.primary),
                             const SizedBox(width: 8),

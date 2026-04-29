@@ -158,9 +158,9 @@ class _ReviewSheetState extends State<_ReviewSheet> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4))),
@@ -203,7 +203,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
           decoration: InputDecoration(
             hintText: 'Share your experience (optional)...',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-            filled: true, fillColor: const Color(0xFFF1F5F9),
+            filled: true, fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
           maxLines: 3,
           maxLength: 400,
