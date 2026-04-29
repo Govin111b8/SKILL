@@ -39,21 +39,49 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   String? _error;
   StreamSubscription? _wsSub;
+  StreamSubscription? _statusSub;
   String _myId = '';
+  bool _otherTyping = false;
+  Timer? _typingTimer;
+  bool _iAmTyping = false;
+  String? _otherUserId; // resolved user ID of the other party
 
   @override
   void initState() {
     super.initState();
     _myId = (context.read<AuthService>().user?['id'] ?? '').toString();
+    _ctrl.addListener(_onTextChanged);
     _bootstrap();
   }
 
   @override
   void dispose() {
     _wsSub?.cancel();
+    _statusSub?.cancel();
+    _typingTimer?.cancel();
+    _ctrl.removeListener(_onTextChanged);
     _ctrl.dispose();
     _scroll.dispose();
+    // Send typing stopped
+    if (_iAmTyping && _threadId != null && _otherUserId != null) {
+      RealtimeService.instance.sendTyping(threadId: _threadId!, toUserId: _otherUserId!, typing: false);
+    }
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (_threadId == null || _otherUserId == null) return;
+    if (_ctrl.text.isNotEmpty && !_iAmTyping) {
+      _iAmTyping = true;
+      RealtimeService.instance.sendTyping(threadId: _threadId!, toUserId: _otherUserId!, typing: true);
+    }
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 3), () {
+      if (_iAmTyping) {
+        _iAmTyping = false;
+        RealtimeService.instance.sendTyping(threadId: _threadId!, toUserId: _otherUserId!, typing: false);
+      }
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -63,16 +91,18 @@ class _ChatScreenState extends State<ChatScreen> {
         if (widget.threadId != null) {
           _threadId = widget.threadId;
         } else if (widget.otherUserId != null && widget.openWith != null) {
-          // 'professional' → I'm customer requesting thread with a pro USER (we need professional_id, not user_id, ideally)
-          // For booking-driven flow, otherUserId is the pro/customer USER. We open thread by customer_id or by professional_id depending.
           final t = widget.openWith == 'customer'
               ? await MessagingService.openThread(customerId: widget.otherUserId!, bookingId: widget.bookingId)
               : await MessagingService.openThread(professionalId: widget.otherUserId!, bookingId: widget.bookingId);
           _threadId = t.id;
+          // Resolve other user ID from thread
+          _otherUserId = widget.otherUserId;
         }
       }
       if (_threadId != null) {
         _messages = await MessagingService.listMessages(_threadId!);
+        // Send read receipt immediately
+        RealtimeService.instance.sendReadReceipt(_threadId!);
       }
       _wsSub = RealtimeService.instance.stream.listen(_onWs);
     } catch (e) {
@@ -86,14 +116,56 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _onWs(Map<String, dynamic> ev) {
     final t = ev['type']?.toString();
+
+    // Handle typing indicators
+    if (t == 'typing') {
+      if (ev['threadId']?.toString() == _threadId && ev['userId']?.toString() != _myId) {
+        setState(() => _otherTyping = ev['typing'] == true);
+        // Auto-clear typing after 5s (in case stop event is missed)
+        if (_otherTyping) {
+          Future.delayed(const Duration(seconds: 5), () {
+            if (mounted && _otherTyping) setState(() => _otherTyping = false);
+          });
+        }
+      }
+      return;
+    }
+
+    // Handle read receipts — mark all sent messages as read
+    if (t == 'messages_read') {
+      if (ev['threadId']?.toString() == _threadId) {
+        setState(() {
+          _messages = _messages.map((m) {
+            if (m.senderId == _myId && m.readAt == null) {
+              return ChatMessage(
+                id: m.id, threadId: m.threadId, senderId: m.senderId,
+                body: m.body, messageType: m.messageType, isSystem: m.isSystem,
+                readAt: DateTime.now(), createdAt: m.createdAt, senderName: m.senderName,
+              );
+            }
+            return m;
+          }).toList();
+        });
+      }
+      return;
+    }
+
+    // Handle new message
     if (t != 'message' && t != 'new_message') return;
     final msg = ev['message'] ?? ev['data'] ?? ev;
     if (msg is! Map) return;
     if (msg['thread_id']?.toString() != _threadId) return;
     final m = ChatMessage.fromJson(Map<String, dynamic>.from(msg));
     if (_messages.any((x) => x.id == m.id)) return;
-    setState(() => _messages = [..._messages, m]);
+    setState(() {
+      _messages = [..._messages, m];
+      _otherTyping = false; // they sent a message, so they stopped typing
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    // Send read receipt since we're looking at the chat
+    if (m.senderId != _myId) {
+      RealtimeService.instance.sendReadReceipt(_threadId!);
+    }
   }
 
   void _scrollToBottom() {
@@ -107,6 +179,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty || _threadId == null || _sending) return;
     setState(() => _sending = true);
     _ctrl.clear();
+    // Stop typing
+    _typingTimer?.cancel();
+    if (_iAmTyping && _otherUserId != null) {
+      _iAmTyping = false;
+      RealtimeService.instance.sendTyping(threadId: _threadId!, toUserId: _otherUserId!, typing: false);
+    }
     try {
       final m = await MessagingService.sendMessage(_threadId!, text);
       if (!_messages.any((x) => x.id == m.id)) {
@@ -132,8 +210,34 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Text(widget.otherName.isNotEmpty ? widget.otherName[0].toUpperCase() : '?', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(widget.otherName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(widget.otherName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
+              if (_otherTyping)
+                Text('typing...', style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w500)),
+            ],
+          )),
         ]),
+        actions: [
+          StreamBuilder<ConnectionStatus>(
+            stream: RealtimeService.instance.statusStream,
+            initialData: RealtimeService.instance.status,
+            builder: (_, snap) {
+              final s = snap.data ?? ConnectionStatus.disconnected;
+              if (s == ConnectionStatus.connected) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  s == ConnectionStatus.connecting ? Icons.sync : Icons.cloud_off,
+                  size: 18,
+                  color: s == ConnectionStatus.connecting ? Colors.orange : Colors.red,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -189,6 +293,26 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    // System messages: centered, muted style
+    if (message.isSystem) {
+      return Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withAlpha(180),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            message.body,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontStyle: FontStyle.italic),
+          ),
+        ),
+      );
+    }
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(

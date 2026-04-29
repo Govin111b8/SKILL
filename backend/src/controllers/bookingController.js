@@ -204,6 +204,54 @@ exports.transition = async (req, res, next) => {
     hub.sendTo(otherUser, { type: 'booking', action: 'updated', data: updated });
     hub.sendTo(req.user.id, { type: 'booking', action: 'updated', data: updated });
 
+    // Auto-calculate response_time_hours for professional (average time from 'requested' to first pro action)
+    if (isPro && b.status === 'requested' && (to === 'quoted' || to === 'cancelled')) {
+      try {
+        const proId = b.professional_id;
+        // Calculate average response time for all bookings where pro responded
+        const avgRes = await query(
+          `SELECT AVG(EXTRACT(EPOCH FROM (log.created_at - b2.created_at)) / 3600.0) AS avg_hours
+           FROM booking_status_log log
+           JOIN bookings b2 ON log.booking_id = b2.id
+           WHERE b2.professional_id = $1
+             AND log.from_status = 'requested'
+             AND log.to_status IN ('quoted', 'cancelled')
+             AND log.actor_id = (SELECT user_id FROM professionals WHERE id = $1)`,
+          [proId]
+        );
+        const avgHours = avgRes.rows[0]?.avg_hours;
+        if (avgHours != null && !isNaN(parseFloat(avgHours))) {
+          await query(
+            `UPDATE professionals SET response_time_hours = $1 WHERE id = $2`,
+            [parseFloat(avgHours).toFixed(1), proId]
+          );
+        }
+      } catch (_) { /* non-critical */ }
+    }
+
+    // Post a system message in the chat thread for this booking (if one exists)
+    try {
+      const threadRes = await query(
+        `SELECT id, customer_id, professional_id FROM message_threads
+         WHERE (booking_id = $1) OR (customer_id = $2 AND professional_id = $3 AND booking_id IS NULL)
+         ORDER BY booking_id DESC NULLS LAST LIMIT 1`,
+        [b.id, b.customer_id, b.professional_id]
+      );
+      if (threadRes.rows.length) {
+        const thread = threadRes.rows[0];
+        const systemBody = `📋 Booking "${b.title}" → ${(titles[to] || to).toUpperCase()}${note ? ': ' + note : ''}`;
+        await query(
+          `INSERT INTO messages (thread_id, sender_id, body, is_system) VALUES ($1, $2, $3, true) RETURNING id`,
+          [thread.id, req.user.id, systemBody]
+        );
+        await query(`UPDATE message_threads SET last_message_at = NOW() WHERE id = $1`, [thread.id]);
+        // Push system message via WS to both parties
+        const sysMsgPayload = { type: 'message', data: { thread_id: thread.id, body: systemBody, message_type: 'system', sender_id: req.user.id, is_system: true, created_at: new Date().toISOString() } };
+        hub.sendTo(b.customer_id, sysMsgPayload);
+        hub.sendTo(b.pro_user_id, sysMsgPayload);
+      }
+    } catch (_) { /* non-critical — don't fail the transition */ }
+
     res.json({ success: true, data: updated });
   } catch (e) { next(e); }
 };

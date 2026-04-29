@@ -42,7 +42,7 @@ class _BookingsListScreenState extends State<BookingsListScreen> {
     _wsSub = RealtimeService.instance.stream.listen((event) {
       if (!mounted) return;
       final t = event['type']?.toString() ?? '';
-      if (t.startsWith('booking_')) _load();
+      if (t == 'booking' || t.startsWith('booking_') || t == 'notification') _load();
     });
   }
 

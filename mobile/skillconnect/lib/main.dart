@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
+import 'services/theme_service.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -22,9 +23,16 @@ import 'screens/search/search_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final authService = AuthService();
-  await authService.init();
+  final themeService = ThemeService();
+  await Future.wait([authService.init(), themeService.init()]);
   runApp(
-    ChangeNotifierProvider.value(value: authService, child: const SkillConnectApp()),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: authService),
+        ChangeNotifierProvider.value(value: themeService),
+      ],
+      child: const SkillConnectApp(),
+    ),
   );
 }
 
@@ -157,12 +165,13 @@ class SkillConnectApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeService>().mode;
     return MaterialApp(
       title: 'SkillConnect',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       home: Consumer<AuthService>(
         builder: (_, auth, __) {
           final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
@@ -213,8 +222,8 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _unread = 0;
   StreamSubscription<Map<String, dynamic>>? _realtimeSub;
-
-  // Screens differ by role — built lazily after first auth check
+  StreamSubscription<ConnectionStatus>? _connSub;
+  ConnectionStatus _connStatus = ConnectionStatus.disconnected;
 
   List<Widget> _buildScreens(bool isPro) => isPro
       ? const [
@@ -251,11 +260,16 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     _refreshUnread();
     _realtimeSub = RealtimeService.instance.stream.listen((_) { if (mounted) _refreshUnread(); });
+    _connStatus = RealtimeService.instance.status;
+    _connSub = RealtimeService.instance.statusStream.listen((s) {
+      if (mounted) setState(() => _connStatus = s);
+    });
   }
 
   @override
   void dispose() {
     _realtimeSub?.cancel();
+    _connSub?.cancel();
     super.dispose();
   }
 
@@ -276,7 +290,34 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       body: Stack(children: [
-        IndexedStack(index: safeIndex, children: screens),
+        Column(children: [
+          // Connection status banner
+          if (_connStatus != ConnectionStatus.connected)
+            Material(
+              color: _connStatus == ConnectionStatus.connecting
+                  ? Colors.orange.shade700
+                  : Colors.red.shade700,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    SizedBox(width: 12, height: 12, child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: Colors.white,
+                      value: _connStatus == ConnectionStatus.disconnected ? 0 : null,
+                    )),
+                    const SizedBox(width: 8),
+                    Text(
+                      _connStatus == ConnectionStatus.connecting ? 'Connecting...' : 'No connection',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          Expanded(child: IndexedStack(index: safeIndex, children: screens)),
+        ]),
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           right: 12,

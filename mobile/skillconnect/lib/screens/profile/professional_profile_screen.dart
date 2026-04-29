@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
@@ -77,6 +78,20 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Professional Profile'), actions: [
+        if (_professional != null)
+          IconButton(
+            tooltip: 'Share Profile',
+            onPressed: () {
+              final p = _professional!;
+              final text = '${p.name} on SkillConnect\n'
+                  '${p.headline ?? ''}\n'
+                  '⭐ ${p.averageRating.toStringAsFixed(1)} (${p.reviewCount} reviews)\n'
+                  '📍 ${p.location ?? 'N/A'}\n\n'
+                  'Check them out on SkillConnect!';
+              Share.share(text);
+            },
+            icon: const Icon(Icons.share),
+          ),
         if (_professional != null)
           IconButton(
             tooltip: _favorited ? 'Remove from favorites' : 'Add to favorites',

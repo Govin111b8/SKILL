@@ -316,14 +316,15 @@ class ChatMessage {
   final String senderId;
   final String body;
   final String messageType;
+  final bool isSystem;
   final DateTime? readAt;
   final DateTime createdAt;
   final String? senderName;
 
   ChatMessage({
     required this.id, required this.threadId, required this.senderId,
-    required this.body, this.messageType = 'text', this.readAt, required this.createdAt,
-    this.senderName,
+    required this.body, this.messageType = 'text', this.isSystem = false,
+    this.readAt, required this.createdAt, this.senderName,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -332,6 +333,7 @@ class ChatMessage {
     senderId: json['sender_id']?.toString() ?? '',
     body: json['body']?.toString() ?? '',
     messageType: json['message_type']?.toString() ?? 'text',
+    isSystem: json['is_system'] == true || json['message_type'] == 'system',
     readAt: json['read_at'] == null ? null : _toDate(json['read_at']),
     createdAt: _toDate(json['created_at']),
     senderName: _toStringOrNull(json['sender_name']),

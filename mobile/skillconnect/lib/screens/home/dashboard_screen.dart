@@ -9,6 +9,7 @@ import '../contacts/my_contacts_screen.dart';
 import '../profile/edit_professional_profile_screen.dart';
 import '../portfolio/portfolio_screen.dart';
 import '../favorites/favorites_screen.dart';
+import '../bookings/service_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -119,6 +120,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 8),
                   if (!isPro) ...[
                     _actionButton(Icons.favorite, 'Saved', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
+                    const SizedBox(width: 8),
+                    _actionButton(Icons.history, 'History', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHistoryScreen()))),
                     const SizedBox(width: 8),
                   ],
                   _actionButton(Icons.verified_user_rounded, 'KYC', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),

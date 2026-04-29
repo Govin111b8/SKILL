@@ -84,11 +84,14 @@ app.get('/api/download/apk', (req, res) => {
   res.download(apkPath, 'SkillConnect.apk');
 });
 
-// Serve Flutter web app under /app/ (mobile-style app — this is the primary app)
+// Serve Flutter web app under /app/ — try deployed public/app first, fall back to build/web
+const deployedAppPath = path.join(__dirname, '../public/app');
 const webBuildPath = path.join(__dirname, '../../mobile/skillconnect/build/web');
-app.use('/app', express.static(webBuildPath));
+const fs = require('fs');
+const appServePath = fs.existsSync(path.join(deployedAppPath, 'index.html')) ? deployedAppPath : webBuildPath;
+app.use('/app', express.static(appServePath, { maxAge: '1h', etag: true }));
 app.get(/^\/app(\/.*)?$/, (req, res) => {
-  res.sendFile(path.join(webBuildPath, 'index.html'));
+  res.sendFile(path.join(appServePath, 'index.html'));
 });
 
 // Serve Pro portal under /pro/

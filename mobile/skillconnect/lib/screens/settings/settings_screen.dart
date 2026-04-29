@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/theme_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -137,6 +138,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          Text('Appearance', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(children: [
+                _ThemeTile(
+                  icon: Icons.brightness_auto,
+                  label: 'System Default',
+                  selected: context.watch<ThemeService>().mode == ThemeMode.system,
+                  onTap: () => context.read<ThemeService>().setMode(ThemeMode.system),
+                ),
+                _ThemeTile(
+                  icon: Icons.light_mode,
+                  label: 'Light',
+                  selected: context.watch<ThemeService>().mode == ThemeMode.light,
+                  onTap: () => context.read<ThemeService>().setMode(ThemeMode.light),
+                ),
+                _ThemeTile(
+                  icon: Icons.dark_mode,
+                  label: 'Dark',
+                  selected: context.watch<ThemeService>().mode == ThemeMode.dark,
+                  onTap: () => context.read<ThemeService>().setMode(ThemeMode.dark),
+                ),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 24),
           Text('Danger Zone', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
           const SizedBox(height: 12),
           Card(
@@ -194,6 +223,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ThemeTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemeTile({required this.icon, required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon, color: selected ? cs.primary : null),
+      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+      trailing: selected ? Icon(Icons.check_circle, color: cs.primary) : null,
+      onTap: onTap,
+      dense: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 }
