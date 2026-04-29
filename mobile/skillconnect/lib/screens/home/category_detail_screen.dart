@@ -254,7 +254,10 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
               final gradient = _gradientForSub(sub, i);
               final icon = _iconForSub(sub, i);
 
-              return InkWell(
+              return Semantics(
+                label: 'Navigate to $subName service',
+                button: true,
+                child: InkWell(
                 onTap: () => Navigator.push(context, MaterialPageRoute(
                   builder: (_) => CategoryDetailScreen(
                     categoryId: (sub['id'] as num).toInt(),
@@ -271,7 +274,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                     boxShadow: [BoxShadow(color: gradient.first.withAlpha(60), blurRadius: 12, offset: const Offset(0, 6))],
                   ),
                   child: Stack(children: [
-                    Positioned(top: -10, right: -10, child: Icon(icon, size: 70, color: Colors.white.withAlpha(30))),
+                    Positioned(top: -10, right: -10, child: ExcludeSemantics(child: Icon(icon, size: 70, color: Colors.white.withAlpha(30)))),
                     Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                       Icon(icon, color: Colors.white, size: 28),
                       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -284,6 +287,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                       ]),
                     ]),
                   ]),
+                ),
                 ),
               );
             },
