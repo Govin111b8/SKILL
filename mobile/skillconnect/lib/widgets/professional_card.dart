@@ -32,7 +32,7 @@ class ProfessionalCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(child: Text(professional.name[0].toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white))),
+                child: Center(child: Text(professional.name.isNotEmpty ? professional.name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white))),
               ),
               const SizedBox(width: 14),
               Expanded(

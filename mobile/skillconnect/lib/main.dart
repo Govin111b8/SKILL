@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
@@ -139,6 +140,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _unread = 0;
+  StreamSubscription<Map<String, dynamic>>? _realtimeSub;
 
   // Screens differ by role — built lazily after first auth check
   List<Widget>? _screens;
@@ -177,7 +179,13 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _refreshUnread();
-    RealtimeService.instance.stream.listen((_) { if (mounted) _refreshUnread(); });
+    _realtimeSub = RealtimeService.instance.stream.listen((_) { if (mounted) _refreshUnread(); });
+  }
+
+  @override
+  void dispose() {
+    _realtimeSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _refreshUnread() async {

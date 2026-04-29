@@ -57,7 +57,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _bootstrap() async {
-    setState(() { _loading = true; _error = null; });
+    if (mounted) setState(() { _loading = true; _error = null; });
     try {
       if (_threadId == null) {
         if (widget.threadId != null) {
@@ -129,7 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
           CircleAvatar(
             radius: 18,
             backgroundColor: cs.primaryContainer,
-            child: Text(widget.otherName[0].toUpperCase(), style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
+            child: Text(widget.otherName.isNotEmpty ? widget.otherName[0].toUpperCase() : '?', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 10),
           Expanded(child: Text(widget.otherName, maxLines: 1, overflow: TextOverflow.ellipsis)),

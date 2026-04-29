@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
@@ -283,90 +282,6 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
               ),
             ])
           : null,
-    );
-  }
-
-  void _showContactSheet(BuildContext context) {
-    final p = _professional!;
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Contact ${p.name}', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          if (p.email != null)
-            ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.phone)),
-              title: const Text('Call Directly'),
-              subtitle: const Text('Make a phone call'),
-              onTap: () async {
-                Navigator.pop(context);
-                final url = Uri.parse('tel:${p.email}');
-                if (await canLaunchUrl(url)) await launchUrl(url);
-              },
-            ),
-          ListTile(
-            leading: CircleAvatar(backgroundColor: Colors.green.shade100, child: const Icon(Icons.chat, color: Colors.green)),
-            title: const Text('WhatsApp'),
-            subtitle: const Text('Chat on WhatsApp'),
-            onTap: () async {
-              Navigator.pop(context);
-              final msg = Uri.encodeComponent('Hi ${p.name}, I found you on SkillConnect and I\'m interested in your services.');
-              final url = Uri.parse('https://wa.me/?text=$msg');
-              if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
-            },
-          ),
-          ListTile(
-            leading: CircleAvatar(backgroundColor: Colors.blue.shade100, child: Icon(Icons.request_quote, color: Colors.blue.shade700)),
-            title: const Text('Request Quote'),
-            subtitle: const Text('Get a custom estimate'),
-            onTap: () {
-              Navigator.pop(context);
-              _showQuoteDialog(context);
-            },
-          ),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
-  }
-
-  void _showQuoteDialog(BuildContext context) {
-    final msgCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Request a Quote'),
-        content: TextField(
-          controller: msgCtrl,
-          maxLines: 4,
-          decoration: const InputDecoration(hintText: 'Describe what you need...', border: OutlineInputBorder()),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              if (msgCtrl.text.trim().length < 10) return;
-              try {
-                await ApiService.post('/contacts', {
-                  'professional_id': _professional!.id,
-                  'contact_type': 'quote_request',
-                  'message': msgCtrl.text.trim(),
-                }, auth: true);
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quote request sent!'), backgroundColor: Colors.green));
-                }
-              } catch (e) {
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-              }
-            },
-            child: const Text('Send'),
-          ),
-        ],
-      ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/models.dart';
 import '../services/booking_service.dart';
 import '../screens/bookings/booking_detail_screen.dart';
 

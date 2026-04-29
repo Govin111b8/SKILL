@@ -132,7 +132,7 @@ class _ContactTile extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: cs.primaryContainer,
-              child: Text(name[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
+              child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: TextStyle(fontWeight: FontWeight.bold, color: cs.primary)),
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -6,7 +6,6 @@ import '../../widgets/review_prompt.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
-import '../notifications/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,8 +65,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
         ]),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
+          const SizedBox(width: 40), // space for floating notification bell
         ],
       ),
       body: RefreshIndicator(

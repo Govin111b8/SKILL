@@ -13,6 +13,7 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> {
   List<Category> _categories = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -24,7 +25,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       final res = await ApiService.get('/categories');
       _categories = (res['data'] as List).map((e) => Category.fromJson(e)).toList();
-    } catch (_) {}
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -48,7 +52,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       appBar: AppBar(title: const Text('All Categories')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : GridView.builder(
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  Text('Failed to load categories', style: TextStyle(color: Colors.grey.shade600)),
+                  const SizedBox(height: 12),
+                  OutlinedButton(onPressed: () { setState(() => _loading = true); _load(); }, child: const Text('Retry')),
+                ]))
+              : _categories.isEmpty
+                  ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.category_outlined, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      Text('No categories available', style: TextStyle(fontSize: 16, color: Colors.grey.shade500)),
+                    ]))
+                  : GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.0,

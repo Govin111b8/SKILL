@@ -108,7 +108,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      titleCtrl.dispose();
+      descCtrl.dispose();
+      urlCtrl.dispose();
+    });
   }
 
   @override

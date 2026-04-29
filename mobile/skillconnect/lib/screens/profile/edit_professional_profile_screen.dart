@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 
 class EditProfessionalProfileScreen extends StatefulWidget {
@@ -127,6 +128,7 @@ class _EditProfessionalProfileScreenState extends State<EditProfessionalProfileS
                   controller: _experienceCtrl,
                   decoration: const InputDecoration(labelText: 'Years of Experience', prefixIcon: Icon(Icons.work_history)),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
                 ),
                 const SizedBox(height: 12),
                 TextField(

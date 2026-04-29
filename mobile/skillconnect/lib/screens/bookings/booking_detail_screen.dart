@@ -145,13 +145,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       if (a.to == 'cancelled' && note.isNotEmpty) payload['cancellation_reason'] = note;
     }
 
-    setState(() => _acting = true);
+    if (mounted) setState(() => _acting = true);
     try {
       await BookingService.transition(_booking!.id, a.to, note: note, payload: payload.isEmpty ? null : payload);
       await _load();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Updated to ${prettyStatus(a.to)}'), backgroundColor: Colors.green));
-      // Auto-prompt customer to review when they observe a completed status
       if (mounted && !context.read<AuthService>().isProfessional && _booking?.status == 'completed') {
         WidgetsBinding.instance.addPostFrameCallback((_) => _showReviewDialog());
       }

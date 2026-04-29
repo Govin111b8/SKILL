@@ -8,7 +8,6 @@ import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../bookings/booking_detail_screen.dart';
-import '../notifications/notifications_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -82,11 +81,8 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
           const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
         ]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-          ),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
+          const SizedBox(width: 40), // space for floating notification bell
         ],
       ),
       body: RefreshIndicator(
@@ -109,7 +105,8 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Good ${_greeting()}, ${(user?['name'] ?? 'Pro').toString().split(' ').first}!',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     const Text('Your business today', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 12),

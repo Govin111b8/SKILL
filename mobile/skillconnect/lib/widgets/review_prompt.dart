@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../services/booking_service.dart';
 
 /// Checks for completed bookings without a review and shows a review prompt
 /// as a non-blocking banner/card. Call [ReviewPrompt.check] from home/bookings screens.

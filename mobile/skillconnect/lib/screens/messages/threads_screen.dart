@@ -1,3 +1,4 @@
+import 'dart:async' as dart_async;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -17,16 +18,23 @@ class _ThreadsScreenState extends State<ThreadsScreen> {
   List<MessageThread> _items = [];
   bool _loading = true;
   String? _error;
+  dart_async.StreamSubscription<Map<String, dynamic>>? _wsSub;
 
   @override
   void initState() {
     super.initState();
     _load();
-    RealtimeService.instance.stream.listen((event) {
+    _wsSub = RealtimeService.instance.stream.listen((event) {
       if (!mounted) return;
       final t = event['type']?.toString() ?? '';
       if (t == 'message' || t == 'new_message') _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
