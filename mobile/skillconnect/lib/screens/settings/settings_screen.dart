@@ -140,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text('Danger Zone', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
           const SizedBox(height: 12),
           Card(
-            color: Colors.red.shade50,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D1518) : Colors.red.shade50,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

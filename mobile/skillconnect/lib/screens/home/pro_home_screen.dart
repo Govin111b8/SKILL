@@ -272,8 +272,8 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.grey.shade400, size: 22),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
+            child: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

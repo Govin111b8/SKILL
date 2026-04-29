@@ -132,6 +132,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           builder: (_) => EditProfessionalProfileScreen(profile: _dashData!['profile']),
                         ));
                         if (result == true) _load();
+                      } else {
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create your professional profile first via the home tab'), backgroundColor: Colors.orange));
                       }
                     }),
                     const SizedBox(width: 8),

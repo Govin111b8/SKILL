@@ -155,7 +155,7 @@ class _KycScreenState extends State<KycScreen> {
                       ]),
                     ),
                     Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
                       child: Column(children: [
                         for (var i = 0; i < byCategory[cat]!.length; i++) ...[
                           if (i > 0) const Divider(height: 1, indent: 60),

@@ -281,7 +281,7 @@ class _MainShellState extends State<MainShell> {
           top: MediaQuery.of(context).padding.top + 8,
           right: 12,
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             shape: const CircleBorder(),
             elevation: 2,
             child: InkWell(

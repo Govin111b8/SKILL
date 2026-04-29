@@ -124,7 +124,7 @@ class _ThreadTile extends StatelessWidget {
         padding: const EdgeInsets.only(top: 4),
         child: Row(children: [
           Expanded(child: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: unread > 0 ? Colors.black87 : Colors.grey.shade600,
+              style: TextStyle(color: unread > 0 ? cs.onSurface : cs.onSurfaceVariant,
                   fontWeight: unread > 0 ? FontWeight.w600 : FontWeight.normal))),
           if (unread > 0)
             Container(

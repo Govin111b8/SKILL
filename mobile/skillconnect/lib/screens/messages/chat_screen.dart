@@ -138,10 +138,16 @@ class _ChatScreenState extends State<ChatScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
+              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600)),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(onPressed: _bootstrap, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+                ])))
               : Column(children: [
                   Expanded(child: _messages.isEmpty
-                      ? Center(child: Text('Say hello 👋', style: TextStyle(color: Colors.grey.shade500)))
+                      ? Center(child: Text('Say hello 👋', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)))
                       : ListView.builder(
                           controller: _scroll,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -201,11 +207,11 @@ class _Bubble extends StatelessWidget {
             border: isMe ? null : Border.all(color: cs.outlineVariant),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(message.body, style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 14.5)),
+            Text(message.body, style: TextStyle(color: isMe ? Colors.white : cs.onSurface, fontSize: 14.5)),
             const SizedBox(height: 3),
             Row(mainAxisSize: MainAxisSize.min, children: [
               Text(DateFormat('h:mm a').format(message.createdAt.toLocal()),
-                  style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey.shade500)),
+                  style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : cs.onSurfaceVariant)),
               if (isMe) ...[
                 const SizedBox(width: 4),
                 Icon(message.readAt != null ? Icons.done_all : Icons.done, size: 12,

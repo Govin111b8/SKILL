@@ -88,7 +88,7 @@ exports.list = async (req, res, next) => {
     }
     const rows = await query(
       `SELECT b.*, u.name AS customer_name, u.avatar_url AS customer_avatar,
-              up.name AS pro_name, up.avatar_url AS pro_avatar
+              up.name AS professional_name, up.avatar_url AS professional_avatar
        FROM bookings b
        JOIN users u ON b.customer_id = u.id
        JOIN professionals p ON b.professional_id = p.id
@@ -104,7 +104,9 @@ exports.list = async (req, res, next) => {
 exports.get = async (req, res, next) => {
   try {
     const r = await query(
-      `SELECT b.*, u.name AS customer_name, up.name AS pro_name, p.user_id AS pro_user_id
+      `SELECT b.*, u.name AS customer_name, u.avatar_url AS customer_avatar,
+              up.name AS professional_name, up.avatar_url AS professional_avatar,
+              p.user_id AS pro_user_id
        FROM bookings b
        JOIN users u ON b.customer_id = u.id
        JOIN professionals p ON b.professional_id = p.id
@@ -117,8 +119,14 @@ exports.get = async (req, res, next) => {
     if (b.customer_id !== req.user.id && b.pro_user_id !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not your booking' });
     }
-    const log = await query('SELECT * FROM booking_status_log WHERE booking_id = $1 ORDER BY created_at', [req.params.id]);
-    res.json({ success: true, data: { ...b, log: log.rows } });
+    const log = await query(
+      `SELECT l.*, u.name AS changed_by_name
+       FROM booking_status_log l
+       LEFT JOIN users u ON l.actor_id = u.id
+       WHERE l.booking_id = $1 ORDER BY l.created_at`,
+      [req.params.id]
+    );
+    res.json({ success: true, data: { ...b, status_log: log.rows } });
   } catch (e) { next(e); }
 };
 
