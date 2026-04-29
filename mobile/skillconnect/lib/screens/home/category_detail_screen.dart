@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
+import '../../data/services_catalog.dart';
 
 /// Category detail: shows subcategories (if any) then professionals in this category.
-/// Handles both root categories (shows subcategory grid) and leaf subcategories (shows pros).
+/// Handles both root categories (shows subcategory grid only) and leaf subcategories (shows pros).
 class CategoryDetailScreen extends StatefulWidget {
   final int categoryId;
   final String categoryName;
@@ -36,12 +37,51 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   bool _hasMore = true;
   final _scrollController = ScrollController();
 
+  /// Whether this category has subcategories (determined after API fetch).
+  bool get _hasSubcategories => ((_category?['subcategories'] as List?) ?? []).isNotEmpty;
+
   static const _sorts = [
     ('rating', 'Top Rated'),
     ('jobs', 'Most Jobs'),
     ('price_asc', 'Price: Low'),
     ('price_desc', 'Price: High'),
     ('newest', 'Newest'),
+  ];
+
+  // Gradient colors for subcategory cards
+  static const _gradients = [
+    [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+    [Color(0xFFF59E0B), Color(0xFFEAB308)],
+    [Color(0xFF92400E), Color(0xFFB45309)],
+    [Color(0xFFEC4899), Color(0xFFA855F7)],
+    [Color(0xFF10B981), Color(0xFF14B8A6)],
+    [Color(0xFF22C55E), Color(0xFF16A34A)],
+    [Color(0xFF7C2D12), Color(0xFFDC2626)],
+    [Color(0xFF0284C7), Color(0xFF0EA5E9)],
+    [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+    [Color(0xFF059669), Color(0xFF047857)],
+  ];
+
+  // Icons for subcategory cards
+  static const _subIcons = [
+    Icons.plumbing,
+    Icons.electrical_services,
+    Icons.handyman,
+    Icons.format_paint,
+    Icons.cleaning_services,
+    Icons.grass,
+    Icons.pest_control,
+    Icons.ac_unit,
+    Icons.roofing,
+    Icons.kitchen,
+    Icons.restaurant,
+    Icons.camera_alt,
+    Icons.videocam,
+    Icons.music_note,
+    Icons.event,
+    Icons.celebration,
+    Icons.mic,
+    Icons.location_city,
   ];
 
   @override
@@ -67,7 +107,11 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     try {
       final res = await ApiService.get('/categories/${widget.categoryId}');
       if (mounted) setState(() { _category = res['data']; });
-      await _loadPros(reset: true);
+      // Only load professionals if this is a leaf category (no subcategories)
+      final subs = (res['data']?['subcategories'] as List?) ?? [];
+      if (subs.isEmpty) {
+        await _loadPros(reset: true);
+      }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); });
     } finally {
@@ -116,6 +160,26 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     _loadPros(reset: true);
   }
 
+  IconData _iconForSub(Map<String, dynamic> sub, int index) {
+    // Try to match from static catalog by name or id
+    final subId = (sub['id'] as num?)?.toInt();
+    if (subId != null) {
+      final service = findServiceById(subId);
+      if (service != null) return service.icon;
+    }
+    return _subIcons[index % _subIcons.length];
+  }
+
+  List<Color> _gradientForSub(Map<String, dynamic> sub, int index) {
+    // Try to match from static catalog by id
+    final subId = (sub['id'] as num?)?.toInt();
+    if (subId != null) {
+      final service = findServiceById(subId);
+      if (service != null) return service.gradient;
+    }
+    return _gradients[index % _gradients.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -125,56 +189,150 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       appBar: AppBar(
         title: Text(widget.categoryName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: 'Filter & Sort',
-            onPressed: _showFilterSheet,
-          ),
+          // Only show filter button when showing professionals (leaf category)
+          if (!_hasSubcategories)
+            IconButton(
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: 'Filter & Sort',
+              onPressed: _showFilterSheet,
+            ),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? _errorView()
-              : CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    // Category header
-                    SliverToBoxAdapter(child: _buildHeader(cs, subs)),
+              : _hasSubcategories
+                  ? _buildSubServicesView(context, subs, cs)
+                  : _buildProfessionalsView(cs, subs),
+    );
+  }
 
-                    // Subcategory chips (if root category)
-                    if (subs.isNotEmpty)
-                      SliverToBoxAdapter(child: _buildSubcategoryGrid(context, subs, cs)),
+  /// View for root categories: shows prominent sub-service cards
+  Widget _buildSubServicesView(BuildContext context, List subs, ColorScheme cs) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        // Category header
+        _buildHeader(cs, subs),
 
-                    // Pro count + sort bar
-                    SliverToBoxAdapter(child: _buildProBar(cs)),
+        // Section title
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(children: [
+            Container(width: 3, height: 16, decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 8),
+            Text('Choose a Service', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            const Spacer(),
+            Text('${subs.length} services', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Text('Tap a service to view skilled professionals', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+        ),
 
-                    // Professional list
-                    if (_professionals.isEmpty && !_loadingPros)
-                      SliverToBoxAdapter(child: _emptyPros())
-                    else
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) {
-                            if (i == _professionals.length) {
-                              return _loadingPros
-                                  ? const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()))
-                                  : const SizedBox.shrink();
-                            }
-                            final pro = _professionals[i];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              child: ProfessionalCard(
-                                professional: pro,
-                              ),
-                            );
-                          },
-                          childCount: _professionals.length + (_hasMore ? 1 : 0),
-                        ),
-                      ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  ],
+        // Sub-services grid
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.4,
+            ),
+            itemCount: subs.length,
+            itemBuilder: (_, i) {
+              final sub = subs[i] as Map<String, dynamic>;
+              final subName = sub['name']?.toString() ?? '';
+              final subDesc = sub['description']?.toString() ?? '';
+              final proCount = (sub['pro_count'] as num?)?.toInt() ?? 0;
+              final gradient = _gradientForSub(sub, i);
+              final icon = _iconForSub(sub, i);
+
+              return Semantics(
+                label: 'Navigate to $subName service',
+                button: true,
+                child: InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => CategoryDetailScreen(
+                    categoryId: (sub['id'] as num).toInt(),
+                    categoryName: subName,
+                    categoryDescription: subDesc,
+                  ),
+                )),
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [BoxShadow(color: gradient.first.withAlpha(60), blurRadius: 12, offset: const Offset(0, 6))],
+                  ),
+                  child: Stack(children: [
+                    Positioned(top: -10, right: -10, child: ExcludeSemantics(child: Icon(icon, size: 70, color: Colors.white.withAlpha(30)))),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Icon(icon, color: Colors.white, size: 28),
+                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(subName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        if (proCount > 0)
+                          Text('$proCount professionals', style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11))
+                        else
+                          Text('View professionals', style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11)),
+                      ]),
+                    ]),
+                  ]),
                 ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// View for leaf categories: shows professionals list
+  Widget _buildProfessionalsView(ColorScheme cs, List subs) {
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        // Category header
+        SliverToBoxAdapter(child: _buildHeader(cs, subs)),
+
+        // Pro count + sort bar
+        SliverToBoxAdapter(child: _buildProBar(cs)),
+
+        // Professional list
+        if (_professionals.isEmpty && !_loadingPros)
+          SliverToBoxAdapter(child: _emptyPros())
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, i) {
+                if (i == _professionals.length) {
+                  return _loadingPros
+                      ? const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()))
+                      : const SizedBox.shrink();
+                }
+                final pro = _professionals[i];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: ProfessionalCard(
+                    professional: pro,
+                  ),
+                );
+              },
+              childCount: _professionals.length + (_hasMore ? 1 : 0),
+            ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+      ],
     );
   }
 
@@ -200,10 +358,10 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         ],
         const SizedBox(height: 12),
         Row(children: [
-          _headerChip('${_total} professionals'),
           if (subs.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            _headerChip('${subs.length} specializations'),
+            _headerChip('${subs.length} sub-services'),
+          ] else ...[
+            _headerChip('$_total professionals'),
           ],
         ]),
       ]),
@@ -219,38 +377,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         border: Border.all(color: Colors.white.withAlpha(70)),
       ),
       child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  Widget _buildSubcategoryGrid(BuildContext context, List subs, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Specializations', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, color: Colors.grey.shade600)),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8, runSpacing: 8,
-          children: subs.map((s) {
-            final sub = s as Map<String, dynamic>;
-            final count = (sub['pro_count'] as num?)?.toInt() ?? 0;
-            return ActionChip(
-              avatar: Icon(Icons.arrow_forward_ios, size: 12, color: cs.primary),
-              label: Text('${sub['name']}${count > 0 ? ' ($count)' : ''}'),
-              backgroundColor: cs.primaryContainer.withAlpha(40),
-              side: BorderSide(color: cs.primary.withAlpha(30)),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => CategoryDetailScreen(
-                  categoryId: (sub['id'] as num).toInt(),
-                  categoryName: sub['name']?.toString() ?? '',
-                  categoryDescription: sub['description']?.toString(),
-                ),
-              )),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-        const Divider(),
-      ]),
     );
   }
 

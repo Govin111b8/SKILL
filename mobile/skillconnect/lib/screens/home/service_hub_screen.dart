@@ -13,6 +13,7 @@ class ServiceHubScreen extends StatelessWidget {
       MaterialPageRoute(builder: (_) => CategoryDetailScreen(
         categoryId: categoryId,
         categoryName: name,
+        isRoot: true,
       )),
     );
   }
