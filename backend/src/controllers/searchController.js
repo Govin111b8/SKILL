@@ -16,6 +16,14 @@ const search = async (req, res, next) => {
       limit = 20,
     } = req.query;
 
+    // Save search to history if user is authenticated and has a query
+    if (req.user && q && q.trim()) {
+      query(
+        `INSERT INTO search_history (user_id, query_text, filters_json) VALUES ($1, $2, $3)`,
+        [req.user.id, q.trim().substring(0, 255), JSON.stringify({ category_id, availability, sort_by })]
+      ).catch(() => {});
+    }
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const params = [];
     const conditions = [];
@@ -110,6 +118,9 @@ const search = async (req, res, next) => {
       case 'rating':
         orderClause += 'average_rating DESC';
         break;
+      case 'response_time':
+        orderClause += 'p.response_time_hours ASC NULLS LAST';
+        break;
       case 'reputation':
       default:
         orderClause += 'average_rating DESC, review_count DESC';
@@ -145,4 +156,26 @@ const search = async (req, res, next) => {
   }
 };
 
-module.exports = { search };
+// Get recent search history for autocomplete
+const searchHistory = async (req, res, next) => {
+  try {
+    const r = await query(
+      `SELECT DISTINCT ON (query_text) query_text, created_at
+       FROM search_history WHERE user_id = $1
+       ORDER BY query_text, created_at DESC
+       LIMIT 10`,
+      [req.user.id]
+    );
+    res.json({ success: true, data: r.rows.map(row => row.query_text) });
+  } catch (e) { next(e); }
+};
+
+// Clear search history
+const clearHistory = async (req, res, next) => {
+  try {
+    await query('DELETE FROM search_history WHERE user_id = $1', [req.user.id]);
+    res.json({ success: true });
+  } catch (e) { next(e); }
+};
+
+module.exports = { search, searchHistory, clearHistory };

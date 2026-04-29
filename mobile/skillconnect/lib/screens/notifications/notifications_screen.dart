@@ -56,6 +56,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailScreen(bookingId: n.relatedId!)));
     } else if (t == 'message' && n.relatedId != null) {
       await Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(threadId: n.relatedId!, otherName: n.title)));
+    } else if (t.contains('review') && n.relatedId != null) {
+      Navigator.pushNamed(context, '/professional', arguments: n.relatedId!);
+    } else if (t.contains('kyc')) {
+      // Navigate to KYC screen
+      await Navigator.pushNamed(context, '/home');
     }
     _load();
   }

@@ -40,4 +40,16 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { authenticate, authorize };
+// Like authenticate but doesn't reject — just sets req.user if token present
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (_) {}
+  }
+  next();
+};
+
+module.exports = { authenticate, authorize, optionalAuth };

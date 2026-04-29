@@ -9,6 +9,7 @@ import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../../widgets/skeleton_loader.dart';
 import 'booking_detail_screen.dart';
+import 'booking_calendar_screen.dart';
 
 class BookingsListScreen extends StatefulWidget {
   const BookingsListScreen({super.key});
@@ -69,6 +70,13 @@ class _BookingsListScreenState extends State<BookingsListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bookings'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Calendar view',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingCalendarScreen())),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: SizedBox(

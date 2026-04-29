@@ -381,7 +381,7 @@ class _SearchScreenState extends State<SearchScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(children: [
-              for (final s in [('reputation', 'Top Rated'), ('rating', 'Highest Rating'), ('experience', 'Most Experienced'), if (_nearMe) ('distance', 'Nearest')])
+              for (final s in [('reputation', 'Top Rated'), ('rating', 'Highest Rating'), ('experience', 'Most Experienced'), ('response_time', 'Fastest Response'), if (_nearMe) ('distance', 'Nearest')])
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
@@ -491,9 +491,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class _SearchSuggestions extends StatelessWidget {
+class _SearchSuggestions extends StatefulWidget {
   final void Function(String query) onSelect;
   const _SearchSuggestions({required this.onSelect});
+
+  @override
+  State<_SearchSuggestions> createState() => _SearchSuggestionsState();
+}
+
+class _SearchSuggestionsState extends State<_SearchSuggestions> {
+  List<String> _history = [];
 
   static const _suggestions = [
     ('🔧', 'Plumber'),
@@ -507,19 +514,73 @@ class _SearchSuggestions extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final res = await ApiService.get('/search/history', auth: true);
+      if (mounted) setState(() => _history = List<String>.from(res['data'] ?? []));
+    } catch (_) {}
+  }
+
+  Future<void> _clearHistory() async {
+    try {
+      await ApiService.delete('/search/history', auth: true);
+      if (mounted) setState(() => _history = []);
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Recent searches
+        if (_history.isNotEmpty) ...[
+          Row(children: [
+            Icon(Icons.history, size: 16, color: cs.primary),
+            const SizedBox(width: 6),
+            Text('Recent searches', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+            const Spacer(),
+            GestureDetector(
+              onTap: _clearHistory,
+              child: Text('Clear', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8, runSpacing: 8,
+            children: _history.map((q) => GestureDetector(
+              onTap: () => widget.onSelect(q),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: cs.primary.withAlpha(40)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.history, size: 14, color: cs.primary.withAlpha(150)),
+                  const SizedBox(width: 6),
+                  Text(q, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.primary)),
+                ]),
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 20),
+        ],
         Text('Popular searches', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8, runSpacing: 8,
           children: _suggestions.map((s) {
             return GestureDetector(
-              onTap: () => onSelect(s.$2),
+              onTap: () => widget.onSelect(s.$2),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(

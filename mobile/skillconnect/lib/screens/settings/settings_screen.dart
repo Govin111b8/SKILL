@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/theme_service.dart';
+import '../../services/upload_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,6 +39,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _currentPassCtrl.dispose();
     _newPassCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+    if (picked == null) return;
+    setState(() => _saving = true);
+    try {
+      final url = await UploadService.uploadAvatar(File(picked.path));
+      if (mounted) {
+        context.read<AuthService>().updateLocalUser({'avatar_url': url});
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Avatar updated!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red));
+    }
+    if (mounted) setState(() => _saving = false);
   }
 
   Future<void> _saveProfile() async {
@@ -98,6 +118,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(children: [
+                // Avatar upload
+                GestureDetector(
+                  onTap: _pickAvatar,
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.primary),
+                      Text('Photo', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary)),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person))),
                 const SizedBox(height: 12),
                 TextField(controller: _phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone)), keyboardType: TextInputType.phone),

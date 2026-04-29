@@ -50,6 +50,19 @@ router.post(
 
 router.get('/:id', getProfile);
 
+// Get online presence for a professional (quick WS check)
+router.get('/:id/presence', (req, res) => {
+  const hub = require('../realtime/hub');
+  const { query: dbQuery } = require('../config/database');
+  dbQuery('SELECT user_id FROM professionals WHERE id = $1', [req.params.id])
+    .then(r => {
+      if (!r.rows.length) return res.json({ success: true, data: { status: 'offline', lastSeen: null } });
+      const presence = hub.getPresence(r.rows[0].user_id);
+      res.json({ success: true, data: presence });
+    })
+    .catch(() => res.json({ success: true, data: { status: 'offline', lastSeen: null } }));
+});
+
 router.put(
   '/:id',
   authenticate,

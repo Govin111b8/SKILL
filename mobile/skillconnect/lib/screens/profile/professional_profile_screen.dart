@@ -26,6 +26,8 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
   bool _favorited = false;
   bool _favBusy = false;
   String? _error;
+  String _presenceStatus = 'offline'; // real-time presence
+  Map<int, int> _ratingDist = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
 
   @override
   void initState() {
@@ -48,6 +50,17 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       try {
         final favs = await NotificationsService.listFavorites();
         _favorited = favs.any((f) => (f as Map)['id']?.toString() == widget.professionalId);
+      } catch (_) {}
+      // Best-effort: check real-time presence
+      try {
+        final pres = await ApiService.get('/professionals/${widget.professionalId}/presence');
+        _presenceStatus = (pres['data']?['status'] ?? 'offline').toString();
+      } catch (_) {}
+      // Best-effort: rating distribution
+      try {
+        final dist = await ApiService.get('/reviews/${widget.professionalId}/distribution');
+        final d = dist['data'] as Map<String, dynamic>? ?? {};
+        _ratingDist = {for (final e in d.entries) int.parse(e.key): (e.value as num).toInt()};
       } catch (_) {}
     } catch (e) {
       _error = e.toString();
@@ -146,10 +159,10 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
                             Text('${_professional!.averageRating.toStringAsFixed(1)} (${_professional!.reviewCount})', style: const TextStyle(fontWeight: FontWeight.w500)),
                           ]),
                           const SizedBox(height: 12),
-                          if (_professional!.availabilityStatus != null)
+                          if (_professional!.availabilityStatus != null || _presenceStatus == 'online')
                             Chip(
-                              avatar: Icon(Icons.circle, size: 10, color: _professional!.availabilityStatus == 'available' ? Colors.green : Colors.orange),
-                              label: Text(_professional!.availabilityStatus!.toUpperCase(), style: const TextStyle(fontSize: 11)),
+                              avatar: Icon(Icons.circle, size: 10, color: _presenceStatus == 'online' ? Colors.green : (_professional!.availabilityStatus == 'available' ? Colors.green : Colors.orange)),
+                              label: Text(_presenceStatus == 'online' ? 'ONLINE NOW' : _professional!.availabilityStatus!.toUpperCase(), style: const TextStyle(fontSize: 11)),
                             ),
                         ]),
                       ),
@@ -244,6 +257,38 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
                     // Reviews
                     Text('Reviews (${_reviews.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
+                    // Rating breakdown
+                    if (_reviews.isNotEmpty) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(children: [
+                            for (int star = 5; star >= 1; star--)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(children: [
+                                  Text('$star', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.star, size: 14, color: Colors.amber),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: _reviews.isEmpty ? 0 : (_ratingDist[star] ?? 0) / _reviews.length,
+                                      minHeight: 8,
+                                      backgroundColor: cs.surfaceContainerHighest,
+                                      color: star >= 4 ? Colors.green : (star == 3 ? Colors.amber : Colors.red.shade400),
+                                    ),
+                                  )),
+                                  const SizedBox(width: 8),
+                                  SizedBox(width: 24, child: Text('${_ratingDist[star] ?? 0}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), textAlign: TextAlign.end)),
+                                ]),
+                              ),
+                          ]),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     if (_reviews.isEmpty)
                       const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('No reviews yet'))))
                     else
