@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -147,6 +148,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     if (mounted) setState(() => _acting = true);
     try {
+      HapticFeedback.mediumImpact();
       await BookingService.transition(_booking!.id, a.to, note: note, payload: payload.isEmpty ? null : payload);
       await _load();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(

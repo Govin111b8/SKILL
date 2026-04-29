@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/services_catalog.dart';
-import '../search/search_screen.dart';
 import 'category_detail_screen.dart';
 
 /// Service Hub — every service is a "mini-app" inside the unified SkillConnect platform.

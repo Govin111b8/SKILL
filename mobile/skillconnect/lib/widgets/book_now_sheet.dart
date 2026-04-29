@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../services/booking_service.dart';
 import '../screens/bookings/booking_detail_screen.dart';
@@ -102,6 +103,7 @@ class _BookNowSheetState extends State<_BookNowSheet> {
         preferredDate: dt,
       );
       if (mounted) {
+        HapticFeedback.heavyImpact();
         Navigator.pop(context); // close sheet
         Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailScreen(booking: booking)));
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

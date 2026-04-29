@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
+import '../../widgets/skeleton_loader.dart';
 import '../../data/services_catalog.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -35,9 +38,12 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _availableNow = false;
   bool _nearMe = false;
   double _radiusKm = 25;
-  // Hardcoded demo coords (Hyderabad city center) — production: use geolocator package
-  static const double _defaultLat = 17.385;
-  static const double _defaultLng = 78.4867;
+  double? _userLat;
+  double? _userLng;
+  bool _geoLoading = false;
+  // Fallback coords (Hyderabad) used only if permission denied
+  static const double _fallbackLat = 17.385;
+  static const double _fallbackLng = 78.4867;
 
   @override
   void initState() {
@@ -61,6 +67,48 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  /// Request permission and fetch real device coordinates.
+  /// Falls back to hardcoded Hyderabad coords if permission denied.
+  Future<void> _fetchLocation() async {
+    setState(() => _geoLoading = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showGeoSnackBar('Location services are disabled. Using default city.');
+        _userLat = _fallbackLat;
+        _userLng = _fallbackLng;
+        if (mounted) setState(() => _geoLoading = false);
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        _showGeoSnackBar('Location permission denied. Using default city.');
+        _userLat = _fallbackLat;
+        _userLng = _fallbackLng;
+        if (mounted) setState(() => _geoLoading = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      _userLat = pos.latitude;
+      _userLng = pos.longitude;
+    } catch (_) {
+      _userLat = _fallbackLat;
+      _userLng = _fallbackLng;
+    }
+    if (mounted) setState(() => _geoLoading = false);
+  }
+
+  void _showGeoSnackBar(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
+  }
+
   void _onScroll() {
     if (_scrollController.position.pixels > _scrollController.position.maxScrollExtent - 200 && !_loadingMore && _page < _totalPages) {
       _loadNextPage();
@@ -79,8 +127,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
       if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
       if (_availableNow) params['availability'] = 'available';
-      if (_nearMe) {
-        params['latitude'] = _defaultLat.toString(); params['longitude'] = _defaultLng.toString(); params['radius_km'] = _radiusKm.toStringAsFixed(0);
+      if (_nearMe && _userLat != null && _userLng != null) {
+        params['latitude'] = _userLat.toString(); params['longitude'] = _userLng.toString(); params['radius_km'] = _radiusKm.toStringAsFixed(0);
       }
       final res = await ApiService.get('/search', queryParams: params);
       final next = (res['data'] as List).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
@@ -120,9 +168,9 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
       if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
       if (_availableNow) params['availability'] = 'available';
-      if (_nearMe) {
-        params['latitude'] = _defaultLat.toString();
-        params['longitude'] = _defaultLng.toString();
+      if (_nearMe && _userLat != null && _userLng != null) {
+        params['latitude'] = _userLat.toString();
+        params['longitude'] = _userLng.toString();
         params['radius_km'] = _radiusKm.toStringAsFixed(0);
       }
       final res = await ApiService.get('/search', queryParams: params);
@@ -286,8 +334,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 SwitchListTile(
                   dense: true,
                   value: _nearMe,
-                  onChanged: (v) => setState(() => _nearMe = v),
-                  title: const Text('Near Me', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onChanged: _geoLoading ? null : (v) async {
+                    if (v && _userLat == null) {
+                      await _fetchLocation();
+                    }
+                    if (mounted) setState(() => _nearMe = v);
+                  },
+                  title: Row(children: [
+                    const Text('Near Me', style: TextStyle(fontWeight: FontWeight.w600)),
+                    if (_geoLoading) ...[
+                      const SizedBox(width: 8),
+                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                    ],
+                  ]),
                   subtitle: const Text('Professionals within radius'),
                   secondary: Icon(Icons.location_on, color: _nearMe ? cs.primary : Colors.grey.shade400),
                   contentPadding: EdgeInsets.zero,
@@ -385,25 +444,32 @@ class _SearchScreenState extends State<SearchScreen> {
           // Results
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, __) => const SkeletonProfessionalCard(),
+                  )
                 : !_searched
-                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.search, size: 64, color: Colors.grey.shade300),
-                        const SizedBox(height: 12),
-                        Text('Search for professionals', style: TextStyle(color: Colors.grey.shade500)),
-                        const SizedBox(height: 4),
-                        Text('Use filters to narrow results', style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
-                      ]))
+                    ? _SearchSuggestions(
+                        onSelect: (q) {
+                          _searchCtl.text = q;
+                          HapticFeedback.selectionClick();
+                          _debounce?.cancel();
+                          _search();
+                        },
+                      )
                     : _results.isEmpty
-                        ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(Icons.person_off, size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            const Text('No professionals found'),
-                            if (hasFilters) ...[
-                              const SizedBox(height: 8),
-                              TextButton(onPressed: _clearFilters, child: const Text('Clear filters')),
-                            ],
-                          ]))
+                        ? EmptyStateWidget(
+                            icon: Icons.person_search_rounded,
+                            iconColor: const Color(0xFF6366F1),
+                            title: 'No professionals found',
+                            subtitle: hasFilters
+                                ? 'Try adjusting your filters or searching a different keyword.'
+                                : 'We couldn\'t find anyone matching your search. Try a different keyword.',
+                            actionLabel: hasFilters ? 'Clear filters' : null,
+                            onAction: hasFilters ? _clearFilters : null,
+                          )
                         : ListView.builder(
                             controller: _scrollController,
                             padding: const EdgeInsets.all(16),
@@ -421,6 +487,74 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SearchSuggestions extends StatelessWidget {
+  final void Function(String query) onSelect;
+  const _SearchSuggestions({required this.onSelect});
+
+  static const _suggestions = [
+    ('🔧', 'Plumber'),
+    ('⚡', 'Electrician'),
+    ('🎨', 'Painter'),
+    ('🧹', 'House Cleaning'),
+    ('❄️', 'AC Service'),
+    ('🪚', 'Carpenter'),
+    ('🐜', 'Pest Control'),
+    ('🚚', 'Home Shifting'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Popular searches', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8, runSpacing: 8,
+          children: _suggestions.map((s) {
+            return GestureDetector(
+              onTap: () => onSelect(s.$2),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(s.$1, style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 6),
+                  Text(s.$2, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                ]),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.primary.withAlpha(10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.primary.withAlpha(30)),
+          ),
+          child: Row(children: [
+            Icon(Icons.lightbulb_outline_rounded, color: cs.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Tip: Use filters for better results', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.primary)),
+              const SizedBox(height: 2),
+              Text('Filter by availability, price range, and distance to find the perfect match.', style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4)),
+            ])),
+          ]),
+        ),
+      ],
     );
   }
 }

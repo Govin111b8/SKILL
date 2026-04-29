@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../models/models.dart';
 import '../screens/profile/professional_profile_screen.dart';
@@ -11,98 +12,137 @@ class ProfessionalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final p = professional;
+    final isAvailable = p.availabilityStatus == 'available';
+
+    // Avatar gradient colors based on name initial
+    final avatarColors = [
+      [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+      [const Color(0xFF06B6D4), const Color(0xFF3B82F6)],
+      [const Color(0xFF10B981), const Color(0xFF059669)],
+      [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
+      [const Color(0xFFEC4899), const Color(0xFF8B5CF6)],
+    ];
+    final c = avatarColors[(p.name.isEmpty ? 0 : p.name.codeUnitAt(0)) % avatarColors.length];
+
     return Card(
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (_) => ProfessionalProfileScreen(professionalId: professional.id),
-        )),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ProfessionalProfileScreen(professionalId: p.id),
+          ));
+        },
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [cs.primary.withAlpha(180), cs.primary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // — Row 1: Avatar + Name + Badges + Availability
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Avatar
+              Stack(children: [
+                Container(
+                  width: 52, height: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: c, begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  child: Center(child: Text(
+                    p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
+                  )),
                 ),
-                child: Center(child: Text(professional.name.isNotEmpty ? professional.name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white))),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(child: Text(professional.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                      if (professional.kycLevel > 0 || professional.trustScore > 0) ...[
-                        TrustBadge(kycLevel: professional.kycLevel, trustScore: professional.trustScore, compact: true),
-                        const SizedBox(width: 4),
-                      ],
-                      if (professional.availabilityStatus == 'available')
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: const Color(0xFF10B981).withAlpha(20), borderRadius: BorderRadius.circular(20)),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
-                            const SizedBox(width: 4),
-                            const Text('Online', style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
-                          ]),
-                        ),
-                    ]),
-                    if (professional.headline != null) ...[
-                      const SizedBox(height: 3),
-                      Text(professional.headline!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
-                    ],
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      RatingBarIndicator(
-                        rating: professional.averageRating,
-                        itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: Color(0xFFFBBF24)),
-                        itemSize: 16,
+                if (isAvailable)
+                  Positioned(bottom: 0, right: 0,
+                    child: Container(
+                      width: 14, height: 14,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.white, width: 2),
                       ),
-                      const SizedBox(width: 6),
-                      Text(professional.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      Text(' (${professional.reviewCount})', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
-                      const Spacer(),
-                      if (professional.pricingEstimate != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: cs.primary.withAlpha(15), borderRadius: BorderRadius.circular(8)),
-                          child: Text('From ₹${professional.pricingEstimate}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
-                        ),
-                    ]),
-                    if (professional.location != null) ...[
-                      const SizedBox(height: 6),
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade400),
-                        const SizedBox(width: 3),
-                        Expanded(child: Text(professional.location!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                        if (professional.distance != null) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withAlpha(20), borderRadius: BorderRadius.circular(8)),
-                            child: Text('${professional.distance!.toStringAsFixed(1)} km', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF06B6D4))),
-                          ),
-                        ],
-                      ]),
-                    ],
-                  ],
-                ),
+                    ),
+                  ),
+              ]),
+              const SizedBox(width: 12),
+              // Name + headline
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(p.name, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                  if (p.kycLevel > 0)
+                    TrustBadge(kycLevel: p.kycLevel, trustScore: p.trustScore, compact: true),
+                ]),
+                if (p.headline != null) ...[
+                  const SizedBox(height: 2),
+                  Text(p.headline!, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12)),
+                ],
+              ])),
+            ]),
+
+            const SizedBox(height: 10),
+
+            // — Row 2: Rating + Reviews + Price
+            Row(children: [
+              RatingBarIndicator(
+                rating: p.averageRating,
+                itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: Color(0xFFFBBF24)),
+                itemSize: 15,
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey.shade300),
+              Text(p.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFFFBBF24))),
+              Text(' · ${p.reviewCount} reviews', style: Theme.of(context).textTheme.bodySmall),
+              const Spacer(),
+              if (p.pricingEstimate != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: cs.primary.withAlpha(15), borderRadius: BorderRadius.circular(10)),
+                  child: Text('₹${p.pricingEstimate}/hr', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cs.primary)),
+                ),
+            ]),
+
+            // — Row 3: Location + Distance tags
+            if (p.location != null || p.distance != null || isAvailable) ...[
+              const SizedBox(height: 10),
+              Wrap(spacing: 6, runSpacing: 4, children: [
+                if (p.location != null)
+                  _Tag(icon: Icons.location_on_outlined, label: p.location!, iconColor: Colors.grey.shade500, isDark: isDark),
+                if (p.distance != null)
+                  _Tag(icon: Icons.near_me_rounded, label: '${p.distance!.toStringAsFixed(1)} km', iconColor: const Color(0xFF06B6D4), isDark: isDark, accent: true),
+                if (isAvailable)
+                  _Tag(icon: Icons.circle, label: 'Available now', iconColor: const Color(0xFF10B981), isDark: isDark, accent: true),
+              ]),
             ],
-          ),
+          ]),
         ),
       ),
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final bool isDark;
+  final bool accent;
+  const _Tag({required this.icon, required this.label, required this.iconColor, required this.isDark, this.accent = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: accent ? iconColor.withAlpha(18) : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 11, color: iconColor),
+        const SizedBox(width: 3),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: accent ? iconColor : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+            maxLines: 1, overflow: TextOverflow.ellipsis),
+      ]),
     );
   }
 }

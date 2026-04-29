@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'register_screen.dart';
 
 /// Welcome screen — the first thing users see. Lets them pick their role
 /// (Customer or Professional) before proceeding to login/register.

@@ -6,7 +6,6 @@ import '../../services/booking_service.dart';
 import '../../widgets/book_now_sheet.dart';
 import '../report/report_screen.dart';
 import '../portfolio/portfolio_screen.dart';
-import '../bookings/booking_detail_screen.dart';
 import '../messages/chat_screen.dart';
 import 'package:intl/intl.dart';
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
-import '../profile/professional_profile_screen.dart';
 
 /// Category detail: shows subcategories (if any) then professionals in this category.
 /// Handles both root categories (shows subcategory grid) and leaf subcategories (shows pros).
@@ -231,7 +230,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         const SizedBox(height: 10),
         Wrap(
           spacing: 8, runSpacing: 8,
-          children: (subs as List<dynamic>).map((s) {
+          children: subs.map((s) {
             final sub = s as Map<String, dynamic>;
             final count = (sub['pro_count'] as num?)?.toInt() ?? 0;
             return ActionChip(

@@ -8,6 +8,7 @@ import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../bookings/booking_detail_screen.dart';
+import '../profile/edit_professional_profile_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -363,7 +364,18 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
           Text('$pct% done — a complete profile gets 3× more bookings', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
         ])),
         const SizedBox(width: 8),
-        TextButton(onPressed: () {}, child: const Text('Go')),
+        TextButton(
+          onPressed: () async {
+            final profile = _dash?['profile'];
+            if (profile == null) return;
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => EditProfessionalProfileScreen(profile: profile)),
+            );
+            if (result == true && mounted) _load();
+          },
+          child: const Text('Go'),
+        ),
       ]),
     );
   }
