@@ -16,9 +16,11 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _searchCtl = TextEditingController();
+  final _scrollController = ScrollController();
   List<Professional> _results = [];
   List<Category> _categories = [];
   bool _loading = false;
+  bool _loadingMore = false;
   bool _searched = false;
   String _sortBy = 'reputation';
   int _page = 1;
@@ -46,6 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _search();
     }
     _searchCtl.addListener(_onSearchChanged);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -54,7 +57,40 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchCtl.removeListener(_onSearchChanged);
     _searchCtl.dispose();
     _maxPriceCtl.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels > _scrollController.position.maxScrollExtent - 200 && !_loadingMore && _page < _totalPages) {
+      _loadNextPage();
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_loadingMore || _page >= _totalPages) return;
+    setState(() => _loadingMore = true);
+    final nextPage = _page + 1;
+    try {
+      final params = <String, String>{
+        'sort_by': _sortBy, 'page': nextPage.toString(), 'limit': '20',
+      };
+      if (_searchCtl.text.trim().isNotEmpty) params['q'] = _searchCtl.text.trim();
+      if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
+      if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
+      if (_availableNow) params['availability'] = 'available';
+      if (_nearMe) {
+        params['latitude'] = _defaultLat.toString(); params['longitude'] = _defaultLng.toString(); params['radius_km'] = _radiusKm.toStringAsFixed(0);
+      }
+      final res = await ApiService.get('/search', queryParams: params);
+      final next = (res['data'] as List).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
+      final pag = res['pagination'] as Map?;
+      _totalPages = (pag?['pages'] as num?)?.toInt() ?? 1;
+      _page = nextPage;
+      if (mounted) setState(() { _results.addAll(next); _loadingMore = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
+    }
   }
 
   void _onSearchChanged() {
@@ -369,11 +405,12 @@ class _SearchScreenState extends State<SearchScreen> {
                             ],
                           ]))
                         : ListView.builder(
+                            controller: _scrollController,
                             padding: const EdgeInsets.all(16),
-                            itemCount: _results.length + (_totalPages > _page ? 1 : 0),
+                            itemCount: _results.length + (_loadingMore ? 1 : 0),
                             itemBuilder: (_, i) {
                               if (i == _results.length) {
-                                return Center(child: TextButton(onPressed: () => _search(page: _page + 1), child: const Text('Load More')));
+                                return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
                               }
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),

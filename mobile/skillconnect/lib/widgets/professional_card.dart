@@ -40,7 +40,7 @@ class ProfessionalCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Expanded(child: Text(professional.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
+                      Expanded(child: Text(professional.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis)),
                       if (professional.kycLevel > 0 || professional.trustScore > 0) ...[
                         TrustBadge(kycLevel: professional.kycLevel, trustScore: professional.trustScore, compact: true),
                         const SizedBox(width: 4),

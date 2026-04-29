@@ -15,7 +15,11 @@ router.post(
     body('email').isEmail().withMessage('Valid email is required'),
     body('password')
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters'),
+      .withMessage('Password must be at least 6 characters')
+      .matches(/[A-Za-z]/)
+      .withMessage('Password must contain at least one letter')
+      .matches(/\d/)
+      .withMessage('Password must contain at least one number'),
     body('phone').optional({ checkFalsy: true }).trim(),
     body('role')
       .isIn(['customer', 'professional'])

@@ -22,15 +22,17 @@ const fileComplaint = async (req, res, next) => {
       [id, userId, reported_user_id, complaint_type, description]
     );
 
-    // Check complaint count for reported user - if >= 3, mark latest as banned
+    // Check complaint count — escalate status based on count
+    // 1-2: pending (under review), 3+: flagged for admin review (not auto-banned)
     const complaintCount = await query(
       'SELECT COUNT(*) FROM complaints WHERE reported_user_id = $1',
       [reported_user_id]
     );
 
-    if (parseInt(complaintCount.rows[0].count) >= 3) {
+    const count = parseInt(complaintCount.rows[0].count);
+    if (count >= 3) {
       await query(
-        "UPDATE complaints SET status = 'banned' WHERE reported_user_id = $1 AND status = 'pending'",
+        "UPDATE complaints SET status = 'flagged' WHERE reported_user_id = $1 AND status = 'pending'",
         [reported_user_id]
       );
     }
@@ -50,7 +52,9 @@ const fileComplaint = async (req, res, next) => {
 const getComplaints = async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const safePage = Math.max(1, parseInt(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (safePage - 1) * safeLimit;
 
     const countResult = await query('SELECT COUNT(*) FROM complaints');
     const total = parseInt(countResult.rows[0].count);
@@ -64,17 +68,17 @@ const getComplaints = async (req, res, next) => {
        JOIN users reported ON c.reported_user_id = reported.id
        ORDER BY c.created_at DESC
        LIMIT $1 OFFSET $2`,
-      [parseInt(limit), offset]
+      [safeLimit, offset]
     );
 
     res.status(200).json({
       success: true,
       data: result.rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: safePage,
+        limit: safeLimit,
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / safeLimit),
       },
     });
   } catch (error) {

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/auth');
@@ -22,11 +23,33 @@ const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 
+// Trust proxy (required for rate limiting behind reverse proxies like Codespaces)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-app.use(cors({ origin: true, credentials: true }));
+
+// CORS — allow same-origin + Codespace URLs
+const allowedOrigins = [
+  /\.app\.github\.dev$/,
+  /^https?:\/\/localhost(:\d+)?$/,
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.some(p => typeof p === 'string' ? p === origin : p.test(origin))) return cb(null, true);
+    cb(null, true); // permissive in dev; tighten for production
+  },
+  credentials: true,
+}));
+
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+
+// Rate limiting — protect auth endpoints from brute force
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' } });
+const apiLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 200, message: { success: false, message: 'Rate limit exceeded. Slow down.' } });
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);

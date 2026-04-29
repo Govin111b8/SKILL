@@ -94,7 +94,7 @@ exports.list = async (req, res, next) => {
        JOIN professionals p ON b.professional_id = p.id
        JOIN users up ON p.user_id = up.id
        WHERE ${where}
-       ORDER BY b.updated_at DESC LIMIT 100`,
+       ORDER BY b.updated_at DESC LIMIT 50`,
       params
     );
     res.json({ success: true, data: rows.rows });
@@ -144,8 +144,16 @@ exports.transition = async (req, res, next) => {
     // Build SET clause
     const sets = [`status = $1::booking_status`, `updated_at = NOW()`];
     const params = [to];
-    if (to === 'quoted' && payload.quoted_amount != null) { params.push(payload.quoted_amount); sets.push(`quoted_amount = $${params.length}::numeric`); }
-    if (to === 'scheduled' && payload.scheduled_for) { params.push(payload.scheduled_for); sets.push(`scheduled_for = $${params.length}::timestamptz`); }
+    if (to === 'quoted' && payload.quoted_amount != null) {
+      const amt = parseFloat(payload.quoted_amount);
+      if (isNaN(amt) || amt <= 0) return res.status(400).json({ success: false, message: 'quoted_amount must be a positive number' });
+      params.push(amt); sets.push(`quoted_amount = $${params.length}::numeric`);
+    }
+    if (to === 'scheduled' && payload.scheduled_for) {
+      const dt = new Date(payload.scheduled_for);
+      if (isNaN(dt.getTime()) || dt < new Date()) return res.status(400).json({ success: false, message: 'scheduled_for must be a valid future date' });
+      params.push(payload.scheduled_for); sets.push(`scheduled_for = $${params.length}::timestamptz`);
+    }
     if (to === 'in_progress') sets.push(`started_at = NOW()`);
     if (to === 'completed') {
       sets.push(`completed_at = NOW()`);

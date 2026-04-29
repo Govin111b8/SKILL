@@ -42,6 +42,20 @@ class _ReportScreenState extends State<ReportScreen> {
       return;
     }
 
+    // Confirm before submitting
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Submit Report?'),
+        content: const Text('Are you sure you want to report this user? False reports may result in action against your account.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Submit Report')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
     setState(() => _submitting = true);
     try {
       await ApiService.post('/complaints', {

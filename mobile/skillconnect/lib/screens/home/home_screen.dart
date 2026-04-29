@@ -213,7 +213,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]),
               )
             else if (_topProfessionals.isEmpty)
-              const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No professionals yet')))
+              Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+                Icon(Icons.person_search_rounded, size: 48, color: Colors.grey.shade300),
+                const SizedBox(height: 10),
+                Text('No professionals found', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+                const SizedBox(height: 4),
+                Text('Pull down to refresh or check back later', style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(onPressed: _load, icon: const Icon(Icons.refresh, size: 16), label: const Text('Refresh')),
+              ]))
             else
               ..._topProfessionals.map((p) => Padding(padding: const EdgeInsets.only(bottom: 12), child: ProfessionalCard(professional: p))),
           ],

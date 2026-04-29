@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -91,12 +92,12 @@ class SkillConnectApp extends StatelessWidget {
       ),
       home: Consumer<AuthService>(
         builder: (_, auth, __) {
-          final dest = auth.isLoggedIn ? const MainShell() : const LoginScreen();
+          final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
           return SplashScreen(nextScreen: dest);
         },
       ),
       routes: {
-        '/login': (_) => const LoginScreen(),
+        '/login': (_) => const WelcomeScreen(),
         '/register': (_) => const RegisterScreen(),
         '/home': (_) => const MainShell(),
         '/contacts': (_) => const MyContactsScreen(),
