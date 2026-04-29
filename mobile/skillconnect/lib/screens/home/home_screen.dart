@@ -39,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  void _openService(int id, String name) {
+  void _openService(int id, String name, {bool isRoot = false}) {
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => CategoryDetailScreen(categoryId: id, categoryName: name),
+      builder: (_) => CategoryDetailScreen(categoryId: id, categoryName: name, isRoot: isRoot),
     ));
   }
 
@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (_, i) {
                   final hub = kServiceHubs[i];
                   return GestureDetector(
-                    onTap: () { HapticFeedback.selectionClick(); _openService(hub.id, hub.name); },
+                    onTap: () { HapticFeedback.selectionClick(); _openService(hub.id, hub.name, isRoot: true); },
                     child: Container(
                       width: 120,
                       padding: const EdgeInsets.all(12),
