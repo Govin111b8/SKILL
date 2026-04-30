@@ -15,6 +15,8 @@ import Settings from './pages/Settings';
 import Bookings from './pages/Bookings';
 import BookingDetail from './pages/BookingDetail';
 import CreateBooking from './pages/CreateBooking';
+import Messages from './pages/Messages';
+import Chat from './pages/Chat';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -68,6 +70,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <BookingDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages/:threadId"
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             }
           />
