@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(payload.user);
+    window.dispatchEvent(new Event('auth-change'));
     return payload;
   }
 
@@ -45,6 +46,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(payload.user);
+    window.dispatchEvent(new Event('auth-change'));
     return payload;
   }
 
@@ -52,6 +54,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    window.dispatchEvent(new Event('auth-change'));
   }
 
   const value = {
