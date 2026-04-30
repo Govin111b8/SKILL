@@ -1,0 +1,315 @@
+.bookings-page {
+  min-height: 80vh;
+  padding: 2rem 0 4rem;
+  background: var(--gray-50);
+}
+
+.bookings-page .container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.bookings-header {
+  margin-bottom: 2rem;
+}
+
+.bookings-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.bookings-header p {
+  color: var(--gray-500);
+  font-size: 0.95rem;
+}
+
+/* Filter Tabs */
+.bookings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+.bookings-tab {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  background: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.bookings-tab:hover {
+  color: var(--gray-700);
+}
+
+.bookings-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.bookings-tab .tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  margin-left: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border-radius: var(--radius-full);
+}
+
+.bookings-tab.active .tab-count {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+/* Booking Cards */
+.bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.booking-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--gray-100);
+}
+
+.booking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary-100);
+}
+
+.booking-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius);
+  background: var(--primary-50);
+  color: var(--primary);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.booking-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.booking-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.booking-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  flex-wrap: wrap;
+}
+
+.booking-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.booking-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.booking-card-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.booking-card-date {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.status-badge--requested { background: #ede9fe; color: #7c3aed; }
+.status-badge--quoted { background: #fef3c7; color: #d97706; }
+.status-badge--accepted { background: #dbeafe; color: #2563eb; }
+.status-badge--scheduled { background: #e0e7ff; color: #4338ca; }
+.status-badge--in_progress { background: #fef9c3; color: #a16207; }
+.status-badge--completed { background: #d1fae5; color: #059669; }
+.status-badge--cancelled { background: #fee2e2; color: #dc2626; }
+.status-badge--disputed { background: #fce7f3; color: #db2777; }
+.status-badge--refunded { background: #f3e8ff; color: #9333ea; }
+
+/* Empty State */
+.bookings-empty {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.bookings-empty-icon {
+  font-size: 3rem;
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.bookings-empty h3 {
+  font-size: 1.15rem;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.bookings-empty p {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Skeleton */
+.booking-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.booking-skeleton .skel {
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.booking-skeleton .skel-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.booking-skeleton .skel-body {
+  flex: 1;
+}
+
+.booking-skeleton .skel-line {
+  height: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.booking-skeleton .skel-line:first-child {
+  width: 60%;
+  height: 0.9rem;
+}
+
+.booking-skeleton .skel-line:last-child {
+  width: 40%;
+  margin-bottom: 0;
+}
+
+.booking-skeleton .skel-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.booking-skeleton .skel-badge {
+  width: 5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+}
+
+.booking-skeleton .skel-amount {
+  width: 3.5rem;
+  height: 0.9rem;
+  border-radius: 4px;
+}
+
+/* Error Banner */
+.bookings-error {
+  padding: 1rem 1.25rem;
+  background: #fef2f2;
+  color: var(--danger);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .bookings-page {
+    padding: 1.25rem 0 5rem;
+  }
+
+  .booking-card {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .booking-card-right {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 4rem;
+  }
+}

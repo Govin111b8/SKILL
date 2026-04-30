@@ -12,6 +12,9 @@ import Categories from './pages/Categories';
 import CategoryDetail from './pages/CategoryDetail';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Bookings from './pages/Bookings';
+import BookingDetail from './pages/BookingDetail';
+import CreateBooking from './pages/CreateBooking';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -41,6 +44,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <Bookings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings/create"
+            element={
+              <ProtectedRoute>
+                <CreateBooking />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings/:id"
+            element={
+              <ProtectedRoute>
+                <BookingDetail />
               </ProtectedRoute>
             }
           />
