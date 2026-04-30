@@ -74,7 +74,7 @@ const register = async (req, res, next) => {
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(config.isProduction ? 12 : 10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const id = crypto.randomUUID();

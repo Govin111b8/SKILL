@@ -10,7 +10,7 @@
   "extends": "eslint:recommended",
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-console": "warn",
     "prefer-const": "error",
     "no-var": "error",
     "eqeqeq": ["error", "always"],
