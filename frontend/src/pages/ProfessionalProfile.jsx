@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   FiMapPin, FiClock, FiDollarSign, FiPhone, FiMail, FiMessageSquare,
-  FiStar, FiCheck, FiShare2, FiHeart, FiArrowLeft, FiX, FiSend,
+  FiStar, FiCheck, FiShare2, FiHeart, FiArrowLeft, FiX, FiSend, FiCalendar,
 } from 'react-icons/fi';
 import { get, post } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import OnlineIndicator from '../components/OnlineIndicator';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +14,7 @@ import './ProfessionalProfile.css';
 
 function ProfessionalProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [professional, setProfessional] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ function ProfessionalProfile() {
               {/* Info */}
               <div className="profile-info">
                 <div className="profile-name-row">
-                  <h1>{name}</h1>
+                  <h1>{name} <OnlineIndicator userId={id} size={12} style={{ marginLeft: 8, verticalAlign: 'middle' }} /></h1>
                   {available !== undefined && (
                     <span className={`profile-avail ${available ? 'on' : 'off'}`}>
                       <span className="avail-dot" /> {available ? 'Available' : 'Unavailable'}
@@ -146,8 +148,30 @@ function ProfessionalProfile() {
 
             {/* Hero CTA */}
             <div className="profile-hero-cta">
-              <button className="btn btn-primary btn-lg profile-contact-btn" onClick={() => setShowContact(true)}>
-                <FiPhone size={18} /> Contact Professional
+              <button
+                className="btn btn-primary btn-lg profile-contact-btn"
+                onClick={() => navigate(`/bookings/create?professional_id=${id}&professional_name=${encodeURIComponent(name)}`)}
+              >
+                <FiCalendar size={18} /> Book Now
+              </button>
+              <button
+                className="btn btn-outline btn-lg profile-contact-btn"
+                style={{ marginTop: '0.5rem' }}
+                onClick={async () => {
+                  if (!isAuthenticated) { navigate('/login'); return; }
+                  try {
+                    const res = await post('/messages/threads', { professional_id: id });
+                    const thread = res.data || res;
+                    navigate(`/messages/${thread.id}`);
+                  } catch {
+                    navigate('/messages');
+                  }
+                }}
+              >
+                <FiMessageSquare size={18} /> Message
+              </button>
+              <button className="btn btn-secondary btn-lg profile-contact-btn" style={{ marginTop: '0.5rem' }} onClick={() => setShowContact(true)}>
+                <FiPhone size={18} /> Contact Info
               </button>
               <div className="profile-hero-cta-actions">
                 <button className={`profile-action-btn ${saved ? 'saved' : ''}`} onClick={() => setSaved(!saved)}>

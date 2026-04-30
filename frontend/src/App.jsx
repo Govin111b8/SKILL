@@ -18,6 +18,7 @@ import CreateBooking from './pages/CreateBooking';
 import Messages from './pages/Messages';
 import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
+import Payment from './pages/Payment';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -64,6 +65,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CreateBooking />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings/:id/pay"
+            element={
+              <ProtectedRoute>
+                <Payment />
               </ProtectedRoute>
             }
           />
