@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../context/WebSocketContext';
 import './Navbar.css';
 
 function Navbar() {
@@ -11,6 +12,7 @@ function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef(null);
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadNotificationCount } = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -73,6 +75,14 @@ function Navbar() {
 
             {isAuthenticated ? (
               <div className="navbar-user-menu">
+                <Link to="/notifications" className="navbar-notif-btn" title="Notifications">
+                  <FiBell size={18} />
+                  {unreadNotificationCount > 0 && (
+                    <span className="navbar-notif-badge">
+                      {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                    </span>
+                  )}
+                </Link>
                 <Link to="/dashboard" className="navbar-avatar" title={user?.name}>
                   {initials || <FiUser size={16} />}
                 </Link>
@@ -131,6 +141,7 @@ function Navbar() {
           <Link to="/search"><FiSearch /> Explore</Link>
           {isAuthenticated ? (
             <>
+              <Link to="/notifications"><FiBell /> Notifications</Link>
               <Link to="/dashboard"><FiUser /> Dashboard</Link>
               <button onClick={handleLogout} className="drawer-logout"><FiLogOut /> Logout</button>
             </>

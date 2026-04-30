@@ -17,7 +17,9 @@ import BookingDetail from './pages/BookingDetail';
 import CreateBooking from './pages/CreateBooking';
 import Messages from './pages/Messages';
 import Chat from './pages/Chat';
+import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
+import Toast from './components/Toast';
 import './App.css';
 
 function App() {
@@ -89,11 +91,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
       <BottomNav />
+      <Toast />
     </div>
   );
 }
