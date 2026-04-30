@@ -2,6 +2,8 @@
 const { WebSocketServer } = require('ws');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const { config } = require('../config');
+const logger = require('../config/logger');
 
 const sockets = new Map(); // userId -> Set<ws>
 const presence = new Map(); // userId -> { lastSeen: Date, status: 'online'|'away'|'offline' }
@@ -28,7 +30,7 @@ function attach(server) {
       const url = new URL(req.url, 'http://localhost');
       const token = url.searchParams.get('token');
       if (!token) return ws.close(4001, 'no token');
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const payload = jwt.verify(token, config.jwt.secret);
       userId = payload.id;
     } catch (e) {
       return ws.close(4002, 'bad token');
