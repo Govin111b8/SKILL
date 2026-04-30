@@ -3,942 +3,1807 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillConnect Pro — Professional Dashboard</title>
+  <title>SkillConnect Pro &mdash; Professional Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --p:    #4f46e5; --p-lt: #ede9fe; --p-dk: #3730a3;
-      --cyan: #06b6d4; --cyan-lt: #ecfeff;
-      --ok:   #10b981; --warn: #f59e0b; --err: #ef4444;
-      --tx:   #111827; --tx2: #6b7280; --bd: #e5e7eb;
-      --bg:   #f3f2f0; --card: #fff; --sw: 240px;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5}
-    a{color:var(--p);text-decoration:none}
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES & RESET
+   ═══════════════════════════════════════════════ */
+:root {
+  --sidebar: #1e293b;
+  --sidebar-hover: #334155;
+  --sidebar-active: #4f46e5;
+  --accent: #4f46e5;
+  --accent-light: #ede9fe;
+  --accent-dark: #3730a3;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #0ea5e9;
+  --sidebar-width: 260px;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,.1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+a { color: var(--accent); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
 
-    /* ─── TOPBAR ─────────────────────────────── */
-    .bar{position:fixed;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:100}
-    .logo{font-size:18px;font-weight:800;background:linear-gradient(120deg,var(--p),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
-    .logo s{font-weight:300;text-decoration:none}
-    .sp{flex:1}
-    .uinfo{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
-    .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
-    .btn-g{background:none;border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;color:var(--tx2);font-size:13px;font-family:inherit}
-    .btn-g:hover{background:var(--bg)}
+/* ═══════════════════════════════════════════════
+   LOGIN PAGE
+   ═══════════════════════════════════════════════ */
+#login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 20px;
+}
+.login-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px rgba(0,0,0,.25);
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo h1 {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(120deg, var(--accent), #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.login-logo p {
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-size: 14px;
+}
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+  transition: border-color .2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .2s;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: .9; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: .9; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { opacity: .9; }
+.btn-sm { padding: 6px 14px; font-size: 13px; border-radius: 6px; }
+.btn-block { width: 100%; }
+.login-error {
+  background: #fef2f2;
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
 
-    /* ─── LAYOUT ─────────────────────────────── */
-    #app{padding-top:52px;display:flex;min-height:100vh}
-    .side{width:var(--sw);flex-shrink:0;position:fixed;top:52px;bottom:0;left:0;background:var(--card);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:16px 0;overflow-y:auto}
-    .ni{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--tx2);font-weight:500;font-size:13.5px;border-left:3px solid transparent;transition:.15s}
-    .ni:hover{background:var(--bg);color:var(--tx)}
-    .ni.on{background:var(--p-lt);color:var(--p);border-left-color:var(--p);font-weight:600}
-    .ni .ic{font-size:17px;width:20px;text-align:center}
-    .main{margin-left:var(--sw);flex:1;padding:24px;max-width:860px}
+/* ═══════════════════════════════════════════════
+   APP LAYOUT
+   ═══════════════════════════════════════════════ */
+#app { display: none; min-height: 100vh; }
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--sidebar);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow-y: auto;
+  transition: transform .3s;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-logo h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+}
+.sidebar-logo span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.sidebar-user {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name { font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-role { font-size: 12px; color: var(--text-muted); }
 
-    /* ─── CARD ───────────────────────────────── */
-    .card{background:var(--card);border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:16px}
-    .ch{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
-    .ch h3{font-size:15px;font-weight:600}
-    .cb{padding:20px}
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.nav-section { padding: 8px 20px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #475569; font-weight: 600; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+.nav-item.active {
+  background: rgba(79, 70, 229, .15);
+  color: #a5b4fc;
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.nav-icon { font-size: 18px; width: 24px; text-align: center; }
+.nav-badge {
+  position: absolute;
+  right: 16px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-footer button {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: .2s;
+}
+.sidebar-footer button:hover { background: rgba(255,255,255,.12); color: #e2e8f0; }
 
-    /* ─── PROFILE HEADER ─────────────────────── */
-    .ph-card{background:var(--card);border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:16px}
-    .ph-cover{height:100px;background:linear-gradient(120deg,var(--p) 0%,var(--cyan) 100%)}
-    .ph-body{padding:0 20px 20px}
-    .ph-av{width:80px;height:80px;border-radius:50%;border:4px solid #fff;background:linear-gradient(135deg,var(--p),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;margin-top:-40px;margin-bottom:8px}
-    .ph-name{font-size:20px;font-weight:700}
-    .ph-hl{color:var(--tx2);font-size:14px;margin-top:2px}
-    .ph-meta{display:flex;gap:16px;color:var(--tx2);font-size:13px;margin-top:10px;flex-wrap:wrap}
+.main-content {
+  margin-left: var(--sidebar-width);
+  padding: 32px;
+  min-height: 100vh;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-header h2 { font-size: 24px; font-weight: 700; }
+.page-header p { font-size: 14px; color: var(--text-secondary); }
 
-    /* ─── STATS GRID ─────────────────────────── */
-    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-    .sc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center}
-    .sc .v{font-size:24px;font-weight:700;color:var(--p)}
-    .sc .l{font-size:11px;font-weight:500;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+/* ═══════════════════════════════════════════════
+   VIEW SECTIONS
+   ═══════════════════════════════════════════════ */
+.view { display: none; }
+.view.active { display: block; }
 
-    /* ─── COMPLETENESS BAR ───────────────────── */
-    .comp{padding:14px 20px;border-top:1px solid var(--bd)}
-    .comp .lbl{display:flex;justify-content:space-between;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--tx2)}
-    .comp .bar{height:6px;background:var(--bd);border-radius:99px;overflow:hidden}
-    .comp .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--cyan));transition:width .5s}
+/* ═══════════════════════════════════════════════
+   CARDS & STATS
+   ═══════════════════════════════════════════════ */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header h3 { font-size: 15px; font-weight: 600; }
+.card-body { padding: 20px; }
 
-    /* ─── BADGES ─────────────────────────────── */
-    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-    .b-ok{background:#d1fae5;color:#065f46}
-    .b-warn{background:#fef3c7;color:#92400e}
-    .b-gray{background:#f3f4f6;color:#6b7280}
-    .b-blue{background:var(--p-lt);color:var(--p)}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.stat-card .stat-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.stat-card .stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
+.stat-card .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
 
-    /* ─── FORM ───────────────────────────────── */
-    .fg{margin-bottom:14px}
-    .fg label{display:block;font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
-    .fc{width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .15s;background:#fff}
-    .fc:focus{outline:none;border-color:var(--p)}
-    textarea.fc{min-height:80px;resize:vertical}
+/* ═══════════════════════════════════════════════
+   BADGE / STATUS
+   ═══════════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.badge-requested { background: #fef3c7; color: #92400e; }
+.badge-quoted { background: #e0e7ff; color: #3730a3; }
+.badge-accepted { background: #d1fae5; color: #065f46; }
+.badge-scheduled { background: #dbeafe; color: #1e40af; }
+.badge-in_progress, .badge-in-progress { background: #fef9c3; color: #854d0e; }
+.badge-completed { background: #d1fae5; color: #065f46; }
+.badge-cancelled { background: #fee2e2; color: #991b1b; }
+.badge-disputed { background: #fce7f3; color: #9d174d; }
+.badge-refunded { background: #f3e8ff; color: #6b21a8; }
+.badge-available { background: #d1fae5; color: #065f46; }
+.badge-busy { background: #fef3c7; color: #92400e; }
+.badge-offline { background: #f1f5f9; color: #475569; }
 
-    /* ─── BUTTONS ────────────────────────────── */
-    .btn{padding:9px 18px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
-    .btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--p-dk)}
-    .btn-o{background:#fff;color:var(--p);border:1.5px solid var(--p)}.btn-o:hover{background:var(--p-lt)}
-    .btn-ok{background:var(--ok);color:#fff}
-    .btn-err{background:var(--err);color:#fff}
-    .btn-s{padding:5px 12px;font-size:12px}
-    .btn-ghost{background:none;border:none;cursor:pointer;color:var(--tx2);padding:4px 8px;border-radius:6px;font-size:13px;font-family:inherit}
-    .btn-ghost:hover{background:var(--bg);color:var(--p)}
+/* ═══════════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════════ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: .2s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { background: #fff; color: var(--accent); font-weight: 600; box-shadow: var(--shadow); }
 
-    /* ─── CHIPS ──────────────────────────────── */
-    .chips{display:flex;flex-wrap:wrap;gap:8px}
-    .chip{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500;background:var(--p-lt);color:var(--p);cursor:pointer;border:1.5px solid transparent;transition:.15s}
-    .chip.on{background:var(--p);color:#fff}
-    .chip-c{background:var(--cyan-lt);color:#0e7490}
+/* ═══════════════════════════════════════════════
+   BOOKING LIST
+   ═══════════════════════════════════════════════ */
+.booking-list { display: flex; flex-direction: column; gap: 12px; }
+.booking-item {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: .2s;
+}
+.booking-item:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); }
+.booking-icon {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.booking-info { flex: 1; min-width: 0; }
+.booking-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.booking-meta { font-size: 13px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+.booking-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.booking-amount { font-size: 16px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 15px; }
 
-    /* ─── BOOKING CARD ───────────────────────── */
-    .bc{padding:14px 20px;border-bottom:1px solid var(--bd)}
-    .bc:last-child{border-bottom:0}
-    .bc-top{display:flex;justify-content:space-between;align-items:flex-start}
-    .bc-title{font-weight:600;font-size:14px}
-    .bc-detail{font-size:13px;color:var(--tx2);margin-top:4px}
-    .bc-actions{display:flex;gap:8px;margin-top:10px}
+/* ═══════════════════════════════════════════════
+   BOOKING DETAIL
+   ═══════════════════════════════════════════════ */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row:last-child { border: none; }
+.detail-label { font-size: 13px; color: var(--text-secondary); }
+.detail-value { font-size: 14px; font-weight: 500; }
+.timeline { list-style: none; }
+.timeline li {
+  position: relative;
+  padding: 0 0 16px 28px;
+}
+.timeline li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.timeline li::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.timeline li:last-child::after { display: none; }
+.timeline .tl-status { font-weight: 600; font-size: 13px; }
+.timeline .tl-info { font-size: 12px; color: var(--text-secondary); }
 
-    /* ─── REVIEWS ────────────────────────────── */
-    .rv{padding:14px;border-bottom:1px solid var(--bd)}
-    .rv:last-child{border-bottom:0}
-    .stars{color:#f59e0b;letter-spacing:2px;font-size:15px}
+/* ═══════════════════════════════════════════════
+   MESSAGES
+   ═══════════════════════════════════════════════ */
+.msg-layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 100px); gap: 0; }
+.msg-threads {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: var(--radius) 0 0 var(--radius);
+  border: 1px solid var(--border);
+}
+.thread-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: .15s;
+}
+.thread-item:hover { background: #f8fafc; }
+.thread-item.active { background: var(--accent-light); }
+.thread-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.thread-info { flex: 1; min-width: 0; }
+.thread-name { font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; }
+.thread-name .time { font-weight: 400; font-size: 12px; color: var(--text-muted); }
+.thread-preview { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thread-unread .thread-name { color: var(--accent); }
 
-    /* ─── PORTFOLIO GRID ─────────────────────── */
-    .pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-    .pi{border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--card)}
-    .pi-thumb{height:110px;background:linear-gradient(135deg,var(--p-lt),var(--cyan-lt));display:flex;align-items:center;justify-content:center;font-size:30px}
-    .pi-info{padding:10px}
-    .pi-info .t{font-size:13px;font-weight:600}
-    .pi-info .d{font-size:12px;color:var(--tx2);margin-top:2px}
-    .pi-add{border:2px dashed var(--bd);border-radius:10px;height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--tx2);transition:.15s}
-    .pi-add:hover{border-color:var(--p);color:var(--p)}
+.msg-chat {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  border: 1px solid var(--border);
+  border-left: none;
+}
+.chat-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+.chat-bubble.sent {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-bubble.received {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.chat-bubble .bubble-time {
+  font-size: 11px;
+  opacity: .7;
+  margin-top: 4px;
+}
+.chat-bubble.system {
+  align-self: center;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  font-size: 13px;
+  max-width: 90%;
+  text-align: center;
+}
+.chat-input {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+.chat-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+.chat-input input:focus { border-color: var(--accent); }
+.chat-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 15px;
+}
 
-    /* ─── TOAST ──────────────────────────────── */
-    #toast{position:fixed;top:62px;right:20px;z-index:999;background:#fff;border:1px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.12);display:flex;align-items:center;gap:10px;transform:translateX(130%);transition:transform .3s;max-width:320px}
-    #toast.show{transform:translateX(0)}
-    #toast.ok{border-left:3px solid var(--ok)}
-    #toast.err{border-left:3px solid var(--err)}
+/* ═══════════════════════════════════════════════
+   NOTIFICATIONS
+   ═══════════════════════════════════════════════ */
+.notif-list { display: flex; flex-direction: column; gap: 8px; }
+.notif-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  align-items: flex-start;
+  cursor: pointer;
+  transition: .2s;
+}
+.notif-item.unread { border-left: 3px solid var(--accent); background: #fafbff; }
+.notif-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.notif-body { flex: 1; }
+.notif-title { font-weight: 600; font-size: 14px; }
+.notif-text { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.notif-time { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-    /* ─── GATE ───────────────────────────────── */
-    #gate{display:flex;flex-direction:column;min-height:100vh}
-    .hero{background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 60%,#0c4a6e 100%);padding:80px 40px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px}
-    .hero h1{font-size:42px;font-weight:800;color:#fff;max-width:600px;line-height:1.2}
-    .hero h1 em{background:linear-gradient(120deg,#a78bfa,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-style:normal}
-    .hero p{color:#94a3b8;font-size:17px;max-width:480px}
-    .hero .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-    .btn-hero{padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
-    .btn-hp{background:linear-gradient(120deg,var(--p),#7c3aed);color:#fff}
-    .btn-hs{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.2)}
+/* ═══════════════════════════════════════════════
+   PROFILE FORM
+   ═══════════════════════════════════════════════ */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.profile-grid .full { grid-column: 1 / -1; }
+.form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  min-height: 100px;
+  resize: vertical;
+  outline: none;
+  font-size: 14px;
+  color: var(--text);
+}
+.form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.form-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+}
+.form-select:focus { border-color: var(--accent); }
 
-    .features{padding:40px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;background:#fff}
-    .feat{flex:1;min-width:180px;max-width:260px;padding:20px;border-radius:12px;border:1px solid var(--bd);text-align:center}
-    .feat .ico{font-size:28px;margin-bottom:10px}
-    .feat h3{font-size:14px;font-weight:600;margin-bottom:6px}
-    .feat p{font-size:13px;color:var(--tx2)}
+/* ═══════════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--card);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  overflow: hidden;
+}
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 { font-size: 17px; font-weight: 700; }
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close:hover { background: var(--bg); }
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
 
-    /* ─── AUTH PANEL ─────────────────────────── */
-    .ap{max-width:420px;margin:40px auto;padding:32px;background:var(--card);border-radius:16px;border:1px solid var(--bd);box-shadow:0 4px 30px rgba(0,0,0,.08)}
-    .at{display:flex;gap:4px;margin-bottom:24px;background:var(--bg);padding:4px;border-radius:10px}
-    .at-tab{flex:1;text-align:center;padding:8px;border-radius:7px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--tx2)}
-    .at-tab.on{background:#fff;color:var(--tx);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* ═══════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: #1e293b;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  animation: toastIn .3s ease, toastOut .3s ease 3.7s forwards;
+  pointer-events: auto;
+  max-width: 380px;
+}
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--info); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
-    /* ─── WIZARD ─────────────────────────────── */
-    .wiz-prog{display:flex;gap:4px;margin-bottom:20px}
-    .wp{flex:1;height:3px;background:var(--bd);border-radius:99px;transition:background .3s}
-    .wp.done{background:var(--p)}.wp.cur{background:var(--cyan)}
+/* ═══════════════════════════════════════════════
+   SPINNER
+   ═══════════════════════════════════════════════ */
+.spinner {
+  width: 24px; height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-center { display: flex; justify-content: center; padding: 40px; }
 
-    /* ─── AVAILABILITY ───────────────────────── */
-    .avs{display:flex;gap:8px;flex-wrap:wrap}
-    .av-opt{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--bd);background:#fff;transition:.15s}
-    .av-opt.available{border-color:var(--ok);background:#d1fae5;color:#065f46}
-    .av-opt.busy{border-color:var(--warn);background:#fef3c7;color:#92400e}
-    .av-opt.offline{border-color:var(--bd);background:var(--bg);color:var(--tx2)}
+/* ═══════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 64px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .sidebar-logo, .sidebar-user, .sidebar-footer, .nav-section { display: none; }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-left: none;
+    border-top: 3px solid transparent;
+  }
+  .nav-item.active {
+    border-left-color: transparent;
+    border-top-color: var(--accent);
+  }
+  .nav-icon { font-size: 20px; }
+  .nav-badge { position: absolute; top: 2px; right: 4px; }
+  .main-content {
+    margin-left: 0;
+    padding: 16px 16px 80px;
+  }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .msg-layout { grid-template-columns: 1fr; height: auto; }
+  .msg-threads { border-radius: var(--radius); border-right: none; }
+  .msg-chat { border-radius: var(--radius); border: 1px solid var(--border); margin-top: 12px; min-height: 400px; }
+  .msg-chat-hidden { display: none; }
+  .booking-item { flex-direction: column; align-items: flex-start; }
+  .booking-actions { width: 100%; }
+  .profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
 
-    /* ─── INLINE EDITOR ──────────────────────── */
-    .ie{display:none}
-    .ie.open{display:block}
-    .ie-btns{display:flex;gap:8px;margin-top:8px}
-
-    /* ─── MODAL ──────────────────────────────── */
-    #modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .modal-box{background:#fff;border-radius:16px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative;cursor:default}
-    .modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2);line-height:1}
-
-    /* ─── FIELD LABEL ────────────────────────── */
-    .fg-label{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-
-    /* ─── RESPONSIVE ─────────────────────────── */
-    @media(max-width:768px){
-      .side{display:none}
-      .main{margin-left:0;padding:16px}
-      .sg{grid-template-columns:repeat(2,1fr)}
-      .hero{padding:50px 20px}
-      .hero h1{font-size:28px}
-    }
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body>
-<div id="toast"></div>
 
-<!-- ══════════════════ GATE ══════════════════ -->
-<div id="gate">
-  <nav class="bar">
-    <div class="logo">SkillConnect <s>Pro</s></div>
-    <div class="sp"></div>
-    <button class="btn-g" onclick="showSI()">Sign In</button>
-    <button class="btn btn-p btn-s" onclick="showSU()">Join Free</button>
-  </nav>
-
-  <div class="hero">
-    <h1>Build your <em>professional brand</em> and grow your income</h1>
-    <p>Join skilled professionals on SkillConnect — India's fastest-growing services marketplace</p>
-    <div class="ctas">
-      <button class="btn-hero btn-hp" onclick="showSU()">🚀 Join as Professional — Free</button>
-      <button class="btn-hero btn-hs" onclick="showSI()">Sign In to Dashboard</button>
+<!-- ═══════════════════════════════════════════════
+     LOGIN PAGE
+     ═══════════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>SkillConnect</h1>
+      <p>Professional Portal</p>
     </div>
-  </div>
-
-  <div class="features">
-    <div class="feat"><div class="ico">🎯</div><h3>Get Found by Clients</h3><p>Appear in searches when customers need your skills</p></div>
-    <div class="feat"><div class="ico">⭐</div><h3>Build Your Reputation</h3><p>Collect verified reviews, build trust, command better rates</p></div>
-    <div class="feat"><div class="ico">💼</div><h3>LinkedIn for Trades</h3><p>Complete profile with portfolio, skills, certifications and more</p></div>
-    <div class="feat"><div class="ico">📊</div><h3>Track Your Growth</h3><p>View earnings, job stats, and ratings from your dashboard</p></div>
-  </div>
-
-  <!-- Auth panel -->
-  <div id="auth-panel" style="display:none;padding:0 20px 60px">
-    <div class="ap">
-      <!-- Sign In -->
-      <div id="si-pane">
-        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Welcome back</h2>
-        <p style="color:var(--tx2);font-size:13px;margin-bottom:20px">Sign in to your professional dashboard</p>
-        <div class="fg"><label>Email</label><input class="fc" type="email" id="si-email" placeholder="you@example.com" autocomplete="email"></div>
-        <div class="fg"><label>Password</label><input class="fc" type="password" id="si-pw" placeholder="••••••••" autocomplete="current-password"></div>
-        <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="doSignIn()">Sign In →</button>
-        <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--tx2)">No account? <a href="#" onclick="showSU()">Join free</a></p>
+    <div id="login-error" class="login-error"></div>
+    <form id="login-form" autocomplete="on">
+      <div class="form-group">
+        <label for="login-email">Email Address</label>
+        <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required autocomplete="email">
       </div>
-
-      <!-- Sign Up Wizard -->
-      <div id="su-pane" style="display:none">
-        <div class="wiz-prog" id="wiz-dots">
-          <div class="wp cur"></div><div class="wp"></div><div class="wp"></div><div class="wp"></div>
-        </div>
-
-        <!-- Step 1 -->
-        <div id="ws1">
-          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Create your account</h2>
-          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 1 of 4 — Basic information</p>
-          <div class="fg"><label>Full Name</label><input class="fc" id="r-name" placeholder="e.g. Ravi Kumar"></div>
-          <div class="fg"><label>Email</label><input class="fc" type="email" id="r-email" placeholder="you@example.com"></div>
-          <div class="fg"><label>Password</label><input class="fc" type="password" id="r-pw" placeholder="Min. 6 characters"></div>
-          <button class="btn btn-p" style="width:100%" onclick="w1()">Continue →</button>
-          <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--tx2)">Have an account? <a href="#" onclick="showSI()">Sign in</a></p>
-        </div>
-
-        <!-- Step 2: Categories -->
-        <div id="ws2" style="display:none">
-          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Your specializations</h2>
-          <p style="color:var(--tx2);font-size:13px;margin-bottom:14px">Step 2 of 4 — Select all your skills</p>
-          <div id="cat-chips" class="chips" style="max-height:260px;overflow-y:auto;padding:4px 0;gap:6px"></div>
-          <button class="btn btn-p" style="width:100%;margin-top:16px" onclick="w2()">Continue →</button>
-        </div>
-
-        <!-- Step 3: Pro details -->
-        <div id="ws3" style="display:none">
-          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Professional details</h2>
-          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 3 of 4 — Tell clients about you</p>
-          <div class="fg"><label>Professional Headline</label><input class="fc" id="r-hl" placeholder="e.g. Expert Plumber · 5 yrs experience"></div>
-          <div class="fg"><label>City / Location</label><input class="fc" id="r-loc" placeholder="e.g. Mumbai, Maharashtra"></div>
-          <div class="fg"><label>Years of Experience</label><input class="fc" type="number" id="r-exp" placeholder="5" min="0" max="60"></div>
-          <button class="btn btn-p" style="width:100%" onclick="w3()">Continue →</button>
-        </div>
-
-        <!-- Step 4: Bio + pricing -->
-        <div id="ws4" style="display:none">
-          <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">About & pricing</h2>
-          <p style="color:var(--tx2);font-size:13px;margin-bottom:18px">Step 4 of 4 — Almost there!</p>
-          <div class="fg"><label>Professional Bio</label><textarea class="fc" id="r-bio" rows="3" placeholder="Describe your expertise and what makes you stand out..."></textarea></div>
-          <div class="fg"><label>Hourly Rate / Visit Rate (₹)</label><input class="fc" type="number" id="r-price" placeholder="e.g. 500"></div>
-          <button class="btn btn-p" style="width:100%" id="wfin-btn" onclick="w4()">Create Profile →</button>
-        </div>
-
-        <!-- Step 5: Done -->
-        <div id="ws5" style="display:none;text-align:center;padding:20px 0">
-          <div style="font-size:50px;margin-bottom:16px">🎉</div>
-          <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">You're live!</h2>
-          <p style="color:var(--tx2);font-size:14px;margin-bottom:20px">Your professional profile is ready. Start attracting clients!</p>
-          <button class="btn btn-p" style="width:100%" onclick="enter()">Go to Dashboard →</button>
-        </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
       </div>
-    </div>
-  </div>
-</div><!-- #gate -->
-
-<!-- ══════════════════ APP ══════════════════ -->
-<div id="app" hidden>
-  <nav class="bar">
-    <div class="logo">SkillConnect <s>Pro</s></div>
-    <div class="sp"></div>
-    <div class="uinfo">
-      <div class="av" id="t-av">?</div>
-      <span id="t-name">…</span>
-    </div>
-    <button class="btn-g btn-s" onclick="logout()">Logout</button>
-  </nav>
-
-  <aside class="side">
-    <div class="ni on" id="n-ov" onclick="go('ov')"><span class="ic">🏠</span> Overview</div>
-    <div class="ni" id="n-pf" onclick="go('pf')"><span class="ic">👤</span> My Profile</div>
-    <div class="ni" id="n-bk" onclick="go('bk')">
-      <span class="ic">📅</span> Bookings
-      <span id="bk-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:auto"></span>
-    </div>
-    <div class="ni" id="n-rv" onclick="go('rv')"><span class="ic">⭐</span> Reviews</div>
-    <div class="ni" id="n-pt" onclick="go('pt')"><span class="ic">💼</span> Portfolio</div>
-    <div style="flex:1"></div>
-    <div class="comp">
-      <div class="lbl"><span>Profile Strength</span><strong id="cp-pct">0%</strong></div>
-      <div class="bar"><div class="fill" id="cp-bar" style="width:0%"></div></div>
-    </div>
-  </aside>
-
-  <main class="main" id="mc"></main>
-</div>
-
-<!-- MODAL -->
-<div id="modal" hidden onclick="if(event.target===this)cm()">
-  <div class="modal-box">
-    <button class="modal-close" onclick="cm()">✕</button>
-    <div id="mc-modal"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign In</button>
+    </form>
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     APP SHELL
+     ═══════════════════════════════════════════════ -->
+<div id="app">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h1>SkillConnect</h1>
+      <span>Pro Portal</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sidebar-avatar"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebar-name"></div>
+        <div class="sidebar-user-role" id="sidebar-status"></div>
+      </div>
+    </div>
+    <div class="sidebar-nav" id="sidebar-nav">
+      <div class="nav-section">Menu</div>
+      <div class="nav-item active" data-view="dashboard" onclick="App.navigate('dashboard')">
+        <span class="nav-icon">&#x1F4CA;</span> <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" data-view="bookings" onclick="App.navigate('bookings')">
+        <span class="nav-icon">&#x1F4CB;</span> <span class="nav-label">Bookings</span>
+        <span class="nav-badge" id="badge-bookings" style="display:none">0</span>
+      </div>
+      <div class="nav-item" data-view="messages" onclick="App.navigate('messages')">
+        <span class="nav-icon">&#x1F4AC;</span> <span class="nav-label">Messages</span>
+        <span class="nav-badge" id="badge-messages" style="display:none">0</span>
+      </div>
+      <div class="nav-item" data-view="notifications" onclick="App.navigate('notifications')">
+        <span class="nav-icon">&#x1F514;</span> <span class="nav-label">Notifications</span>
+        <span class="nav-badge" id="badge-notifications" style="display:none">0</span>
+      </div>
+      <div class="nav-section" style="margin-top:8px">Account</div>
+      <div class="nav-item" data-view="profile" onclick="App.navigate('profile')">
+        <span class="nav-icon">&#x1F464;</span> <span class="nav-label">Profile</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button onclick="App.logout()">&#x1F6AA; Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <h2>Dashboard</h2>
+          <p id="dash-greeting">Welcome back!</p>
+        </div>
+        <div id="dash-availability"></div>
+      </div>
+      <div class="stats-grid" id="dash-stats"></div>
+      <div class="card">
+        <div class="card-header"><h3>Recent Booking Requests</h3></div>
+        <div class="card-body" id="dash-recent"></div>
+      </div>
+    </div>
+
+    <!-- BOOKINGS VIEW -->
+    <div class="view" id="view-bookings">
+      <div class="page-header">
+        <div>
+          <h2>Bookings</h2>
+          <p>Manage your service bookings</p>
+        </div>
+      </div>
+      <div class="tabs" id="booking-tabs">
+        <button class="tab-btn active" data-filter="new" onclick="App.filterBookings('new')">New Requests</button>
+        <button class="tab-btn" data-filter="active" onclick="App.filterBookings('active')">Active</button>
+        <button class="tab-btn" data-filter="completed" onclick="App.filterBookings('completed')">Completed</button>
+        <button class="tab-btn" data-filter="all" onclick="App.filterBookings('all')">All</button>
+      </div>
+      <div id="bookings-list" class="booking-list"></div>
+    </div>
+
+    <!-- BOOKING DETAIL VIEW -->
+    <div class="view" id="view-booking-detail">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="App.navigate('bookings')">&larr; Back to Bookings</button>
+        </div>
+      </div>
+      <div id="booking-detail-content"></div>
+    </div>
+
+    <!-- MESSAGES VIEW -->
+    <div class="view" id="view-messages">
+      <div class="page-header">
+        <div>
+          <h2>Messages</h2>
+          <p>Chat with your customers</p>
+        </div>
+      </div>
+      <div class="msg-layout" id="msg-layout">
+        <div class="msg-threads" id="msg-threads"></div>
+        <div class="msg-chat" id="msg-chat">
+          <div class="chat-placeholder">
+            <span>&#x1F4AC; Select a conversation to start messaging</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS VIEW -->
+    <div class="view" id="view-notifications">
+      <div class="page-header">
+        <div>
+          <h2>Notifications</h2>
+          <p>Stay updated on your activity</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="App.markAllRead()">Mark all read</button>
+      </div>
+      <div id="notif-list" class="notif-list"></div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="view-profile">
+      <div class="page-header">
+        <div>
+          <h2>Profile Settings</h2>
+          <p>Manage your professional profile</p>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><h3>Availability</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-select" id="profile-availability" onchange="App.updateAvailability()">
+              <option value="available">&#x1F7E2; Available</option>
+              <option value="busy">&#x1F7E1; Busy</option>
+              <option value="offline">&#x26AB; Offline</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <form id="profile-form" onsubmit="App.saveProfile(event)">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h3>Personal Information</h3></div>
+          <div class="card-body">
+            <div class="profile-grid">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" class="form-input" id="profile-name" placeholder="Your name">
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" class="form-input" id="profile-phone" placeholder="+91 XXXXXXXXXX">
+              </div>
+              <div class="form-group full">
+                <label>Location</label>
+                <input type="text" class="form-input" id="profile-location" placeholder="City, State">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h3>Professional Details</h3></div>
+          <div class="card-body">
+            <div class="profile-grid">
+              <div class="form-group full">
+                <label>Headline</label>
+                <input type="text" class="form-input" id="profile-headline" placeholder="e.g., Expert Plumber with 10 years experience">
+              </div>
+              <div class="form-group full">
+                <label>Bio</label>
+                <textarea class="form-textarea" id="profile-bio" placeholder="Tell customers about yourself, your skills, and experience..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Years of Experience</label>
+                <input type="number" class="form-input" id="profile-experience" placeholder="0" min="0">
+              </div>
+              <div class="form-group">
+                <label>Pricing Estimate</label>
+                <input type="text" class="form-input" id="profile-pricing" placeholder="e.g., 500-1000/hr">
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="profile-save-btn">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="App.closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modal-title">Modal</h3>
+      <button class="modal-close" onclick="App.hideModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════
+     APPLICATION JAVASCRIPT
+     ═══════════════════════════════════════════════ -->
 <script>
-// ══════════════════ CONFIG ══════════════════
-const API = window.location.origin + '/api';
-const S = {
-  tok: localStorage.getItem('sc_pt'),
-  user: null, pro: null, cats: [],
-  stats: null, bks: [], rvs: [], pt: [],
-  view: 'ov', wiz: {}
+'use strict';
+
+/* ═══════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════ */
+var State = {
+  token: localStorage.getItem('token'),
+  user: null,
+  proProfile: null,
+  currentView: 'dashboard',
+  bookings: [],
+  bookingFilter: 'new',
+  threads: [],
+  activeThreadId: null,
+  messages: [],
+  notifications: [],
+  unreadNotifs: 0,
+  ws: null,
+  wsRetries: 0,
 };
 
-// ══════════════════ HTTP ══════════════════
-async function req(m, p, b) {
-  const r = await fetch(API + p, {
-    method: m,
-    headers: { 'Content-Type': 'application/json', ...(S.tok ? { Authorization: `Bearer ${S.tok}` } : {}) },
-    ...(b ? { body: JSON.stringify(b) } : {})
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.message || d.errors?.[0]?.msg || 'Error');
-  return d;
+/* ═══════════════════════════════════════════════
+   API HELPERS
+   ═══════════════════════════════════════════════ */
+async function api(path, opts) {
+  opts = opts || {};
+  var headers = { 'Content-Type': 'application/json' };
+  if (State.token) headers['Authorization'] = 'Bearer ' + State.token;
+  if (opts.headers) Object.assign(headers, opts.headers);
+  var res = await fetch('/api' + path, Object.assign({}, opts, { headers: headers }));
+  if (res.status === 401) { App.logout(); throw new Error('Unauthorized'); }
+  var json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Request failed');
+  return json;
 }
-const G = p => req('GET', p);
-const P = (p, b) => req('POST', p, b);
-const U = (p, b) => req('PUT', p, b);
-const D = p => req('DELETE', p);
+function apiGet(p) { return api(p); }
+function apiPost(p, body) { return api(p, { method: 'POST', body: JSON.stringify(body) }); }
+function apiPut(p, body) { return api(p, { method: 'PUT', body: JSON.stringify(body) }); }
 
-// ══════════════════ TOAST ══════════════════
-let _tt;
-function toast(msg, t = 'ok') {
-  const el = document.getElementById('toast');
-  el.textContent = (t === 'ok' ? '✅ ' : '❌ ') + msg;
-  el.className = 'show ' + t;
-  clearTimeout(_tt); _tt = setTimeout(() => el.className = '', 3500);
+/* ═══════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════ */
+function esc(s) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(s || ''));
+  return d.innerHTML;
 }
-
-// ══════════════════ GATE UI ══════════════════
-function showSI() {
-  document.getElementById('auth-panel').style.display = 'block';
-  document.getElementById('si-pane').style.display = 'block';
-  document.getElementById('su-pane').style.display = 'none';
-  document.getElementById('auth-panel').scrollIntoView({ behavior: 'smooth' });
+function fmtDate(d) {
+  if (!d) return '\u2014';
+  try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch(e) { return '\u2014'; }
 }
-function showSU() {
-  loadCats();
-  document.getElementById('auth-panel').style.display = 'block';
-  document.getElementById('si-pane').style.display = 'none';
-  document.getElementById('su-pane').style.display = 'block';
-  document.getElementById('auth-panel').scrollIntoView({ behavior: 'smooth' });
+function fmtTime(d) {
+  if (!d) return '';
+  try { return new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
+  catch(e) { return ''; }
 }
-
-// ══════════════════ SIGN IN ══════════════════
-async function doSignIn() {
-  const email = v('si-email'), pw = v('si-pw');
-  if (!email || !pw) return toast('Fill in all fields', 'err');
-  try {
-    const r = await P('/auth/login', { email, password: pw });
-    S.tok = r.data.token; localStorage.setItem('sc_pt', r.data.token); S.user = r.data.user;
-    await enter();
-  } catch (e) { toast(e.message, 'err'); }
+function fmtDateTime(d) { return d ? fmtDate(d) + ' ' + fmtTime(d) : '\u2014'; }
+function fmtMoney(n) { return n ? '\u20B9' + Number(n).toLocaleString('en-IN') : '\u2014'; }
+function timeAgo(d) {
+  if (!d) return '';
+  var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  if (s < 604800) return Math.floor(s / 86400) + 'd ago';
+  return fmtDate(d);
 }
-
-// ══════════════════ WIZARD ══════════════════
-function setWStep(n) {
-  [1,2,3,4,5].forEach(i => {
-    const el = document.getElementById(`ws${i}`);
-    if (el) el.style.display = i === n ? 'block' : 'none';
-  });
-  const dots = document.querySelectorAll('.wp');
-  dots.forEach((d, i) => { d.className = 'wp' + (i < n-1 ? ' done' : i === n-1 ? ' cur' : ''); });
+function initials(name) {
+  return (name || '?').split(' ').map(function(w){ return w.charAt(0); }).join('').toUpperCase().slice(0, 2);
 }
-
-async function w1() {
-  const name = v('r-name'), email = v('r-email'), pw = v('r-pw');
-  if (!name || !email || !pw) return toast('Fill in all fields', 'err');
-  if (pw.length < 6) return toast('Password must be 6+ characters', 'err');
-  try {
-    const r = await P('/auth/register', { name, email, password: pw, role: 'professional' });
-    S.tok = r.data.token; localStorage.setItem('sc_pt', r.data.token); S.user = r.data.user;
-    setWStep(2);
-  } catch (e) { toast(e.message, 'err'); }
+function statusLabel(s) {
+  return (s || '').replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
 }
-
-function w2() {
-  S.wiz.cats = [...document.querySelectorAll('.cchip.on')].map(el => parseInt(el.dataset.id));
-  if (!S.wiz.cats.length) return toast('Select at least one category', 'err');
-  setWStep(3);
+function toast(msg, type) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 4000);
 }
+function $(id) { return document.getElementById(id); }
 
-function w3() {
-  const hl = v('r-hl'), loc = v('r-loc'), exp = parseInt(v('r-exp')) || 0;
-  if (!hl) return toast('Headline is required', 'err');
-  Object.assign(S.wiz, { hl, loc, exp }); setWStep(4);
-}
+/* ═══════════════════════════════════════════════
+   APP NAMESPACE
+   ═══════════════════════════════════════════════ */
+var App = {};
 
-async function w4() {
-  const bio = v('r-bio'), price = parseFloat(v('r-price')) || 0;
-  if (!bio) return toast('Bio is required', 'err');
-  const btn = document.getElementById('wfin-btn');
-  btn.textContent = 'Creating profile…'; btn.disabled = true;
+/* ── AUTH ───────────────────────────────────── */
+App.logout = function() {
+  State.token = null;
+  State.user = null;
+  State.proProfile = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  if (State.ws) { State.ws.close(); State.ws = null; }
+  $('login-page').style.display = '';
+  $('app').style.display = 'none';
+};
 
-  // Geolocation (optional)
-  let lat = 0, lon = 0;
-  try {
-    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 }));
-    lat = pos.coords.latitude; lon = pos.coords.longitude;
-  } catch (_) {}
-
-  // Update user location
-  if (S.wiz.loc) { try { await U('/users/profile', { name: S.user.name, location: S.wiz.loc }); } catch (_) {} }
+App.enterApp = async function(user) {
+  State.user = user || (await apiGet('/auth/me')).data.user;
+  $('login-page').style.display = 'none';
+  $('app').style.display = 'block';
+  $('sidebar-avatar').textContent = initials(State.user.name);
+  $('sidebar-name').textContent = State.user.name || 'Professional';
 
   try {
-    const r = await P('/professionals', {
-      headline: S.wiz.hl, bio,
-      years_of_experience: S.wiz.exp, pricing_estimate: price,
-      service_location_radius_km: 25, latitude: lat, longitude: lon,
-      category_ids: S.wiz.cats
+    var proRes = await apiGet('/professionals/me');
+    State.proProfile = proRes.data;
+    var st = State.proProfile.availability_status || 'offline';
+    $('sidebar-status').textContent = statusLabel(st);
+  } catch(e) {
+    $('sidebar-status').textContent = 'Professional';
+  }
+
+  App.connectWebSocket();
+  App.navigate('dashboard');
+};
+
+$('login-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var errEl = $('login-error');
+  var btn = $('login-btn');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in\u2026';
+  try {
+    var result = await apiPost('/auth/login', {
+      email: $('login-email').value.trim(),
+      password: $('login-password').value,
     });
-    S.pro = r.data; setWStep(5);
-  } catch (e) {
-    toast(e.message, 'err');
-    btn.textContent = 'Create Profile →'; btn.disabled = false;
+    State.token = result.data.token;
+    localStorage.setItem('token', result.data.token);
+    if (result.data.refreshToken) localStorage.setItem('refreshToken', result.data.refreshToken);
+    await App.enterApp(result.data.user);
+  } catch(err) {
+    errEl.textContent = err.message || 'Login failed';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+
+/* ── NAVIGATION ────────────────────────────── */
+App.navigate = function(view) {
+  State.currentView = view;
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  var target = $('view-' + view);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    n.classList.toggle('active', n.dataset.view === view);
+  });
+  switch (view) {
+    case 'dashboard': App.loadDashboard(); break;
+    case 'bookings': App.loadBookings(); break;
+    case 'messages': App.loadThreads(); break;
+    case 'notifications': App.loadNotifications(); break;
+    case 'profile': App.loadProfile(); break;
+  }
+};
+
+/* ── DASHBOARD ─────────────────────────────── */
+App.loadDashboard = async function() {
+  var statsEl = $('dash-stats');
+  var recentEl = $('dash-recent');
+  statsEl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  recentEl.innerHTML = '';
+  try {
+    var result = await apiGet('/dashboard');
+    var d = result.data;
+    var s = d.stats || {};
+    var e = d.earnings || {};
+    var f = d.funnel || {};
+
+    $('dash-greeting').textContent = 'Welcome back, ' + (State.user && State.user.name ? State.user.name.split(' ')[0] : 'Pro') + '!';
+
+    var av = State.proProfile ? State.proProfile.availability_status || 'offline' : 'offline';
+    $('dash-availability').innerHTML = '<span class="badge badge-' + av + '">' + statusLabel(av) + '</span>';
+
+    var activeCount = (f.quoted || 0) + (f.accepted || 0) + (f.scheduled || 0) + (f.inProgress || 0);
+    statsEl.innerHTML =
+      '<div class="stat-card"><div class="stat-icon" style="background:#fef3c7">&#x1F4E5;</div><div class="stat-value">' + (f.requested || 0) + '</div><div class="stat-label">Pending Requests</div></div>' +
+      '<div class="stat-card"><div class="stat-icon" style="background:#dbeafe">&#x26A1;</div><div class="stat-value">' + activeCount + '</div><div class="stat-label">Active Jobs</div></div>' +
+      '<div class="stat-card"><div class="stat-icon" style="background:#d1fae5">&#x2705;</div><div class="stat-value">' + (f.completed || s.completedJobs || 0) + '</div><div class="stat-label">Completed</div></div>' +
+      '<div class="stat-card"><div class="stat-icon" style="background:#ede9fe">&#x1F4B0;</div><div class="stat-value">' + fmtMoney(e.thisMonth || 0) + '</div><div class="stat-label">Earnings This Month</div></div>' +
+      '<div class="stat-card"><div class="stat-icon" style="background:#fce7f3">&#x2B50;</div><div class="stat-value">' + (s.rating ? Number(s.rating).toFixed(1) : '\u2014') + '</div><div class="stat-label">Rating (' + (s.reviews || 0) + ' reviews)</div></div>' +
+      '<div class="stat-card"><div class="stat-icon" style="background:#ecfeff">&#x1F441;</div><div class="stat-value">' + (s.views || 0) + '</div><div class="stat-label">Profile Views</div></div>';
+
+    // Load recent bookings for the dashboard
+    await App.loadBookings(true);
+    var recent = State.bookings.filter(function(b){ return b.status === 'requested'; }).slice(0, 5);
+    if (recent.length === 0) {
+      recentEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x1F4ED;</div><p>No pending requests</p></div>';
+    } else {
+      recentEl.innerHTML = recent.map(bookingItemHTML).join('');
+    }
+  } catch(err) {
+    statsEl.innerHTML = '<div class="empty-state"><p>Failed to load dashboard: ' + esc(err.message) + '</p></div>';
+  }
+};
+
+/* ── BOOKINGS ──────────────────────────────── */
+App.loadBookings = async function(silent) {
+  var listEl = $('bookings-list');
+  if (!silent) listEl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  try {
+    var result = await apiGet('/bookings?role=pro');
+    State.bookings = Array.isArray(result.data) ? result.data : [];
+    if (!silent) App.renderBookings();
+    App.updateBadges();
+  } catch(err) {
+    if (!silent) listEl.innerHTML = '<div class="empty-state"><p>Failed to load bookings</p></div>';
+  }
+};
+
+App.filterBookings = function(filter) {
+  State.bookingFilter = filter;
+  document.querySelectorAll('#booking-tabs .tab-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  App.renderBookings();
+};
+
+App.renderBookings = function() {
+  var listEl = $('bookings-list');
+  var filtered = State.bookings;
+  switch (State.bookingFilter) {
+    case 'new': filtered = filtered.filter(function(b){ return b.status === 'requested'; }); break;
+    case 'active': filtered = filtered.filter(function(b){ return ['quoted','accepted','scheduled','in_progress'].indexOf(b.status) >= 0; }); break;
+    case 'completed': filtered = filtered.filter(function(b){ return b.status === 'completed'; }); break;
+  }
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x1F4CB;</div><p>No bookings found</p></div>';
+    return;
+  }
+  listEl.innerHTML = filtered.map(bookingItemHTML).join('');
+};
+
+function bookingItemHTML(b) {
+  var actions = getBookingActions(b);
+  var amount = b.final_amount || b.quoted_amount;
+  return '<div class="booking-item" onclick="App.viewBooking(\'' + b.id + '\')">' +
+    '<div class="booking-icon">&#x1F527;</div>' +
+    '<div class="booking-info">' +
+      '<div class="booking-title">' + esc(b.title || 'Untitled Booking') + '</div>' +
+      '<div class="booking-meta">' +
+        '<span>&#x1F464; ' + esc(b.customer_name || 'Customer') + '</span>' +
+        '<span>&#x1F4C5; ' + fmtDate(b.preferred_date || b.created_at) + '</span>' +
+        '<span class="badge badge-' + b.status + '">' + statusLabel(b.status) + '</span>' +
+      '</div>' +
+    '</div>' +
+    (amount ? '<div class="booking-amount">' + fmtMoney(amount) + '</div>' : '') +
+    '<div class="booking-actions" onclick="event.stopPropagation()">' + actions + '</div>' +
+  '</div>';
+}
+
+function getBookingActions(b) {
+  switch (b.status) {
+    case 'requested':
+      return '<button class="btn btn-primary btn-sm" onclick="App.showQuoteModal(\'' + b.id + '\')">Send Quote</button>' +
+             '<button class="btn btn-danger btn-sm" onclick="App.transitionBooking(\'' + b.id + '\',\'cancelled\')">Decline</button>';
+    case 'quoted':
+      return '<span style="color:var(--text-secondary);font-size:13px">Awaiting customer</span>';
+    case 'accepted':
+      return '<button class="btn btn-primary btn-sm" onclick="App.showScheduleModal(\'' + b.id + '\')">Schedule</button>';
+    case 'scheduled':
+      return '<button class="btn btn-warning btn-sm" onclick="App.transitionBooking(\'' + b.id + '\',\'in_progress\')">Start Job</button>';
+    case 'in_progress':
+      return '<button class="btn btn-success btn-sm" onclick="App.transitionBooking(\'' + b.id + '\',\'completed\')">Complete</button>';
+    default:
+      return '';
   }
 }
 
-// ══════════════════ ENTER DASHBOARD ══════════════════
-async function enter() {
+App.viewBooking = async function(id) {
+  App.navigate('booking-detail');
+  var contentEl = $('booking-detail-content');
+  contentEl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
   try {
-    const [pRes, cRes] = await Promise.all([G('/users/profile'), G('/categories')]);
-    S.user = pRes.data;
-    S.cats = flatten(cRes.data || []);
-    try { const pr = await G('/professionals/me'); S.pro = pr.data; } catch (_) {}
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').hidden = false;
-    document.getElementById('t-name').textContent = S.user?.name || 'Pro';
-    document.getElementById('t-av').textContent = (S.user?.name || 'P')[0].toUpperCase();
-    await Promise.all([loadStats(), loadBks()]);
-    go('ov');
-  } catch (e) { toast(e.message, 'err'); }
-}
+    var result = await apiGet('/bookings/' + id);
+    var b = result.data.booking || result.data;
+    var log = result.data.status_log || b.status_log || [];
+    var actions = getBookingActions(b);
+    var logHTML = '';
+    if (log.length > 0) {
+      logHTML = '<ul class="timeline">' + log.map(function(l) {
+        return '<li><div class="tl-status">' + statusLabel(l.to_status) + '</div>' +
+          '<div class="tl-info">' + esc(l.changed_by_name || 'System') + ' \u2014 ' + fmtDateTime(l.created_at) + '</div>' +
+          (l.note ? '<div class="tl-info" style="font-style:italic">' + esc(l.note) + '</div>' : '') +
+        '</li>';
+      }).join('') + '</ul>';
+    } else {
+      logHTML = '<p style="color:var(--text-secondary)">No status changes yet</p>';
+    }
 
-function flatten(tree, out = []) {
-  tree.forEach(n => { out.push(n); if (n.children) flatten(n.children, out); });
-  return out;
-}
-
-// ══════════════════ DATA LOADERS ══════════════════
-async function loadCats() {
-  try {
-    const r = await fetch(API + '/categories');
-    const d = await r.json();
-    const ch = document.getElementById('cat-chips'); ch.innerHTML = '';
-    flatten(d.data || []).forEach(c => {
-      const el = document.createElement('div');
-      el.className = 'chip cchip'; el.dataset.id = c.id;
-      el.textContent = c.name;
-      el.onclick = () => el.classList.toggle('on');
-      ch.appendChild(el);
-    });
-  } catch (_) {}
-}
-
-async function loadStats() { try { const r = await G('/dashboard'); S.stats = r.data || r; } catch (_) { S.stats = {}; } }
-async function loadBks() { try { const r = await G('/bookings'); S.bks = r.data || []; } catch (_) { S.bks = []; } }
-async function loadRvs() {
-  if (!S.pro) return;
-  try { const r = await G(`/reviews/${S.pro.id}`); S.rvs = r.data || []; } catch (_) { S.rvs = []; }
-}
-async function loadPt() {
-  if (!S.pro) return;
-  try { const r = await G(`/portfolio/${S.pro.id}`); S.pt = r.data || []; } catch (_) { S.pt = []; }
-}
-
-// ══════════════════ VIEW ROUTER ══════════════════
-function go(view) {
-  S.view = view;
-  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
-  const nav = document.getElementById(`n-${view}`);
-  if (nav) nav.classList.add('on');
-  const mc = document.getElementById('mc');
-  mc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--tx2)">Loading…</div>';
-  const newReqs = (S.bks || []).filter(b => b.status === 'requested').length;
-  const badge = document.getElementById('bk-badge');
-  if (newReqs > 0) { badge.textContent = newReqs; badge.style.display = 'inline'; }
-  else badge.style.display = 'none';
-  switch(view) {
-    case 'ov': renderOv(); break;
-    case 'pf': renderPf(); break;
-    case 'bk': loadBks().then(renderBk); break;
-    case 'rv': loadRvs().then(renderRv); break;
-    case 'pt': loadPt().then(renderPt); break;
+    contentEl.innerHTML =
+      '<div class="detail-grid"><div>' +
+        '<div class="card" style="margin-bottom:20px"><div class="card-header">' +
+          '<h3>' + esc(b.title || 'Booking Details') + '</h3>' +
+          '<span class="badge badge-' + b.status + '">' + statusLabel(b.status) + '</span>' +
+        '</div><div class="card-body">' +
+          (b.description ? '<p style="margin-bottom:16px;color:var(--text-secondary)">' + esc(b.description) + '</p>' : '') +
+          '<div class="detail-row"><span class="detail-label">Customer</span><span class="detail-value">' + esc(b.customer_name || '\u2014') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Preferred Date</span><span class="detail-value">' + fmtDate(b.preferred_date) + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Scheduled For</span><span class="detail-value">' + fmtDateTime(b.scheduled_for) + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Service Address</span><span class="detail-value">' + esc(b.service_address || '\u2014') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Quoted Amount</span><span class="detail-value">' + fmtMoney(b.quoted_amount) + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Final Amount</span><span class="detail-value">' + fmtMoney(b.final_amount) + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">' + fmtDateTime(b.created_at) + '</span></div>' +
+          (actions ? '<div style="margin-top:16px;display:flex;gap:8px">' + actions + '</div>' : '') +
+        '</div></div>' +
+      '</div><div>' +
+        '<div class="card"><div class="card-header"><h3>Status History</h3></div>' +
+        '<div class="card-body">' + logHTML + '</div></div>' +
+      '</div></div>';
+  } catch(err) {
+    contentEl.innerHTML = '<div class="empty-state"><p>Failed to load: ' + esc(err.message) + '</p></div>';
   }
-  upComp();
-}
+};
 
-// ══════════════════ OVERVIEW ══════════════════
-function renderOv() {
-  const st = S.stats || {}, pr = S.pro, u = S.user;
-  const rating = parseFloat(pr?.average_rating || 0).toFixed(1);
-  const jobs = pr?.completed_jobs || 0;
-  const earn = st?.earnings?.thisMonth || st?.total_earnings || 0;
-  const rvCount = pr?.review_count || st?.review_count || 0;
-  const pending = (S.bks || []).filter(b => b.status === 'requested');
+/* ── BOOKING TRANSITIONS ───────────────────── */
+App.showQuoteModal = function(bookingId) {
+  App.showModal('Send Quote',
+    '<div class="form-group"><label>Quote Amount (\u20B9)</label>' +
+    '<input type="number" class="form-input" id="quote-amount" placeholder="Enter amount" min="1" step="1" required></div>' +
+    '<div class="form-group"><label>Note (optional)</label>' +
+    '<textarea class="form-textarea" id="quote-note" placeholder="Add a note for the customer..." style="min-height:60px"></textarea></div>',
+    '<button class="btn btn-secondary" onclick="App.hideModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="App.submitQuote(\'' + bookingId + '\')">Send Quote</button>'
+  );
+  setTimeout(function(){ var el = $('quote-amount'); if (el) el.focus(); }, 100);
+};
 
-  document.getElementById('mc').innerHTML = `
-    ${phHtml(u, pr, false)}
-    <div class="sg">
-      <div class="sc"><div class="v">⭐ ${rating}</div><div class="l">Avg Rating</div></div>
-      <div class="sc"><div class="v">${jobs}</div><div class="l">Jobs Done</div></div>
-      <div class="sc"><div class="v">₹${fmtN(earn)}</div><div class="l">This Month</div></div>
-      <div class="sc"><div class="v">${rvCount}</div><div class="l">Reviews</div></div>
-    </div>
-    ${pending.length ? `
-    <div class="card">
-      <div class="ch"><h3>🔔 New Requests (${pending.length})</h3><button class="btn btn-o btn-s" onclick="go('bk')">View All</button></div>
-      <div>${pending.slice(0,3).map(b => bcHtml(b)).join('')}</div>
-    </div>` : ''}
-    <div class="card">
-      <div class="ch"><h3>⚡ Quick Actions</h3></div>
-      <div class="cb" style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-o btn-s" onclick="openAvailModal()">📍 Availability</button>
-        <button class="btn btn-o btn-s" onclick="go('pf')">✏️ Edit Profile</button>
-        <button class="btn btn-o btn-s" onclick="go('pt')">📷 Portfolio</button>
-        <button class="btn btn-o btn-s" onclick="copyLink()">🔗 Share Profile</button>
-        ${S.pro ? `<a href="/app/" target="_blank" class="btn btn-o btn-s" style="color:var(--p)">👁 View Public Profile</a>` : ''}
-      </div>
-    </div>
-    ${!S.pro ? `<div class="card" style="border:2px dashed var(--p);background:var(--p-lt)">
-      <div class="cb" style="text-align:center">
-        <div style="font-size:28px">⚠️</div>
-        <h3 style="margin:8px 0 4px">Profile Incomplete</h3>
-        <p style="color:var(--tx2);font-size:13px;margin-bottom:12px">You're registered but haven't created your professional profile yet.</p>
-        <button class="btn btn-p" onclick="showSU()">Complete Profile Setup</button>
-      </div>
-    </div>` : ''}
-  `;
-}
-
-// ══════════════════ PROFILE ══════════════════
-function renderPf() {
-  const u = S.user, p = S.pro;
-  document.getElementById('mc').innerHTML = `
-    ${phHtml(u, p, true)}
-    <div class="card">
-      <div class="ch"><h3>About</h3><button class="btn-ghost" onclick="show('bio-e')">✏️ Edit</button></div>
-      <div class="cb">
-        <div id="bio-d" style="color:var(--tx2);line-height:1.7">${esc(p?.bio || 'No bio yet. Click Edit to add your professional summary.')}</div>
-        <div id="bio-e" class="ie">
-          <textarea class="fc" id="bio-in" rows="4">${esc(p?.bio || '')}</textarea>
-          <div class="ie-btns"><button class="btn btn-p btn-s" onclick="saveBio()">Save</button><button class="btn-ghost btn-s" onclick="hide('bio-e','bio-d')">Cancel</button></div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><h3>Headline</h3><button class="btn-ghost" onclick="show('hl-e')">✏️ Edit</button></div>
-      <div class="cb">
-        <div id="hl-d" style="font-size:15px;font-weight:500">${esc(p?.headline || '—')}</div>
-        <div id="hl-e" class="ie">
-          <input class="fc" id="hl-in" value="${esc(p?.headline || '')}">
-          <div class="ie-btns"><button class="btn btn-p btn-s" onclick="saveHl()">Save</button><button class="btn-ghost btn-s" onclick="hide('hl-e','hl-d')">Cancel</button></div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><h3>Availability & Location</h3><button class="btn-ghost" onclick="openAvailModal()">✏️ Edit</button></div>
-      <div class="cb" style="display:flex;gap:24px;flex-wrap:wrap">
-        <div><div class="fg-label">Status</div>${availBadge(p?.availability_status || 'offline')}</div>
-        <div><div class="fg-label">Location</div><strong>${esc(u?.location || '—')}</strong></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><h3>Pricing & Experience</h3><button class="btn-ghost" onclick="show('px-e')">✏️ Edit</button></div>
-      <div class="cb" id="px-d">
-        <div style="display:flex;gap:32px;flex-wrap:wrap">
-          <div><div class="fg-label">Rate (₹)</div><strong>${p?.pricing_estimate ?? '—'}</strong></div>
-          <div><div class="fg-label">Experience</div><strong>${p?.years_of_experience ?? '—'} years</strong></div>
-        </div>
-      </div>
-      <div class="cb ie" id="px-e">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="fg"><label>Rate (₹)</label><input class="fc" id="px-rate" type="number" value="${p?.pricing_estimate || ''}"></div>
-          <div class="fg"><label>Years Exp.</label><input class="fc" id="px-exp" type="number" value="${p?.years_of_experience || ''}"></div>
-        </div>
-        <div class="ie-btns"><button class="btn btn-p btn-s" onclick="savePx()">Save</button><button class="btn-ghost btn-s" onclick="hide('px-e','px-d')">Cancel</button></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><h3>Categories & Skills</h3><button class="btn-ghost" onclick="openCatModal()">✏️ Edit</button></div>
-      <div class="cb">
-        <div class="chips">
-          ${(p?.categories || []).length > 0
-            ? p.categories.map(c => `<span class="chip chip-c">${esc(c.name || c)}</span>`).join('')
-            : '<span style="color:var(--tx2);font-size:13px">No categories selected yet</span>'}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// fg-label CSS is defined in the <style> block above
-
-// ══════════════════ BOOKINGS ══════════════════
-function renderBk() {
-  const req = (S.bks || []).filter(b => b.status === 'requested');
-  const act = (S.bks || []).filter(b => ['quoted','accepted','scheduled','in_progress'].includes(b.status));
-  const past = (S.bks || []).filter(b => ['completed','cancelled','declined','refunded','disputed'].includes(b.status));
-  document.getElementById('mc').innerHTML = `
-    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Bookings</h2><p style="color:var(--tx2);margin-top:4px">Manage your service requests and active jobs</p></div>
-    ${req.length ? `<div class="card"><div class="ch"><h3>🔔 New Requests (${req.length})</h3></div><div>${req.map(b => bcHtml(b, true)).join('')}</div></div>` : ''}
-    ${act.length ? `<div class="card"><div class="ch"><h3>⚙️ Active Jobs (${act.length})</h3></div><div>${act.map(b => bcHtml(b, false, true)).join('')}</div></div>` : ''}
-    <div class="card">
-      <div class="ch"><h3>📋 Past Bookings (${past.length})</h3></div>
-      <div>${past.length ? past.map(b => bcHtml(b)).join('') : '<p style="padding:20px;color:var(--tx2)">No past bookings yet</p>'}</div>
-    </div>
-  `;
-}
-
-// ══════════════════ REVIEWS ══════════════════
-function renderRv() {
-  const rvs = S.rvs || [];
-  const avg = rvs.length ? (rvs.reduce((a, r) => a + (r.rating || 0), 0) / rvs.length).toFixed(1) : '—';
-  const avgNum = parseFloat(avg) || 0;
-  document.getElementById('mc').innerHTML = `
-    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Reviews</h2></div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="cb" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
-        <div style="text-align:center">
-          <div style="font-size:48px;font-weight:800;color:var(--p)">${avg}</div>
-          <div class="stars">${'★'.repeat(Math.round(avgNum))}${'☆'.repeat(5-Math.round(avgNum))}</div>
-          <div style="font-size:13px;color:var(--tx2);margin-top:4px">${rvs.length} review${rvs.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div style="flex:1;min-width:160px">
-          ${[5,4,3,2,1].map(n => {
-            const cnt = rvs.filter(r => Math.round(r.rating) === n).length;
-            const pct = rvs.length ? Math.round(cnt / rvs.length * 100) : 0;
-            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px">
-              <span>${n}★</span>
-              <div style="flex:1;height:6px;background:var(--bd);border-radius:99px"><div style="width:${pct}%;height:100%;background:var(--warn);border-radius:99px"></div></div>
-              <span style="color:var(--tx2)">${cnt}</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      ${rvs.length ? rvs.map(r => `
-        <div class="rv">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="font-weight:600;font-size:14px">${esc(r.reviewer_name || r.user_name || 'Anonymous')}</div>
-              <div class="stars" style="font-size:13px">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</div>
-            </div>
-            <div style="font-size:12px;color:var(--tx2)">${fmtD(r.created_at)}</div>
-          </div>
-          ${r.comment ? `<p style="margin-top:8px;font-size:13.5px">${esc(r.comment)}</p>` : ''}
-        </div>`).join('')
-      : '<div style="padding:24px;text-align:center;color:var(--tx2)">No reviews yet. Complete your first job to get your first review! ⭐</div>'}
-    </div>
-  `;
-}
-
-// ══════════════════ PORTFOLIO ══════════════════
-function renderPt() {
-  const items = S.pt || [];
-  document.getElementById('mc').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div><h2 style="font-size:20px;font-weight:700">Portfolio</h2><p style="color:var(--tx2);font-size:13.5px;margin-top:4px">Showcase your best work to win more clients</p></div>
-      <button class="btn btn-p btn-s" onclick="openAddPt()">+ Add Work</button>
-    </div>
-    <div class="pg">
-      ${items.map(i => `
-        <div class="pi">
-          <div class="pi-thumb">${emoji(i.title)}</div>
-          <div class="pi-info">
-            <div class="t">${esc(i.title || 'Untitled')}</div>
-            <div class="d">${esc((i.description || '').substring(0,60))}${(i.description||'').length>60?'…':''}</div>
-            <button class="btn-ghost" style="color:var(--err);margin-top:6px;font-size:12px" onclick="delPt('${i.id}')">🗑 Remove</button>
-          </div>
-        </div>`).join('')}
-      <div class="pi-add" onclick="openAddPt()">
-        <span style="font-size:30px">📷</span>
-        <span style="font-size:13px;font-weight:500">Add Portfolio Item</span>
-      </div>
-    </div>
-    ${!items.length ? '<p style="color:var(--tx2);font-size:13.5px;margin-top:16px;text-align:center">Upload photos and descriptions of past work to attract more clients.</p>' : ''}
-  `;
-}
-
-// ══════════════════ SUB-RENDERERS ══════════════════
-function phHtml(u, p, editable) {
-  const name = u?.name || '—';
-  const hl = p?.headline || 'Professional on SkillConnect';
-  const rating = parseFloat(p?.average_rating || 0).toFixed(1);
-  const jobs = p?.completed_jobs || 0;
-  const avail = p?.availability_status || 'offline';
-  return `
-    <div class="ph-card">
-      <div class="ph-cover"></div>
-      <div class="ph-body">
-        <div style="display:flex;justify-content:space-between;align-items:flex-end">
-          <div class="ph-av">${name[0]?.toUpperCase() || '?'}</div>
-          ${editable ? `<button class="btn btn-o btn-s" style="margin-bottom:4px" onclick="show('hl-e')">✏️ Edit Headline</button>` : ''}
-        </div>
-        <div class="ph-name">${esc(name)}</div>
-        <div class="ph-hl">${esc(hl)}</div>
-        <div class="ph-meta">
-          ${u?.location ? `<span>📍 ${esc(u.location)}</span>` : ''}
-          <span>⭐ ${rating}</span>
-          <span>✅ ${jobs} jobs done</span>
-          ${availBadge(avail)}
-        </div>
-        ${u?.government_id_verified ? '<span class="badge b-ok" style="margin-top:8px">✓ ID Verified</span>' : ''}
-      </div>
-    </div>`;
-}
-
-function bcHtml(b, showAccept = false, showProgress = false) {
-  const stMap = { requested:'b-warn', quoted:'b-blue', accepted:'b-ok', scheduled:'b-ok', in_progress:'b-ok', completed:'b-ok', cancelled:'b-gray', declined:'b-gray', refunded:'b-gray', disputed:'b-warn' };
-  const cls = stMap[b.status] || 'b-gray';
-  const stLabel = { requested:'New Request', quoted:'Quote Sent', accepted:'Accepted', scheduled:'Scheduled', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled', declined:'Declined', refunded:'Refunded' };
-  return `
-    <div class="bc">
-      <div class="bc-top">
-        <div>
-          <div class="bc-title">${esc(b.title || 'Service Request')}</div>
-          <div class="bc-detail">👤 ${esc(b.customer_name || b.user_name || 'Customer')} · ${fmtD(b.created_at)}</div>
-          ${b.description ? `<div class="bc-detail" style="margin-top:2px">"${esc(b.description.substring(0,100))}"</div>` : ''}
-          ${b.service_address ? `<div class="bc-detail">📍 ${esc(b.service_address)}</div>` : ''}
-        </div>
-        <span class="badge ${cls}">${stLabel[b.status] || b.status}</span>
-      </div>
-      ${showAccept ? `<div class="bc-actions">
-        <button class="btn btn-p btn-s" onclick="transBook('${b.id}','quoted')">✅ Accept & Quote</button>
-        <button class="btn btn-err btn-s" onclick="transBook('${b.id}','cancelled')">❌ Decline</button>
-      </div>` : ''}
-      ${showProgress && (b.status === 'accepted' || b.status === 'scheduled') ? `<div class="bc-actions">
-        <button class="btn btn-ok btn-s" onclick="transBook('${b.id}','in_progress')">▶️ Start Job</button>
-      </div>` : ''}
-      ${showProgress && b.status === 'in_progress' ? `<div class="bc-actions">
-        <button class="btn btn-ok btn-s" onclick="transBook('${b.id}','completed')">🏁 Mark Complete</button>
-      </div>` : ''}
-    </div>`;
-}
-
-function availBadge(s) {
-  const m = { available: ['b-ok','🟢 Available'], busy: ['b-warn','🟡 Busy'], offline: ['b-gray','⚫ Offline'] };
-  const [c, t] = m[s] || m.offline;
-  return `<span class="badge ${c}">${t}</span>`;
-}
-
-// ══════════════════ INLINE EDIT HELPERS ══════════════════
-function show(eId) {
-  document.getElementById(eId).classList.add('open');
-  // Hide paired display el
-  const dId = eId.replace('-e','-d');
-  const dEl = document.getElementById(dId);
-  if (dEl) dEl.style.display = 'none';
-}
-function hide(eId, dId) {
-  document.getElementById(eId).classList.remove('open');
-  if (dId) { const d = document.getElementById(dId); if (d) d.style.display = ''; }
-}
-
-async function saveBio() {
-  const bio = v('bio-in');
-  if (!bio) return toast('Bio cannot be empty', 'err');
+App.submitQuote = async function(bookingId) {
+  var amount = parseFloat(($('quote-amount') || {}).value);
+  var noteEl = $('quote-note');
+  var note = noteEl ? noteEl.value.trim() : '';
+  if (!amount || amount <= 0) { toast('Please enter a valid amount', 'error'); return; }
   try {
-    await U(`/professionals/${S.pro.id}`, { bio }); S.pro.bio = bio;
-    document.getElementById('bio-d').textContent = bio; hide('bio-e','bio-d');
-    toast('Bio updated!'); upComp();
-  } catch (e) { toast(e.message,'err'); }
-}
+    await apiPost('/bookings/' + bookingId + '/transition', {
+      to: 'quoted',
+      payload: { quoted_amount: amount },
+      note: note || undefined,
+    });
+    App.hideModal();
+    toast('Quote sent successfully!', 'success');
+    App.refreshCurrentView();
+  } catch(err) {
+    toast(err.message || 'Failed to send quote', 'error');
+  }
+};
 
-async function saveHl() {
-  const headline = v('hl-in');
-  if (!headline) return toast('Headline required','err');
+App.showScheduleModal = function(bookingId) {
+  var minDate = new Date(Date.now() + 60000).toISOString().slice(0, 16);
+  App.showModal('Schedule Job',
+    '<div class="form-group"><label>Schedule Date &amp; Time</label>' +
+    '<input type="datetime-local" class="form-input" id="schedule-date" min="' + minDate + '" required></div>' +
+    '<div class="form-group"><label>Note (optional)</label>' +
+    '<textarea class="form-textarea" id="schedule-note" placeholder="Add details..." style="min-height:60px"></textarea></div>',
+    '<button class="btn btn-secondary" onclick="App.hideModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="App.submitSchedule(\'' + bookingId + '\')">Confirm Schedule</button>'
+  );
+};
+
+App.submitSchedule = async function(bookingId) {
+  var dateStr = ($('schedule-date') || {}).value;
+  var noteEl = $('schedule-note');
+  var note = noteEl ? noteEl.value.trim() : '';
+  if (!dateStr) { toast('Please select a date', 'error'); return; }
   try {
-    await U(`/professionals/${S.pro.id}`, { headline }); S.pro.headline = headline;
-    document.getElementById('hl-d').textContent = headline; hide('hl-e','hl-d');
-    toast('Headline updated!'); upComp();
-  } catch (e) { toast(e.message,'err'); }
-}
+    await apiPost('/bookings/' + bookingId + '/transition', {
+      to: 'scheduled',
+      payload: { scheduled_for: new Date(dateStr).toISOString() },
+      note: note || undefined,
+    });
+    App.hideModal();
+    toast('Job scheduled!', 'success');
+    App.refreshCurrentView();
+  } catch(err) {
+    toast(err.message || 'Failed to schedule', 'error');
+  }
+};
 
-async function savePx() {
-  const pricing_estimate = parseFloat(v('px-rate')), years_of_experience = parseInt(v('px-exp'));
-  if (isNaN(pricing_estimate)) return toast('Enter a valid rate','err');
+App.transitionBooking = function(bookingId, toStatus) {
+  var labels = {
+    in_progress: 'Start this job?',
+    completed: 'Mark this job as completed?',
+    cancelled: 'Cancel/decline this booking?',
+  };
+  var label = labels[toStatus] || ('Transition to ' + statusLabel(toStatus) + '?');
+  var bodyHTML = '<p style="font-size:15px;margin-bottom:16px">' + label + '</p>';
+  if (toStatus === 'cancelled') {
+    bodyHTML += '<div class="form-group"><label>Reason (optional)</label>' +
+      '<textarea class="form-textarea" id="transition-reason" placeholder="Reason..." style="min-height:60px"></textarea></div>';
+  }
+  var btnClass = toStatus === 'cancelled' ? 'btn-danger' : 'btn-primary';
+  App.showModal('Confirm Action', bodyHTML,
+    '<button class="btn btn-secondary" onclick="App.hideModal()">Cancel</button>' +
+    '<button class="btn ' + btnClass + '" onclick="App.confirmTransition(\'' + bookingId + '\',\'' + toStatus + '\')">Confirm</button>'
+  );
+};
+
+App.confirmTransition = async function(bookingId, toStatus) {
+  var reasonEl = $('transition-reason');
+  var payload = {};
+  if (reasonEl && reasonEl.value.trim()) payload.cancellation_reason = reasonEl.value.trim();
   try {
-    await U(`/professionals/${S.pro.id}`, { pricing_estimate, years_of_experience });
-    S.pro.pricing_estimate = pricing_estimate; S.pro.years_of_experience = years_of_experience;
-    hide('px-e','px-d'); toast('Updated!'); upComp(); renderPf();
-  } catch (e) { toast(e.message,'err'); }
-}
+    await apiPost('/bookings/' + bookingId + '/transition', { to: toStatus, payload: payload });
+    App.hideModal();
+    toast('Booking ' + statusLabel(toStatus) + '!', 'success');
+    App.refreshCurrentView();
+  } catch(err) {
+    toast(err.message || 'Transition failed', 'error');
+  }
+};
 
-// ══════════════════ BOOKING ACTIONS ══════════════════
-async function transBook(id, to) {
+/* ── MESSAGES ──────────────────────────────── */
+App.loadThreads = async function() {
+  var threadsEl = $('msg-threads');
+  threadsEl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
   try {
-    await P(`/bookings/${id}/transition`, { to });
-    toast(`Booking ${to === 'quoted' ? 'accepted' : to}!`);
-    await loadBks(); go('bk');
-  } catch (e) { toast(e.message,'err'); }
-}
+    var result = await apiGet('/messages/threads');
+    State.threads = Array.isArray(result.data) ? result.data : [];
+    App.renderThreads();
+    App.updateBadges();
+  } catch(e) {
+    threadsEl.innerHTML = '<div class="empty-state" style="padding:30px"><p>Failed to load threads</p></div>';
+  }
+};
 
-// ══════════════════ MODALS ══════════════════
-function om(html) { document.getElementById('mc-modal').innerHTML = html; document.getElementById('modal').hidden = false; }
-function cm() { document.getElementById('modal').hidden = true; }
+App.renderThreads = function() {
+  var threadsEl = $('msg-threads');
+  if (State.threads.length === 0) {
+    threadsEl.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon">&#x1F4AC;</div><p>No conversations yet</p></div>';
+    return;
+  }
+  threadsEl.innerHTML = State.threads.map(function(t) {
+    var unread = (t.pro_unread || 0) > 0;
+    return '<div class="thread-item ' + (unread ? 'thread-unread' : '') + ' ' + (t.id === State.activeThreadId ? 'active' : '') + '" onclick="App.openThread(\'' + t.id + '\')">' +
+      '<div class="thread-avatar">' + initials(t.other_name) + '</div>' +
+      '<div class="thread-info">' +
+        '<div class="thread-name"><span>' + esc(t.other_name || 'Customer') + '</span><span class="time">' + timeAgo(t.last_message_at) + '</span></div>' +
+        '<div class="thread-preview">' + (t.booking_title ? '&#x1F4CB; ' + esc(t.booking_title) + ' \u2014 ' : '') + esc(t.last_message || 'No messages yet') + '</div>' +
+      '</div></div>';
+  }).join('');
+};
 
-function openAvailModal() {
-  const cur = S.pro?.availability_status || 'offline';
-  om(`
-    <h3 style="font-size:17px;font-weight:700;margin-bottom:16px">Update Availability</h3>
-    <div class="avs">
-      ${['available','busy','offline'].map(s =>
-        `<div class="av-opt ${s} ${cur===s?s:''}" onclick="setAvail('${s}')">${{available:'🟢 Available',busy:'🟡 Busy',offline:'⚫ Offline'}[s]}</div>`
-      ).join('')}
-    </div>
-    <p style="font-size:12px;color:var(--tx2);margin-top:12px">Clients can only book you when you're set to Available.</p>
-  `);
-}
-
-async function setAvail(status) {
+App.openThread = async function(threadId) {
+  State.activeThreadId = threadId;
+  App.renderThreads();
+  var chatEl = $('msg-chat');
+  chatEl.innerHTML =
+    '<div class="chat-header" id="chat-header">Loading\u2026</div>' +
+    '<div class="chat-messages" id="chat-messages"><div class="loading-center"><div class="spinner"></div></div></div>' +
+    '<div class="chat-input"><input type="text" id="chat-input" placeholder="Type a message\u2026" onkeydown="if(event.key===\'Enter\')App.sendMessage()">' +
+    '<button class="btn btn-primary btn-sm" onclick="App.sendMessage()">Send</button></div>';
   try {
-    await U('/professionals/me/availability', { availability_status: status });
-    if (S.pro) S.pro.availability_status = status;
-    toast(`Status: ${status}`); cm(); upComp();
-  } catch (e) { toast(e.message,'err'); }
-}
+    var res = await apiGet('/messages/threads/' + threadId);
+    State.messages = Array.isArray(res.data) ? res.data : [];
+    var thread = res.thread || State.threads.find(function(t){ return t.id === threadId; }) || {};
+    $('chat-header').innerHTML =
+      '<div class="thread-avatar" style="width:36px;height:36px;font-size:14px">' + initials(thread.other_name) + '</div>' +
+      '<div><div style="font-weight:600">' + esc(thread.other_name || 'Customer') + '</div>' +
+      (thread.booking_title ? '<div style="font-size:12px;color:var(--text-secondary)">' + esc(thread.booking_title) + '</div>' : '') + '</div>';
+    App.renderMessages();
+    // Silently refresh threads to update unread counts
+    apiGet('/messages/threads').then(function(r) {
+      State.threads = Array.isArray(r.data) ? r.data : [];
+      App.updateBadges();
+    }).catch(function(){});
+  } catch(e) {
+    $('chat-messages').innerHTML = '<div class="empty-state"><p>Failed to load messages</p></div>';
+  }
+};
 
-function openAddPt() {
-  om(`
-    <h3 style="font-size:17px;font-weight:700;margin-bottom:16px">Add Portfolio Item</h3>
-    <div class="fg"><label>Title</label><input class="fc" id="pt-t" placeholder="e.g. Complete Bathroom Renovation"></div>
-    <div class="fg"><label>Description</label><textarea class="fc" id="pt-d" rows="3" placeholder="Describe the work you did, challenges solved…"></textarea></div>
-    <div class="fg"><label>Media URL (image / video link)</label><input class="fc" id="pt-u" placeholder="https://…"></div>
-    <div class="fg"><label>Type</label>
-      <select class="fc" id="pt-type">
-        <option value="image">📷 Image</option>
-        <option value="video">🎬 Video</option>
-        <option value="certificate">🏆 Certificate</option>
-      </select>
-    </div>
-    <button class="btn btn-p" style="width:100%;margin-top:4px" onclick="addPt()">Add to Portfolio</button>
-  `);
-}
+App.renderMessages = function() {
+  var el = $('chat-messages');
+  if (!el) return;
+  if (State.messages.length === 0) {
+    el.innerHTML = '<div class="empty-state"><p>No messages yet. Say hello!</p></div>';
+    return;
+  }
+  el.innerHTML = State.messages.map(function(m) {
+    if (m.is_system) {
+      return '<div class="chat-bubble system">' + esc(m.body) + '</div>';
+    }
+    var sent = State.user && m.sender_id === State.user.id;
+    return '<div class="chat-bubble ' + (sent ? 'sent' : 'received') + '">' +
+      '<div>' + esc(m.body) + '</div>' +
+      '<div class="bubble-time">' + fmtTime(m.created_at) + '</div></div>';
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+};
 
-async function addPt() {
-  const title = v('pt-t'), description = v('pt-d'), media_url = v('pt-u'), media_type = v('pt-type') || 'image';
-  if (!title || !description) return toast('Title and description are required','err');
+App.sendMessage = async function() {
+  var input = $('chat-input');
+  if (!input) return;
+  var body = input.value.trim();
+  if (!body || !State.activeThreadId) return;
+  input.value = '';
   try {
-    await P('/portfolio', { title, description, media_url: media_url || 'https://placehold.co/400x300', media_type });
-    toast('Portfolio item added!'); cm(); await loadPt(); renderPt();
-  } catch (e) { toast(e.message,'err'); }
-}
+    var result = await apiPost('/messages/threads/' + State.activeThreadId, { body: body });
+    State.messages.push(result.data);
+    App.renderMessages();
+  } catch(err) {
+    toast('Failed to send message', 'error');
+  }
+};
 
-async function delPt(id) {
-  if (!confirm('Remove this portfolio item?')) return;
-  try { await D(`/portfolio/${id}`); toast('Removed'); await loadPt(); renderPt(); } catch (e) { toast(e.message,'err'); }
-}
-
-function openCatModal() {
-  const sel = new Set((S.pro?.categories || []).map(c => c.id || c));
-  om(`
-    <h3 style="font-size:17px;font-weight:700;margin-bottom:14px">Update Categories & Skills</h3>
-    <div class="chips" style="max-height:300px;overflow-y:auto">
-      ${S.cats.map(c => `<div class="chip cchip ${sel.has(c.id)?'on':''}" data-id="${c.id}" onclick="this.classList.toggle('on')">${esc(c.name)}</div>`).join('')}
-    </div>
-    <button class="btn btn-p btn-s" style="margin-top:16px;width:100%" onclick="saveCats()">Save Categories</button>
-  `);
-}
-
-async function saveCats() {
-  const ids = [...document.querySelectorAll('#mc-modal .chip.on')].map(el => parseInt(el.dataset.id));
-  if (!ids.length) return toast('Select at least one','err');
+/* ── NOTIFICATIONS ─────────────────────────── */
+App.loadNotifications = async function() {
+  var listEl = $('notif-list');
+  listEl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
   try {
-    await U(`/professionals/${S.pro.id}`, { category_ids: ids });
-    const r = await G('/professionals/me'); S.pro = r.data;
-    toast('Categories updated!'); cm(); renderPf(); upComp();
-  } catch (e) { toast(e.message,'err'); }
+    var res = await apiGet('/notifications');
+    State.notifications = Array.isArray(res.data) ? res.data : [];
+    State.unreadNotifs = res.unread_count || State.notifications.filter(function(n){ return !n.read_at; }).length;
+    App.renderNotifications();
+    App.updateBadges();
+  } catch(e) {
+    listEl.innerHTML = '<div class="empty-state"><p>Failed to load notifications</p></div>';
+  }
+};
+
+App.renderNotifications = function() {
+  var listEl = $('notif-list');
+  if (State.notifications.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x1F514;</div><p>No notifications yet</p></div>';
+    return;
+  }
+  listEl.innerHTML = State.notifications.map(function(n) {
+    var icons = { booking:'&#x1F4CB;', message:'&#x1F4AC;', review:'&#x2B50;', payment:'&#x1F4B0;', system:'&#x2139;', reminder:'&#x23F0;', contact:'&#x1F4DE;' };
+    var icon = icons[n.type] || '&#x1F514;';
+    return '<div class="notif-item ' + (n.read_at ? '' : 'unread') + '" onclick="App.markNotifRead(\'' + n.id + '\')">' +
+      '<div class="notif-icon">' + icon + '</div>' +
+      '<div class="notif-body">' +
+        '<div class="notif-title">' + esc(n.title || 'Notification') + '</div>' +
+        '<div class="notif-text">' + esc(n.body || '') + '</div>' +
+        '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' +
+      '</div></div>';
+  }).join('');
+};
+
+App.markNotifRead = async function(id) {
+  try {
+    await apiPut('/notifications/' + id + '/read');
+    var n = State.notifications.find(function(x){ return x.id === id; });
+    if (n && !n.read_at) {
+      n.read_at = new Date().toISOString();
+      State.unreadNotifs = Math.max(0, State.unreadNotifs - 1);
+    }
+    App.renderNotifications();
+    App.updateBadges();
+  } catch(e) { /* ignore */ }
+};
+
+App.markAllRead = async function() {
+  try {
+    await apiPut('/notifications/read-all');
+    State.notifications.forEach(function(n){ n.read_at = n.read_at || new Date().toISOString(); });
+    State.unreadNotifs = 0;
+    App.renderNotifications();
+    App.updateBadges();
+    toast('All notifications marked as read', 'success');
+  } catch(e) { toast('Failed to mark as read', 'error'); }
+};
+
+/* ── PROFILE ───────────────────────────────── */
+App.loadProfile = async function() {
+  try {
+    var userRes = await apiGet('/users/profile');
+    State.user = userRes.data;
+    $('profile-name').value = State.user.name || '';
+    $('profile-phone').value = State.user.phone || '';
+    $('profile-location').value = State.user.location || '';
+  } catch(e) { /* ignore */ }
+  try {
+    var proRes = await apiGet('/professionals/me');
+    State.proProfile = proRes.data;
+    $('profile-headline').value = State.proProfile.headline || '';
+    $('profile-bio').value = State.proProfile.bio || '';
+    $('profile-experience').value = State.proProfile.years_of_experience || '';
+    $('profile-pricing').value = State.proProfile.pricing_estimate || '';
+    $('profile-availability').value = State.proProfile.availability_status || 'offline';
+  } catch(e) { /* ignore */ }
+};
+
+App.saveProfile = async function(e) {
+  e.preventDefault();
+  var btn = $('profile-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving\u2026';
+  try {
+    await apiPut('/users/profile', {
+      name: $('profile-name').value.trim(),
+      phone: $('profile-phone').value.trim(),
+      location: $('profile-location').value.trim(),
+    });
+    if (State.proProfile && State.proProfile.id) {
+      await apiPut('/professionals/' + State.proProfile.id, {
+        headline: $('profile-headline').value.trim(),
+        bio: $('profile-bio').value.trim(),
+        years_of_experience: parseInt($('profile-experience').value) || undefined,
+        pricing_estimate: $('profile-pricing').value.trim(),
+      });
+    }
+    toast('Profile saved!', 'success');
+    var name = $('profile-name').value.trim();
+    if (name) {
+      $('sidebar-name').textContent = name;
+      $('sidebar-avatar').textContent = initials(name);
+      if (State.user) State.user.name = name;
+    }
+  } catch(err) {
+    toast(err.message || 'Failed to save profile', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+  }
+};
+
+App.updateAvailability = async function() {
+  var status = $('profile-availability').value;
+  try {
+    await apiPut('/professionals/me/availability', { availability_status: status });
+    if (State.proProfile) State.proProfile.availability_status = status;
+    $('sidebar-status').textContent = statusLabel(status);
+    toast('Status: ' + statusLabel(status), 'success');
+    App.wsSend({ type: 'presence', status: status === 'available' ? 'online' : status === 'busy' ? 'away' : 'offline' });
+  } catch(err) {
+    toast(err.message || 'Failed to update availability', 'error');
+  }
+};
+
+/* ── MODAL ─────────────────────────────────── */
+App.showModal = function(title, bodyHTML, footerHTML) {
+  $('modal-title').textContent = title;
+  $('modal-body').innerHTML = bodyHTML;
+  $('modal-footer').innerHTML = footerHTML;
+  $('modal-overlay').classList.remove('hidden');
+};
+App.hideModal = function() {
+  $('modal-overlay').classList.add('hidden');
+};
+App.closeModal = function(e) {
+  if (e.target === $('modal-overlay')) App.hideModal();
+};
+
+/* ── BADGES ────────────────────────────────── */
+App.updateBadges = function() {
+  var newBookings = State.bookings.filter(function(b){ return b.status === 'requested'; }).length;
+  var unreadMsgs = State.threads.reduce(function(sum, t){ return sum + (t.pro_unread || 0); }, 0);
+  setBadge('badge-bookings', newBookings);
+  setBadge('badge-messages', unreadMsgs);
+  setBadge('badge-notifications', State.unreadNotifs);
+};
+
+function setBadge(id, count) {
+  var el = $(id);
+  if (!el) return;
+  if (count > 0) {
+    el.textContent = count > 99 ? '99+' : count;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
-// ══════════════════ COMPLETENESS ══════════════════
-function upComp() {
-  if (!S.pro) return;
-  const u = S.user, p = S.pro;
-  let pct = 0;
-  if (u?.name) pct += 10;
-  if (p.headline) pct += 15;
-  if (p.bio) pct += 15;
-  if (u?.location) pct += 10;
-  if ((p.categories || []).length > 0) pct += 20;
-  if (p.pricing_estimate) pct += 10;
-  if ((S.pt || []).length > 0) pct += 10;
-  if (p.years_of_experience) pct += 10;
-  document.getElementById('cp-pct').textContent = pct + '%';
-  document.getElementById('cp-bar').style.width = pct + '%';
-}
+/* ── WEBSOCKET ─────────────────────────────── */
+App.connectWebSocket = function() {
+  if (State.ws) { State.ws.close(); State.ws = null; }
+  if (!State.token) return;
+  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var url = proto + '//' + location.host + '/ws?token=' + encodeURIComponent(State.token);
+  var ws;
+  try { ws = new WebSocket(url); } catch(e) { return; }
+  State.ws = ws;
 
-// ══════════════════ UTILS ══════════════════
-function logout() {
-  localStorage.removeItem('sc_pt');
-  S.tok = null; S.user = null; S.pro = null;
-  S.stats = null; S.bks = []; S.rvs = []; S.pt = []; S.cats = []; S.wiz = {}; S.view = 'ov';
-  document.getElementById('app').hidden = true;
-  document.getElementById('gate').style.display = '';
-}
-function copyLink() {
-  const url = S.pro ? `${window.location.origin}/app/` : window.location.href;
-  navigator.clipboard.writeText(url).then(() => toast('Profile link copied!')).catch(() => toast(url));
-}
-function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtD(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); } catch(_){return '';} }
-function fmtN(n) { return Number(n||0).toLocaleString('en-IN'); }
-function emoji(t='') {
-  const m = ['plumb','electric','paint','clean','garden','landscap','car','auto','cook','food','weld','ac','applian','tile','carpent','design','photo'];
-  const e = ['🔧','⚡','🎨','🧹','🌿','🌿','🚗','🚗','👨‍🍳','👨‍🍳','⚙️','❄️','🏠','🏗️','🪵','✏️','📸'];
-  const i = m.findIndex(k => t.toLowerCase().includes(k));
-  return i >= 0 ? e[i] : '💼';
-}
+  ws.onopen = function() {
+    State.wsRetries = 0;
+    App.wsSend({ type: 'presence', status: 'online' });
+  };
 
-// ══════════════════ INIT ══════════════════
+  ws.onmessage = function(event) {
+    var msg;
+    try { msg = JSON.parse(event.data); } catch(e) { return; }
+    App.handleWsMessage(msg);
+  };
+
+  ws.onclose = function() {
+    State.ws = null;
+    if (State.token && State.wsRetries < 10) {
+      var delay = Math.min(1000 * Math.pow(2, State.wsRetries), 30000);
+      State.wsRetries++;
+      setTimeout(App.connectWebSocket, delay);
+    }
+  };
+
+  ws.onerror = function() { /* onclose handles reconnect */ };
+};
+
+App.wsSend = function(data) {
+  if (State.ws && State.ws.readyState === WebSocket.OPEN) {
+    State.ws.send(JSON.stringify(data));
+  }
+};
+
+// Heartbeat every 25s
+setInterval(function(){ App.wsSend({ type: 'ping' }); }, 25000);
+
+App.handleWsMessage = function(msg) {
+  switch (msg.type) {
+    case 'booking':
+      toast('\u{1F4CB} Booking ' + (msg.action || 'update') + ': ' + (msg.data && msg.data.title ? msg.data.title : 'New booking'), 'info');
+      if (msg.data) {
+        var idx = -1;
+        for (var i = 0; i < State.bookings.length; i++) {
+          if (State.bookings[i].id === msg.data.id) { idx = i; break; }
+        }
+        if (idx >= 0) Object.assign(State.bookings[idx], msg.data);
+        else State.bookings.unshift(msg.data);
+      }
+      App.updateBadges();
+      if (State.currentView === 'dashboard') App.loadDashboard();
+      if (State.currentView === 'bookings') App.renderBookings();
+      break;
+
+    case 'message':
+      var m = msg.data;
+      if (m && m.thread_id === State.activeThreadId && State.user && m.sender_id !== State.user.id) {
+        State.messages.push(m);
+        App.renderMessages();
+        App.wsSend({ type: 'read_receipt', threadId: m.thread_id });
+      } else if (m && State.user && m.sender_id !== State.user.id) {
+        toast('\u{1F4AC} New message received', 'info');
+      }
+      if (State.currentView === 'messages') {
+        App.loadThreads();
+      } else {
+        apiGet('/messages/threads').then(function(r) {
+          State.threads = Array.isArray(r.data) ? r.data : [];
+          App.updateBadges();
+        }).catch(function(){});
+      }
+      break;
+
+    case 'notification':
+      var n = msg.data || msg;
+      toast('\u{1F514} ' + (n.title || 'New notification'), 'info');
+      State.unreadNotifs++;
+      App.updateBadges();
+      if (State.currentView === 'notifications') App.loadNotifications();
+      break;
+
+    case 'typing':
+    case 'messages_read':
+    case 'presence':
+    case 'pong':
+    case 'hello':
+      break;
+  }
+};
+
+/* ── REFRESH ───────────────────────────────── */
+App.refreshCurrentView = function() {
+  App.navigate(State.currentView);
+};
+
+/* ── INIT ──────────────────────────────────── */
 (async function init() {
-  if (S.tok) {
-    try { await enter(); } catch (_) { localStorage.removeItem('sc_pt'); S.tok = null; }
+  if (State.token) {
+    try {
+      await App.enterApp();
+    } catch(e) {
+      localStorage.removeItem('token');
+      State.token = null;
+      $('login-page').style.display = '';
+    }
   }
 })();
 </script>
