@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { config } = require('../config');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -11,7 +12,14 @@ const authenticate = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwt.secret);
+    // Reject refresh tokens used as access tokens
+    if (decoded.type === 'refresh') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token type.',
+      });
+    }
     req.user = decoded;
     next();
   } catch (error) {
@@ -46,7 +54,10 @@ const optionalAuth = (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, config.jwt.secret);
+      if (decoded.type !== 'refresh') {
+        req.user = decoded;
+      }
     } catch (_) {}
   }
   next();

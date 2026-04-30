@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
+const compression = require('compression');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const { config } = require('./config');
+const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
+const requestId = require('./middleware/requestId');
+const httpLogger = require('./middleware/httpLogger');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -24,31 +28,61 @@ const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 
-// Trust proxy (required for rate limiting behind reverse proxies like Codespaces)
+// Trust proxy (required for rate limiting behind reverse proxies)
 app.set('trust proxy', 1);
 
-// Middleware
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// Request correlation ID — must come before logging
+app.use(requestId);
 
-// CORS — allow same-origin + Codespace URLs
+// Middleware
+app.use(helmet({
+  contentSecurityPolicy: config.isProduction ? undefined : false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Compression for all responses
+app.use(compression());
+
+// CORS — strict in production, permissive in development
 const allowedOrigins = [
   /\.app\.github\.dev$/,
   /^https?:\/\/localhost(:\d+)?$/,
+  ...config.cors.allowedOrigins.map((o) => new RegExp(`^${o.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)),
 ];
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some(p => typeof p === 'string' ? p === origin : p.test(origin))) return cb(null, true);
-    cb(null, true); // permissive in dev; tighten for production
+    // Allow requests with no origin (server-to-server, mobile apps)
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.some((p) => (typeof p === 'string' ? p === origin : p.test(origin)))) {
+      return cb(null, true);
+    }
+    if (config.isDevelopment) return cb(null, true);
+    logger.warn({ origin }, 'CORS request from disallowed origin');
+    cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
 
-app.use(morgan('dev'));
-app.use(express.json({ limit: '2mb' }));
+// Structured HTTP logging (replaces morgan)
+app.use(httpLogger);
+
+app.use(express.json({ limit: '1mb' }));
 
 // Rate limiting — protect auth endpoints from brute force
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' } });
-const apiLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 200, message: { success: false, message: 'Rate limit exceeded. Slow down.' } });
+const authLimiter = rateLimit({
+  windowMs: config.rateLimit.auth.windowMs,
+  max: config.rateLimit.auth.max,
+  message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const apiLimiter = rateLimit({
+  windowMs: config.rateLimit.api.windowMs,
+  max: config.rateLimit.api.max,
+  message: { success: false, message: 'Rate limit exceeded. Slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
@@ -72,9 +106,25 @@ app.use('/api/upload', uploadRoutes);
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is running' });
+// Health check — includes DB connectivity verification
+app.get('/api/health', async (req, res) => {
+  const { pool } = require('./config/database');
+  const checks = { server: 'ok', database: 'unknown' };
+  try {
+    const result = await pool.query('SELECT 1');
+    checks.database = result.rows.length ? 'ok' : 'error';
+  } catch (err) {
+    checks.database = 'error';
+    logger.error({ err }, 'Health check DB connectivity failed');
+  }
+  const healthy = checks.database === 'ok';
+  res.status(healthy ? 200 : 503).json({
+    success: healthy,
+    message: healthy ? 'All systems operational' : 'Degraded — database unreachable',
+    checks,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // APK download — serves the release APK if built, debug APK as fallback

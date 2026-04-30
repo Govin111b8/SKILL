@@ -61,12 +61,13 @@ const search = async (req, res, next) => {
       paramIndex++;
     }
 
-    // Text search
+    // Text search — escape special LIKE/ILIKE characters to prevent pattern injection
     if (q) {
+      const escapedQ = q.replace(/[%_\\]/g, '\\$&');
       conditions.push(
         `(u.name ILIKE $${paramIndex} OR p.headline ILIKE $${paramIndex} OR p.bio ILIKE $${paramIndex})`
       );
-      params.push(`%${q}%`);
+      params.push(`%${escapedQ}%`);
       paramIndex++;
     }
 

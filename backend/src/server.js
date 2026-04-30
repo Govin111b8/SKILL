@@ -1,22 +1,32 @@
 require('dotenv').config();
 
 const http = require('http');
+const { config, validateConfig } = require('./config');
+const logger = require('./config/logger');
+
+// Validate configuration before starting
+try {
+  validateConfig();
+} catch (err) {
+  logger.fatal({ err }, 'Configuration validation failed');
+  process.exit(1);
+}
+
 const app = require('./app');
 const hub = require('./realtime/hub');
 
-const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 hub.attach(server);
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} (HTTP + WebSocket /ws)`);
+server.listen(config.port, () => {
+  logger.info({ port: config.port, env: config.env }, `Server running on port ${config.port} (HTTP + WebSocket /ws)`);
 });
 
 // Graceful shutdown
 function shutdown(signal) {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  logger.info({ signal }, 'Shutdown signal received, draining connections...');
   server.close(() => {
-    console.log('HTTP server closed.');
+    logger.info('HTTP server closed.');
     process.exit(0);
   });
   // Force exit after 10s if connections don't drain
@@ -24,3 +34,13 @@ function shutdown(signal) {
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Catch unhandled rejections
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ err: reason }, 'Unhandled promise rejection');
+  process.exit(1);
+});
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception');
+  process.exit(1);
+});
