@@ -64,17 +64,10 @@ class AnalyticsService {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_batchKey);
     if (stored != null && stored.isNotEmpty) {
-      // Queue old events for flush
       for (final s in stored) {
         try {
-          final parts = s.split('|');
-          if (parts.length >= 3) {
-            _eventBuffer.add({
-              'event': parts[0],
-              'timestamp': parts[1],
-              'properties': parts.length > 2 ? parts[2] : '{}',
-            });
-          }
+          final event = jsonDecode(s) as Map<String, dynamic>;
+          _eventBuffer.add(event);
         } catch (_) {}
       }
       await prefs.remove(_batchKey);
@@ -162,11 +155,11 @@ class AnalyticsService {
             : 0,
       }, auth: true);
     } catch (_) {
-      // Store locally for next attempt
+      // Store locally for next attempt using JSON serialization
       final prefs = await SharedPreferences.getInstance();
       final stored = prefs.getStringList(_batchKey) ?? [];
       for (final event in batch) {
-        stored.add('${event['event']}|${event['timestamp']}|${event['properties']}');
+        stored.add(jsonEncode(event));
       }
       // Keep max 200 events stored locally
       if (stored.length > 200) {
