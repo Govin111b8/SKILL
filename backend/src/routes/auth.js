@@ -1,8 +1,14 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
-const { authenticate } = require('../middleware/auth');
-const { register, login, getMe, refreshTokenHandler } = require('../controllers/authController');
+const { authenticate, optionalAuth } = require('../middleware/auth');
+const {
+  register, login, getMe, refreshTokenHandler,
+  sendVerificationEmail, verifyEmail,
+  forgotPassword, resetPassword,
+  sendPhoneOTP, verifyPhoneOTP,
+  logout,
+} = require('../controllers/authController');
 
 const router = Router();
 
@@ -49,5 +55,34 @@ router.post(
   ]),
   refreshTokenHandler
 );
+
+// Email verification
+router.post('/send-verification', authenticate, sendVerificationEmail);
+router.post('/verify-email', validate([
+  body('token').notEmpty().withMessage('Token is required'),
+]), verifyEmail);
+
+// Password reset
+router.post('/forgot-password', validate([
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+]), forgotPassword);
+
+router.post('/reset-password', validate([
+  body('token').notEmpty().withMessage('Token is required'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+]), resetPassword);
+
+// Phone OTP
+router.post('/send-otp', validate([
+  body('phone').notEmpty().withMessage('Phone number is required'),
+]), sendPhoneOTP);
+
+router.post('/verify-otp', optionalAuth, validate([
+  body('phone').notEmpty().withMessage('Phone is required'),
+  body('otp').notEmpty().withMessage('OTP is required'),
+]), verifyPhoneOTP);
+
+// Logout (token revocation)
+router.post('/logout', authenticate, logout);
 
 module.exports = router;

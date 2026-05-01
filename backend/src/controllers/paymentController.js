@@ -1,6 +1,9 @@
 const { pool } = require('../config/database');
+const razorpay = require('../services/razorpay');
+const emailService = require('../services/email');
+const logger = require('../config/logger');
 
-// Create a payment (escrow hold)
+// Create a payment (Razorpay order + escrow hold)
 async function createPayment(req, res, next) {
   try {
     const { booking_id, method } = req.body;
@@ -33,26 +36,88 @@ async function createPayment(req, res, next) {
     const platformFee = Math.round(amount * 0.05 * 100) / 100; // 5% platform fee
     const taxAmount = Math.round(platformFee * 0.18 * 100) / 100; // 18% GST on fee
 
+    // Create Razorpay order
+    const order = await razorpay.createOrder({
+      amount: parseFloat(amount),
+      currency: 'INR',
+      receipt: `booking_${booking_id}`,
+      notes: { booking_id, payer_id },
+    });
+
+    const transactionRef = `TXN_${Date.now()}_${require('crypto').randomBytes(8).toString('hex')}`;
+
     const result = await pool.query(
-      `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref)
-       VALUES ($1, $2, $3, $4, $5, $6, 'INR', $7, 'held_in_escrow', $8)
+      `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, 'INR', $7, 'pending', $8, $9)
        RETURNING *`,
-      [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, method, `TXN_${Date.now()}_${require('crypto').randomBytes(8).toString('hex')}`]
+      [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, method, transactionRef,
+       JSON.stringify({ razorpay_order_id: order.id })]
     );
 
-    // Transition booking to accepted if it was quoted
-    if (booking.status === 'quoted') {
-      await pool.query(
-        `UPDATE bookings SET status = 'accepted', updated_at = NOW() WHERE id = $1`,
-        [booking_id]
-      );
-      await pool.query(
-        `INSERT INTO booking_status_log (booking_id, from_status, to_status, actor_id, note) VALUES ($1, 'quoted', 'accepted', $2, 'Payment held in escrow')`,
-        [booking_id, payer_id]
-      );
+    res.status(201).json({
+      payment: result.rows[0],
+      razorpay_order: {
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: razorpay.KEY_ID,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Verify and confirm payment after frontend capture
+async function verifyPayment(req, res, next) {
+  try {
+    const { payment_id } = req.params;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    // Verify signature
+    const isValid = razorpay.verifyPaymentSignature({
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    });
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Payment verification failed — invalid signature' });
     }
 
-    res.status(201).json({ payment: result.rows[0] });
+    // Update payment status to escrow
+    const result = await pool.query(
+      `UPDATE payments SET status = 'held_in_escrow', transaction_ref = $2,
+       metadata = metadata || $3::jsonb, updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [payment_id, razorpay_payment_id,
+       JSON.stringify({ razorpay_payment_id, verified_at: new Date().toISOString() })]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    const payment = result.rows[0];
+
+    // Transition booking to accepted
+    await pool.query(
+      `UPDATE bookings SET status = 'accepted', updated_at = NOW() WHERE id = $1 AND status = 'quoted'`,
+      [payment.booking_id]
+    );
+    await pool.query(
+      `INSERT INTO booking_status_log (booking_id, from_status, to_status, actor_id, note) VALUES ($1, 'quoted', 'accepted', $2, 'Payment held in escrow')`,
+      [payment.booking_id, req.user.id]
+    );
+
+    // Send receipt email
+    const userRes = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
+    if (userRes.rows.length > 0) {
+      emailService.sendPaymentReceipt(userRes.rows[0].email, payment).catch(() => {});
+    }
+
+    logger.info({ paymentId: payment.id }, 'Payment verified and held in escrow');
+    res.json({ payment: result.rows[0] });
   } catch (err) {
     next(err);
   }
@@ -199,4 +264,4 @@ async function getEarnings(req, res, next) {
   }
 }
 
-module.exports = { createPayment, releaseEscrow, refundPayment, getPayments, getEarnings };
+module.exports = { createPayment, verifyPayment, releaseEscrow, refundPayment, getPayments, getEarnings };

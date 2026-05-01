@@ -33,6 +33,8 @@ const disputeRoutes = require('./routes/disputes');
 const warrantyRoutes = require('./routes/warranties');
 const emergencyRoutes = require('./routes/emergency');
 const referralRoutes = require('./routes/referrals');
+const adminRoutes = require('./routes/admin');
+const webhookRoutes = require('./routes/webhooks');
 
 const app = express();
 
@@ -118,6 +120,8 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/warranties', warrantyRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));

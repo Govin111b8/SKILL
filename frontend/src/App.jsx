@@ -27,6 +27,10 @@ import Referrals from './pages/Referrals';
 import Disputes from './pages/Disputes';
 import Warranties from './pages/Warranties';
 import Analytics from './pages/Analytics';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminKYC from './pages/admin/AdminKYC';
+import AdminDisputes from './pages/admin/AdminDisputes';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -177,6 +181,39 @@ function App() {
             element={
               <ProtectedRoute>
                 <Analytics />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kyc"
+            element={
+              <ProtectedRoute>
+                <AdminKYC />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/disputes"
+            element={
+              <ProtectedRoute>
+                <AdminDisputes />
               </ProtectedRoute>
             }
           />

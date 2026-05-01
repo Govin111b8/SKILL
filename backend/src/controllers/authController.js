@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const { query } = require('../config/database');
 const { config } = require('../config');
 const logger = require('../config/logger');
+const emailService = require('../services/email');
+const smsService = require('../services/sms');
 
 // In-memory login attempt tracking (use Redis in production for multi-instance)
 const loginAttempts = new Map();
@@ -234,4 +236,198 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, refreshTokenHandler };
+// ============================================================
+// EMAIL VERIFICATION
+// ============================================================
+
+const sendVerificationEmail = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const userRes = await query('SELECT email, email_verified FROM users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const user = userRes.rows[0];
+    if (user.email_verified) {
+      return res.status(400).json({ success: false, message: 'Email already verified.' });
+    }
+
+    const token = emailService.generateToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await query(
+      `INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+      [userId, token, expiresAt]
+    );
+
+    await emailService.sendVerificationEmail(user.email, token);
+    res.json({ success: true, message: 'Verification email sent.' });
+  } catch (error) { next(error); }
+};
+
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'Token is required.' });
+
+    const result = await query(
+      `SELECT * FROM email_verifications WHERE token = $1 AND expires_at > NOW() AND verified_at IS NULL`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification token.' });
+    }
+
+    const verification = result.rows[0];
+
+    await query(`UPDATE email_verifications SET verified_at = NOW() WHERE id = $1`, [verification.id]);
+    await query(`UPDATE users SET email_verified = TRUE, email_verified_at = NOW() WHERE id = $1`, [verification.user_id]);
+
+    logger.info({ userId: verification.user_id }, 'Email verified');
+    res.json({ success: true, message: 'Email verified successfully.' });
+  } catch (error) { next(error); }
+};
+
+// ============================================================
+// PASSWORD RESET
+// ============================================================
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
+
+    const userRes = await query('SELECT id, email FROM users WHERE email = $1', [email]);
+
+    // Always return success to prevent email enumeration
+    if (userRes.rows.length === 0) {
+      return res.json({ success: true, message: 'If an account exists with this email, a reset link has been sent.' });
+    }
+
+    const user = userRes.rows[0];
+    const token = emailService.generateToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Invalidate previous reset tokens
+    await query(`UPDATE password_resets SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL`, [user.id]);
+
+    await query(
+      `INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+      [user.id, token, expiresAt]
+    );
+
+    await emailService.sendPasswordResetEmail(user.email, token);
+    logger.info({ userId: user.id }, 'Password reset requested');
+    res.json({ success: true, message: 'If an account exists with this email, a reset link has been sent.' });
+  } catch (error) { next(error); }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required.' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
+    }
+
+    const result = await query(
+      `SELECT * FROM password_resets WHERE token = $1 AND expires_at > NOW() AND used_at IS NULL`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token.' });
+    }
+
+    const resetRecord = result.rows[0];
+    const salt = await bcrypt.genSalt(config.isProduction ? 12 : 10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);
+    await query(`UPDATE password_resets SET used_at = NOW() WHERE id = $1`, [resetRecord.id]);
+
+    // Blacklist all existing refresh tokens for this user (force re-login)
+    const tokenHash = crypto.createHash('sha256').update(`all_${resetRecord.user_id}_${Date.now()}`).digest('hex');
+    await query(
+      `INSERT INTO refresh_token_blacklist (token_hash, user_id, reason, expires_at) VALUES ($1, $2, 'password_reset', NOW() + INTERVAL '7 days')`,
+      [tokenHash, resetRecord.user_id]
+    );
+
+    logger.info({ userId: resetRecord.user_id }, 'Password reset completed');
+    res.json({ success: true, message: 'Password reset successfully. Please login with your new password.' });
+  } catch (error) { next(error); }
+};
+
+// ============================================================
+// PHONE VERIFICATION (OTP)
+// ============================================================
+
+const sendPhoneOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ success: false, message: 'Phone number is required.' });
+
+    const result = await smsService.sendOTP(phone, 'phone_verification');
+    if (!result.success) {
+      return res.status(429).json({ success: false, message: result.error });
+    }
+
+    res.json({ success: true, message: 'OTP sent.', expiresIn: result.expiresIn });
+  } catch (error) { next(error); }
+};
+
+const verifyPhoneOTP = async (req, res, next) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) return res.status(400).json({ success: false, message: 'Phone and OTP are required.' });
+
+    const result = smsService.verifyOTP(phone, otp, 'phone_verification');
+    if (!result.success) {
+      return res.status(400).json({ success: false, message: result.error });
+    }
+
+    // Mark phone as verified for the current user
+    if (req.user) {
+      await query(`UPDATE users SET phone_verified = TRUE WHERE id = $1`, [req.user.id]);
+    }
+
+    res.json({ success: true, message: 'Phone verified successfully.' });
+  } catch (error) { next(error); }
+};
+
+// ============================================================
+// LOGOUT (token revocation)
+// ============================================================
+
+const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      await query(
+        `INSERT INTO refresh_token_blacklist (token_hash, user_id, reason, expires_at)
+         VALUES ($1, $2, 'logout', NOW() + INTERVAL '7 days')
+         ON CONFLICT (token_hash) DO NOTHING`,
+        [tokenHash, req.user.id]
+      );
+    }
+    res.json({ success: true, message: 'Logged out successfully.' });
+  } catch (error) { next(error); }
+};
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  refreshTokenHandler,
+  sendVerificationEmail,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  sendPhoneOTP,
+  verifyPhoneOTP,
+  logout,
+};
