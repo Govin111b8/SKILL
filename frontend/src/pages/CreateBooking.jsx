@@ -83,7 +83,7 @@ export default function CreateBooking() {
 
       // If a time slot was selected, book it
       if (form.preferred_time && form.professional_id && bookingId) {
-        const [startTime] = form.preferred_time.split('-');
+        const startTime = form.preferred_time;
         const endHour = parseInt(startTime.split(':')[0]) + 1;
         const endTime = `${String(endHour).padStart(2, '0')}:00`;
         try {

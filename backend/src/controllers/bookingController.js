@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const hub = require('../realtime/hub');
 const { notify } = require('../utils/notifier');
+const { completeReferral } = require('./referralController');
 
 // Resolve professional row + owner user_id
 async function getPro(professionalId) {
@@ -288,7 +289,6 @@ exports.transition = async (req, res, next) => {
 
         // Complete referral reward (first booking completion)
         try {
-          const { completeReferral } = require('./referralController');
           await completeReferral(b.customer_id);
         } catch (_) { /* ignore */ }
       } catch (_) { /* non-critical */ }
