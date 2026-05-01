@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { FiArrowLeft, FiSend, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiSend, FiAlertCircle, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { get, post } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './CreateBooking.css';
@@ -22,10 +22,13 @@ export default function CreateBooking() {
     description: '',
     service_address: '',
     preferred_date: '',
+    preferred_time: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     get('/categories')
@@ -33,6 +36,27 @@ export default function CreateBooking() {
       .catch(() => setCategories([]))
       .finally(() => setLoadingCats(false));
   }, []);
+
+  // Fetch available time slots when professional and date are selected
+  useEffect(() => {
+    if (form.professional_id && form.preferred_date) {
+      fetchSlots();
+    } else {
+      setAvailableSlots(null);
+    }
+  }, [form.professional_id, form.preferred_date]);
+
+  async function fetchSlots() {
+    setLoadingSlots(true);
+    try {
+      const res = await get(`/schedule/slots?professional_id=${form.professional_id}&date=${form.preferred_date}`);
+      setAvailableSlots(res.data || res);
+    } catch {
+      setAvailableSlots(null);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -54,7 +78,25 @@ export default function CreateBooking() {
         category_id: parseInt(form.category_id, 10),
       };
       const res = await post('/bookings', payload);
-      const bookingId = res.data?.id || res.id;
+      const bookingData = res.data || res;
+      const bookingId = bookingData.id;
+
+      // If a time slot was selected, book it
+      if (form.preferred_time && form.professional_id && bookingId) {
+        const [startTime] = form.preferred_time.split('-');
+        const endHour = parseInt(startTime.split(':')[0]) + 1;
+        const endTime = `${String(endHour).padStart(2, '0')}:00`;
+        try {
+          await post('/schedule/slots/book', {
+            professional_id: form.professional_id,
+            date: form.preferred_date,
+            start_time: startTime,
+            end_time: endTime,
+            booking_id: bookingId,
+          });
+        } catch { /* non-critical — slot booking is optional */ }
+      }
+
       setSuccess(true);
       setTimeout(() => {
         navigate(`/bookings/${bookingId}`);
@@ -69,6 +111,9 @@ export default function CreateBooking() {
   const initials = professionalName
     ? professionalName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
     : '?';
+
+  const slots = availableSlots?.slots || [];
+  const isBlocked = availableSlots?.blocked;
 
   return (
     <div className="create-booking">
@@ -159,6 +204,40 @@ export default function CreateBooking() {
                 disabled={submitting}
               />
             </div>
+
+            {/* Time Slot Selection */}
+            {form.professional_id && form.preferred_date && (
+              <div className="form-group">
+                <label><FiClock size={14} /> Available Time Slots</label>
+                {loadingSlots ? (
+                  <p className="slots-loading">Loading available times...</p>
+                ) : isBlocked ? (
+                  <p className="slots-blocked">Professional is unavailable on this date. Please choose another date.</p>
+                ) : slots.length > 0 ? (
+                  <div className="time-slots-grid">
+                    {slots.map((slot, i) => (
+                      <label
+                        key={i}
+                        className={`time-slot ${!slot.available ? 'time-slot--booked' : ''} ${form.preferred_time === slot.start_time ? 'time-slot--selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="preferred_time"
+                          value={slot.start_time}
+                          checked={form.preferred_time === slot.start_time}
+                          onChange={handleChange}
+                          disabled={!slot.available || submitting}
+                        />
+                        <span className="slot-time">{slot.start_time} — {slot.end_time}</span>
+                        <span className="slot-status">{slot.available ? 'Available' : 'Booked'}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="slots-empty">No schedule set for this day. You can still request a booking.</p>
+                )}
+              </div>
+            )}
 
             {!professionalId && (
               <div className="form-group">

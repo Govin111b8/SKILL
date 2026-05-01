@@ -39,11 +39,12 @@ function Payment() {
     setPaying(true);
     setError(null);
     try {
-      await post(`/bookings/${id}/transition`, { to: 'accepted' });
+      // Create escrow payment via the payments API
+      await post('/payments', { booking_id: id, method });
       setSuccess(true);
       setTimeout(() => navigate(`/bookings/${id}`), 2500);
-    } catch {
-      setError('Payment failed. Please try again.');
+    } catch (err) {
+      setError(err?.data?.error || err?.message || 'Payment failed. Please try again.');
     } finally {
       setPaying(false);
     }

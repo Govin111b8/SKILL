@@ -141,10 +141,9 @@ export default function BookingDetail() {
     if (isCustomer) {
       if (s === 'quoted') {
         buttons.push(
-          <button key="accept" className="btn btn-primary" disabled={actionLoading}
-            onClick={() => transition('accepted')}>
-            <FiCheck /> Accept Quote
-          </button>
+          <Link key="pay" to={`/bookings/${id}/pay`} className="btn btn-primary">
+            <FiDollarSign /> Pay & Accept Quote
+          </Link>
         );
       }
       if (!['completed', 'cancelled', 'disputed', 'refunded'].includes(s)) {
@@ -153,6 +152,13 @@ export default function BookingDetail() {
             disabled={actionLoading} onClick={() => setModal({ type: 'cancel' })}>
             <FiX /> Cancel Booking
           </button>
+        );
+      }
+      if (['in_progress', 'completed'].includes(s)) {
+        buttons.push(
+          <Link key="dispute" to={`/disputes`} className="btn btn-outline btn-sm" style={{ borderColor: '#f59e0b', color: '#92400e' }}>
+            <FiAlertCircle /> Raise Dispute
+          </Link>
         );
       }
     }

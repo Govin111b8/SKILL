@@ -24,6 +24,9 @@ import Earnings from './pages/Earnings';
 import Schedule from './pages/Schedule';
 import Emergency from './pages/Emergency';
 import Referrals from './pages/Referrals';
+import Disputes from './pages/Disputes';
+import Warranties from './pages/Warranties';
+import Analytics from './pages/Analytics';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -150,6 +153,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Referrals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/disputes"
+            element={
+              <ProtectedRoute>
+                <Disputes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/warranties"
+            element={
+              <ProtectedRoute>
+                <Warranties />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
               </ProtectedRoute>
             }
           />

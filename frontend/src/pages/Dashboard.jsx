@@ -93,6 +93,12 @@ function CustomerDashboard({ data }) {
         <Link to="/messages" className="quick-action-btn">
           <FiMessageSquare /> Messages
         </Link>
+        <Link to="/warranties" className="quick-action-btn">
+          <FiShoppingBag /> Warranties
+        </Link>
+        <Link to="/disputes" className="quick-action-btn">
+          <FiBookOpen /> Disputes
+        </Link>
         <Link to="/emergency" className="quick-action-btn quick-action-btn--danger">
           <FiZap /> Emergency
         </Link>
@@ -316,6 +322,12 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
         </Link>
         <Link to="/schedule" className="quick-action-btn">
           <FiClock /> Schedule
+        </Link>
+        <Link to="/analytics" className="quick-action-btn">
+          <FiBarChart2 /> Analytics
+        </Link>
+        <Link to="/disputes" className="quick-action-btn">
+          <FiTarget /> Disputes
         </Link>
         <Link to="/notifications" className="quick-action-btn">
           <FiBell />

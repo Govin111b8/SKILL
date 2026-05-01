@@ -1,0 +1,67 @@
+.warranties-page { padding: 2rem 0 4rem; }
+.warranties-page .page-header { margin-bottom: 2rem; }
+.warranties-page .page-header h1 {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem;
+}
+
+.warranty-form-card {
+  background: white; border-radius: var(--radius-lg); padding: 1.5rem;
+  margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--gray-100);
+}
+.warranty-form-card h3 {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 1rem; font-size: 1.1rem;
+}
+
+.warranty-section { margin-bottom: 2rem; }
+.section-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1.1rem; margin-bottom: 1rem; color: var(--gray-700);
+}
+
+.warranty-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;
+}
+
+.warranty-card {
+  background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  border: 1px solid var(--gray-100); overflow: hidden;
+}
+.warranty-card--active { border-color: #86efac; }
+
+.warranty-card-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-100);
+}
+.warranty-card-header h3 { margin: 0; font-size: 0.95rem; }
+.warranty-pro { font-size: 0.82rem; color: var(--gray-500); margin-top: 0.15rem; }
+
+.warranty-badge {
+  display: inline-block; padding: 0.2rem 0.55rem; border-radius: var(--radius-full);
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+}
+.warranty-badge--active { background: #dcfce7; color: #15803d; }
+.warranty-badge--claimed { background: #fef3c7; color: #92400e; }
+.warranty-badge--expired { background: var(--gray-100); color: var(--gray-500); }
+.warranty-badge--void { background: #fee2e2; color: #991b1b; }
+
+.warranty-card-body { padding: 1rem 1.25rem; }
+.warranty-detail {
+  display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.88rem;
+}
+.detail-label { color: var(--gray-500); }
+
+.warranty-remaining {
+  display: flex; align-items: center; gap: 0.4rem; margin-top: 0.75rem;
+  padding: 0.4rem 0.75rem; background: #ecfdf5; border-radius: var(--radius);
+  color: #059669; font-weight: 600; font-size: 0.85rem;
+}
+
+.warranty-claim-info {
+  margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7;
+  border-radius: var(--radius); font-size: 0.85rem; color: #92400e;
+}
+
+.warranty-card-footer {
+  padding: 0.75rem 1.25rem; background: var(--gray-50); border-top: 1px solid var(--gray-100);
+}

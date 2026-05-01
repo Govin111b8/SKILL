@@ -1,0 +1,107 @@
+.analytics-page { padding: 2rem 0 4rem; }
+.analytics-page .page-header { margin-bottom: 2rem; }
+.analytics-page .page-header h1 {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem;
+}
+
+.analytics-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.summary-card {
+  background: white; border-radius: var(--radius-lg); padding: 1.25rem;
+  display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow);
+  border: 1px solid var(--gray-100);
+}
+.summary-icon {
+  width: 44px; height: 44px; border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.summary-info { display: flex; flex-direction: column; }
+.summary-value { font-size: 1.4rem; font-weight: 700; color: var(--gray-900); }
+.summary-label { font-size: 0.78rem; color: var(--gray-500); }
+
+.analytics-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;
+}
+
+.analytics-card {
+  background: white; border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow); border: 1px solid var(--gray-100);
+}
+.analytics-card h2 {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1rem; margin-bottom: 1.25rem; color: var(--gray-700);
+}
+
+/* Bar Chart */
+.bar-chart {
+  display: flex; align-items: flex-end; gap: 0.75rem; height: 220px; padding-top: 1.5rem;
+}
+.bar-group {
+  flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;
+}
+.bar-value {
+  font-size: 0.65rem; font-weight: 600; color: var(--gray-600); margin-bottom: 0.35rem;
+  white-space: nowrap;
+}
+.bar-track {
+  flex: 1; width: 100%; max-width: 48px; display: flex; align-items: flex-end;
+}
+.bar-fill {
+  width: 100%; border-radius: var(--radius) var(--radius) 0 0; min-height: 4px;
+  transition: height 0.4s ease;
+}
+.bar-fill--earnings { background: var(--gradient-primary); }
+.bar-fill--bookings { background: linear-gradient(135deg, #10b981, #059669); }
+.bar-label { font-size: 0.7rem; color: var(--gray-500); margin-top: 0.5rem; }
+.bar-sublabel { font-size: 0.6rem; color: var(--gray-400); }
+
+.chart-empty {
+  text-align: center; padding: 2rem; color: var(--gray-400); font-size: 0.9rem;
+}
+
+/* Rating Distribution */
+.rating-distribution { display: flex; gap: 2rem; }
+.rating-overview {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 80px;
+}
+.rating-big { font-size: 2.5rem; font-weight: 700; color: var(--gray-900); line-height: 1; }
+.rating-total { font-size: 0.78rem; color: var(--gray-400); }
+.rating-bars { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; }
+.rating-bar-row { display: flex; align-items: center; gap: 0.5rem; }
+.rating-bar-label { font-size: 0.78rem; color: var(--gray-500); width: 28px; text-align: right; }
+.rating-bar-track {
+  flex: 1; height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden;
+}
+.rating-bar-fill {
+  height: 100%; background: #f59e0b; border-radius: 4px; transition: width 0.4s ease;
+}
+.rating-bar-count { font-size: 0.78rem; color: var(--gray-500); width: 24px; }
+
+/* Top Customers */
+.top-customers { display: flex; flex-direction: column; gap: 0.75rem; }
+.customer-row {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem;
+  border-radius: var(--radius); background: var(--gray-50);
+}
+.customer-rank {
+  font-weight: 700; font-size: 0.82rem; color: var(--gray-400); width: 24px;
+}
+.customer-avatar {
+  width: 36px; height: 36px; border-radius: var(--radius-full); overflow: hidden;
+  background: var(--gradient-primary); display: flex; align-items: center;
+  justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.customer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.customer-info { flex: 1; display: flex; flex-direction: column; }
+.customer-info strong { font-size: 0.88rem; }
+.customer-info span { font-size: 0.75rem; color: var(--gray-400); }
+.customer-spent { font-weight: 600; font-size: 0.9rem; color: var(--gray-700); }
+
+@media (max-width: 640px) {
+  .rating-distribution { flex-direction: column; align-items: center; gap: 1rem; }
+  .analytics-grid { grid-template-columns: 1fr; }
+  .bar-chart { overflow-x: auto; min-height: 200px; }
+}
