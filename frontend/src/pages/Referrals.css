@@ -1,0 +1,84 @@
+.referrals-page { padding: 2rem 0; }
+.referrals-page .page-header { margin-bottom: 2rem; }
+.referrals-page .page-header h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; }
+
+.referral-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.ref-stat {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ref-stat svg { color: var(--primary); }
+.ref-stat-value { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); }
+.ref-stat-label { font-size: 0.8rem; color: var(--gray-500); }
+
+.referral-code-section, .apply-code-section, .referral-history {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+.referral-code-section h2, .apply-code-section h2, .referral-history h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.the-code {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--primary);
+  background: var(--gray-50);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: 2px dashed var(--primary-light);
+}
+.code-info { font-size: 0.85rem; color: var(--gray-500); }
+
+.apply-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.apply-form .form-input {
+  flex: 1;
+  max-width: 300px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+
+.referral-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.referral-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+}
+.referral-item-info { display: flex; flex-direction: column; }
+.referral-item-info strong { font-size: 0.9rem; }
+.referral-date { font-size: 0.75rem; color: var(--gray-400); }

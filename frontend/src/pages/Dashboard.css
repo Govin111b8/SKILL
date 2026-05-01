@@ -371,6 +371,15 @@
   background: #4f46e5;
   color: white;
 }
+.quick-action-btn--danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.quick-action-btn--danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 .quick-action-badge {
   background: #ef4444;
   color: white;

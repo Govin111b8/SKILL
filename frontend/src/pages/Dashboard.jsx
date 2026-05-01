@@ -93,6 +93,12 @@ function CustomerDashboard({ data }) {
         <Link to="/messages" className="quick-action-btn">
           <FiMessageSquare /> Messages
         </Link>
+        <Link to="/emergency" className="quick-action-btn quick-action-btn--danger">
+          <FiZap /> Emergency
+        </Link>
+        <Link to="/referrals" className="quick-action-btn">
+          <FiAward /> Referrals
+        </Link>
       </div>
 
       {/* Stats Overview */}
@@ -305,12 +311,21 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
         <Link to="/bookings" className="quick-action-btn">
           <FiCalendar /> Bookings
         </Link>
+        <Link to="/earnings" className="quick-action-btn quick-action-btn--primary">
+          <FiDollarSign /> Earnings
+        </Link>
+        <Link to="/schedule" className="quick-action-btn">
+          <FiClock /> Schedule
+        </Link>
         <Link to="/notifications" className="quick-action-btn">
           <FiBell />
           Notifications
           {stats.unreadNotifications > 0 && (
             <span className="quick-action-badge">{stats.unreadNotifications}</span>
           )}
+        </Link>
+        <Link to="/referrals" className="quick-action-btn">
+          <FiAward /> Referrals
         </Link>
         <Link to="/settings" className="quick-action-btn">
           <FiSettings /> Settings

@@ -20,6 +20,10 @@ import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import Payment from './pages/Payment';
 import Favorites from './pages/Favorites';
+import Earnings from './pages/Earnings';
+import Schedule from './pages/Schedule';
+import Emergency from './pages/Emergency';
+import Referrals from './pages/Referrals';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -114,6 +118,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <Favorites />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/earnings"
+            element={
+              <ProtectedRoute>
+                <Earnings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <Schedule />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emergency"
+            element={
+              <ProtectedRoute>
+                <Emergency />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/referrals"
+            element={
+              <ProtectedRoute>
+                <Referrals />
               </ProtectedRoute>
             }
           />
