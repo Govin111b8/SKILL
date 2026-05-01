@@ -25,6 +25,8 @@ const bookingRoutes = require('./routes/bookings');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
 const uploadRoutes = require('./routes/uploads');
+const favoriteRoutes = require('./routes/favorites');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 
@@ -102,6 +104,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));

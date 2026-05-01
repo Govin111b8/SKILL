@@ -87,6 +87,9 @@ function CustomerDashboard({ data }) {
         <Link to="/bookings" className="quick-action-btn">
           <FiCalendar /> My Bookings
         </Link>
+        <Link to="/favorites" className="quick-action-btn">
+          <FiHeart /> Favorites
+        </Link>
         <Link to="/messages" className="quick-action-btn">
           <FiMessageSquare /> Messages
         </Link>

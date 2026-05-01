@@ -19,6 +19,7 @@ import Messages from './pages/Messages';
 import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import Payment from './pages/Payment';
+import Favorites from './pages/Favorites';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -105,6 +106,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <Favorites />
               </ProtectedRoute>
             }
           />
