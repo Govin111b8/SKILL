@@ -27,6 +27,12 @@ const notificationRoutes = require('./routes/notifications');
 const uploadRoutes = require('./routes/uploads');
 const favoriteRoutes = require('./routes/favorites');
 const analyticsRoutes = require('./routes/analytics');
+const paymentRoutes = require('./routes/payments');
+const scheduleRoutes = require('./routes/schedule');
+const disputeRoutes = require('./routes/disputes');
+const warrantyRoutes = require('./routes/warranties');
+const emergencyRoutes = require('./routes/emergency');
+const referralRoutes = require('./routes/referrals');
 
 const app = express();
 
@@ -106,6 +112,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/schedule', scheduleRoutes);
+app.use('/api/disputes', disputeRoutes);
+app.use('/api/warranties', warrantyRoutes);
+app.use('/api/emergency', emergencyRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));
