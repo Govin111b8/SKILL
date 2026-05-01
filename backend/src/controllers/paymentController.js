@@ -37,7 +37,7 @@ async function createPayment(req, res, next) {
       `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref)
        VALUES ($1, $2, $3, $4, $5, $6, 'INR', $7, 'held_in_escrow', $8)
        RETURNING *`,
-      [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, method, `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`]
+      [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, method, `TXN_${Date.now()}_${require('crypto').randomBytes(8).toString('hex')}`]
     );
 
     // Transition booking to accepted if it was quoted

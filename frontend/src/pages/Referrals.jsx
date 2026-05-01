@@ -29,7 +29,7 @@ function Referrals() {
 
   async function generateCode() {
     try {
-      const res = await post('/referrals/generate');
+      await post('/referrals/generate');
       fetchData();
     } catch (err) {
       setMessage('Error: ' + err.message);

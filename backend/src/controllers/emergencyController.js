@@ -35,7 +35,7 @@ async function createEmergency(req, res, next) {
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, related_id)
          VALUES ($1, 'system', '🚨 Emergency Request Nearby', $2, $3)`,
-        [pro.user_id, `Urgent: ${description.substring(0, 100)}`, result.rows[0].id]
+        [pro.user_id, `Urgent: ${(description || '').substring(0, 100).replace(/[<>]/g, '')}`, result.rows[0].id]
       );
     }
 
