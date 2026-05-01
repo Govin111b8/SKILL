@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   FiArrowLeft, FiSearch, FiArrowRight, FiChevronRight,
+  FiSliders, FiCalendar,
 } from 'react-icons/fi';
 import { get } from '../api/client';
 import { categoriesData } from '../data/categories';
+import { useWebSocket } from '../context/WebSocketContext';
 import ProfessionalCard from '../components/ProfessionalCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './CategoryDetail.css';
@@ -17,18 +19,63 @@ function mapPro(p) {
     available: p.availability_status === 'available',
     pricing: p.pricing_estimate || p.pricing,
     categories: p.categories?.map(c => (typeof c === 'string' ? c : c.name)) || [],
+    completedJobs: p.completed_jobs ?? p.completedJobs ?? 0,
+    responseTime: p.response_time ?? p.responseTime ?? null,
   };
+}
+
+const SORT_OPTIONS = [
+  { value: 'rating', label: 'Top Rated' },
+  { value: 'price-low', label: 'Price: Low → High' },
+  { value: 'price-high', label: 'Price: High → Low' },
+  { value: 'jobs', label: 'Most Jobs' },
+  { value: 'response', label: 'Fastest Response' },
+];
+
+function sortProfessionals(pros, sortBy) {
+  const sorted = [...pros];
+  switch (sortBy) {
+    case 'rating':
+      return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    case 'price-low':
+      return sorted.sort((a, b) => parsePriceNum(a.pricing) - parsePriceNum(b.pricing));
+    case 'price-high':
+      return sorted.sort((a, b) => parsePriceNum(b.pricing) - parsePriceNum(a.pricing));
+    case 'jobs':
+      return sorted.sort((a, b) => (b.completedJobs || 0) - (a.completedJobs || 0));
+    case 'response':
+      return sorted.sort((a, b) => (a.responseTime || 9999) - (b.responseTime || 9999));
+    default:
+      return sorted;
+  }
+}
+
+function parsePriceNum(pricing) {
+  if (!pricing) return 9999;
+  const match = String(pricing).match(/[\d,.]+/);
+  return match ? parseFloat(match[0].replace(',', '')) : 9999;
 }
 
 function CategoryDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const category = categoriesData.find(c => c.slug === slug);
   const [selectedSub, setSelectedSub] = useState(null);
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [sortBy, setSortBy] = useState('rating');
+
+  // WebSocket presence data
+  let onlineUsers = {};
+  try {
+    const ws = useWebSocket();
+    onlineUsers = ws?.onlineUsers || {};
+  } catch {
+    // WebSocket context may not be available
+  }
 
   const fetchPros = useCallback(
     async (subName) => {
@@ -52,11 +99,22 @@ function CategoryDetail() {
     [category]
   );
 
-  // Load all professionals for this category on mount
+  // Init from URL query param ?sub=...
   useEffect(() => {
+    const subParam = searchParams.get('sub');
+    if (subParam && category) {
+      const match = category.subcategories.find(
+        s => s.name.toLowerCase() === subParam.toLowerCase()
+      );
+      if (match) {
+        setSelectedSub(match);
+        fetchPros(match.name);
+        return;
+      }
+    }
     setSelectedSub(null);
     fetchPros(null);
-  }, [slug]);
+  }, [slug, searchParams, category, fetchPros]);
 
   function handleSubClick(sub) {
     const isSame = selectedSub?.name === sub.name;
@@ -64,6 +122,22 @@ function CategoryDetail() {
     setSelectedSub(next);
     fetchPros(next ? next.name : null);
   }
+
+  // Merge online status into professionals
+  const prosWithPresence = useMemo(() => {
+    return professionals.map(p => {
+      const presence = onlineUsers[p.id] || onlineUsers[String(p.id)];
+      if (presence) {
+        return { ...p, isOnline: presence.status === 'online', lastSeen: presence.lastSeen };
+      }
+      return p;
+    });
+  }, [professionals, onlineUsers]);
+
+  const sortedPros = useMemo(
+    () => sortProfessionals(prosWithPresence, sortBy),
+    [prosWithPresence, sortBy]
+  );
 
   if (!category) {
     return (
@@ -79,6 +153,25 @@ function CategoryDetail() {
 
   return (
     <div className="cd-page">
+      {/* ── Breadcrumb ── */}
+      <div className="cd-breadcrumb">
+        <div className="container">
+          <nav className="breadcrumb-nav">
+            <Link to="/">Home</Link>
+            <span className="breadcrumb-sep">/</span>
+            <Link to="/categories">Services</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">{category.name}</span>
+            {selectedSub && (
+              <>
+                <span className="breadcrumb-sep">/</span>
+                <span className="breadcrumb-current">{selectedSub.name}</span>
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
+
       {/* ── Banner ── */}
       <div className="cd-banner" style={{ '--cd-color': category.color, '--cd-bg': category.bg }}>
         <div className="container">
@@ -102,7 +195,7 @@ function CategoryDetail() {
         </div>
       </div>
 
-      {/* ── Sub-services ── */}
+      {/* ── Sub-services chips ── */}
       <div className="cd-subs-wrap">
         <div className="container">
           <div className="cd-subs-header">
@@ -157,13 +250,27 @@ function CategoryDetail() {
                 </p>
               )}
             </div>
-            <Link
-              to={`/search?q=${encodeURIComponent(selectedSub?.name || category.name)}`}
-              className="btn btn-outline btn-sm"
-              style={{ flexShrink: 0 }}
-            >
-              View All <FiArrowRight size={13} />
-            </Link>
+            <div className="cd-pros-controls">
+              <div className="cd-sort-wrap">
+                <FiSliders size={14} />
+                <select
+                  className="cd-sort-select"
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <Link
+                to={`/search?q=${encodeURIComponent(selectedSub?.name || category.name)}`}
+                className="btn btn-outline btn-sm"
+                style={{ flexShrink: 0 }}
+              >
+                View All <FiArrowRight size={13} />
+              </Link>
+            </div>
           </div>
 
           {loading ? (
@@ -171,10 +278,33 @@ function CategoryDetail() {
               <LoadingSpinner />
               <p>Finding professionals…</p>
             </div>
-          ) : professionals.length > 0 ? (
+          ) : sortedPros.length > 0 ? (
             <div className="cd-pros-grid">
-              {professionals.map((pro) => (
-                <ProfessionalCard key={pro.id} professional={pro} />
+              {sortedPros.map((pro) => (
+                <div key={pro.id} className="cd-pro-card-wrap">
+                  <ProfessionalCard professional={pro} />
+                  {/* Online presence dot */}
+                  {pro.isOnline !== undefined && (
+                    <span
+                      className={`cd-presence-dot ${pro.isOnline ? 'cd-presence-dot--online' : 'cd-presence-dot--offline'}`}
+                      title={pro.isOnline ? 'Online now' : 'Offline'}
+                    />
+                  )}
+                  {/* Enhanced footer: completed jobs + Book Now */}
+                  <div className="cd-pro-extra">
+                    {pro.completedJobs > 0 && (
+                      <span className="cd-pro-jobs">
+                        <FiCalendar size={12} /> {pro.completedJobs} jobs done
+                      </span>
+                    )}
+                    <Link
+                      to={`/bookings/create?professional_id=${pro.id}&professional_name=${encodeURIComponent(pro.name || '')}`}
+                      className="btn btn-primary btn-sm cd-book-btn"
+                    >
+                      Book Now
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           ) : searched ? (
