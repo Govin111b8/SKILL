@@ -1,0 +1,55 @@
+import 'app_localizations.dart';
+
+class AppLocalizationsHi extends AppLocalizations {
+  AppLocalizationsHi() : super('hi');
+
+  @override String get appTitle => 'स्किलकनेक्ट';
+  @override String get home => 'होम';
+  @override String get services => 'सेवाएं';
+  @override String get bookings => 'बुकिंग';
+  @override String get chats => 'चैट';
+  @override String get profile => 'प्रोफाइल';
+  @override String get search => 'खोज';
+  @override String get notifications => 'सूचनाएं';
+  @override String get settings => 'सेटिंग्स';
+  @override String get login => 'लॉगिन';
+  @override String get register => 'रजिस्टर';
+  @override String get logout => 'लॉग आउट';
+  @override String get bookNow => 'अभी बुक करें';
+  @override String get rebookSamePro => 'उसी प्रोफेशनल को दोबारा बुक करें';
+  @override String get getInstantQuote => 'तुरंत कोट पाएं';
+  @override String get emergency => 'आपातकाल';
+  @override String get emergencyBooking => 'आपातकालीन बुकिंग';
+  @override String get payment => 'भुगतान';
+  @override String get payViaUpi => 'UPI से भुगतान करें';
+  @override String get cashOnService => 'सेवा पर नकद';
+  @override String get paymentSuccess => 'भुगतान सफल!';
+  @override String get liveTracking => 'लाइव ट्रैकिंग';
+  @override String get onTheWay => 'रास्ते में';
+  @override String get arrived => 'पहुंच गए';
+  @override String get inProgress => 'काम चल रहा है';
+  @override String get completed => 'पूरा हो गया';
+  @override String get dispute => 'विवाद दर्ज करें';
+  @override String get warranty => 'वारंटी ट्रैकर';
+  @override String get voiceNote => 'वॉइस नोट';
+  @override String get tapToRecord => 'रिकॉर्ड करने के लिए टैप करें';
+  @override String get recording => 'रिकॉर्डिंग...';
+  @override String get offline => 'आप ऑफ़लाइन हैं';
+  @override String get willSendWhenOnline => 'ऑनलाइन होने पर भेजा जाएगा';
+  @override String get tryingToReconnect => 'फिर से कनेक्ट हो रहा है...';
+  @override String get noConnection => 'कोई कनेक्शन नहीं';
+  @override String get connecting => 'कनेक्ट हो रहा है...';
+  @override String pendingSync(int count) => '$count सिंक बाकी';
+  @override String get notificationSettings => 'सूचना सेटिंग्स';
+  @override String get bookingUpdates => 'बुकिंग अपडेट';
+  @override String get smartSuggestions => 'स्मार्ट सुझाव';
+  @override String get serviceReminders => 'सेवा रिमाइंडर';
+  @override String get offersPromotions => 'ऑफ़र और प्रमोशन';
+  @override String get languagePreference => 'भाषा प्राथमिकता';
+  @override String get nearbyProviders => 'पास के प्रोवाइडर';
+  @override String get viewAll => 'सभी देखें';
+  @override String get cancel => 'रद्द करें';
+  @override String get confirm => 'पुष्टि करें';
+  @override String get retry => 'फिर से';
+  @override String get done => 'हो गया';
+}

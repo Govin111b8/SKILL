@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../services/auth_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
+import '../../widgets/voice/voice_note_widget.dart';
 
 class ChatScreen extends StatefulWidget {
   /// Provide either threadId OR (otherUserId + openWith) to bootstrap a thread.
@@ -198,6 +199,23 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) setState(() => _sending = false);
   }
 
+  Future<void> _sendVoiceNote(String filePath, Duration duration) async {
+    if (_threadId == null) return;
+    setState(() => _sending = true);
+    try {
+      // Send voice note as a message with audio indicator
+      final durationStr = '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
+      final m = await MessagingService.sendMessage(_threadId!, '🎤 Voice note ($durationStr)');
+      if (!_messages.any((x) => x.id == m.id)) {
+        setState(() => _messages = [..._messages, m]);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Send failed: $e'), backgroundColor: Colors.red));
+    }
+    if (mounted) setState(() => _sending = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -265,6 +283,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
                     ),
                     child: Row(children: [
+                      // Voice note recorder
+                      VoiceNoteRecorder(
+                        onRecordingComplete: (filePath, duration) {
+                          // Send voice note as message with audio attachment
+                          _sendVoiceNote(filePath, duration);
+                        },
+                      ),
                       Expanded(child: TextField(
                         controller: _ctrl,
                         minLines: 1, maxLines: 4,

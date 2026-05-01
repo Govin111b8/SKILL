@@ -20,21 +20,51 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.skillconnect.skillconnect"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // Phase 1: App size optimization — Split APKs per ABI
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86_64")
+            isUniversalApk = false
+        }
+    }
+
+    // Phase 4: Lite version — Product flavors for rural markets
+    flavorDimensions += "version"
+    productFlavors {
+        create("full") {
+            dimension = "version"
+            applicationIdSuffix = ""
+            versionNameSuffix = ""
+        }
+        create("lite") {
+            dimension = "version"
+            applicationIdSuffix = ".lite"
+            versionNameSuffix = "-lite"
+            // Lite version targets smaller APK < 15MB
+            // Strips heavy features: chat media, portfolio, large assets
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Enable code shrinking and resource shrinking for smaller APK
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

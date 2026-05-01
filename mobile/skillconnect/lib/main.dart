@@ -5,7 +5,9 @@ import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
 import 'services/theme_service.dart';
+import 'services/smart_location_service.dart';
 import 'services/offline/offline_services.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -37,6 +39,9 @@ void main() async {
   await ConnectivityService.instance.init();
   await OfflineQueueService.init();
 
+  // Initialize smart location (non-blocking)
+  SmartLocationService.instance.init();
+
   final authService = AuthService();
   final themeService = ThemeService();
   await Future.wait([authService.init(), themeService.init()]);
@@ -46,6 +51,7 @@ void main() async {
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider.value(value: themeService),
         ChangeNotifierProvider.value(value: ConnectivityService.instance),
+        ChangeNotifierProvider.value(value: SmartLocationService.instance),
       ],
       child: const SkillConnectApp(),
     ),
@@ -188,6 +194,9 @@ class SkillConnectApp extends StatelessWidget {
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
       themeMode: themeMode,
+      // i18n: Regional language support (Telugu-first)
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Consumer<AuthService>(
         builder: (_, auth, __) {
           final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
