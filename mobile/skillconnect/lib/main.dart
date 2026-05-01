@@ -31,6 +31,8 @@ import 'screens/tracking/live_tracking_screen.dart';
 import 'screens/disputes/dispute_screen.dart';
 import 'screens/warranty/warranty_screen.dart';
 import 'screens/notifications/notification_preferences_screen.dart';
+import 'screens/schedule/schedule_management_screen.dart';
+import 'screens/earnings/earnings_screen.dart';
 import 'widgets/connectivity_banner.dart';
 
 void main() async {
@@ -220,6 +222,8 @@ class SkillConnectApp extends StatelessWidget {
         '/emergency': (_) => const EmergencyBookingScreen(),
         '/warranty': (_) => const WarrantyScreen(),
         '/notification-preferences': (_) => const NotificationPreferencesScreen(),
+        '/schedule': (_) => const ScheduleManagementScreen(),
+        '/earnings': (_) => const EarningsScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/professional') {

@@ -11,9 +11,13 @@ router.get('/blocked/:professional_id', getBlockedDates);
 router.use(authenticate);
 router.get('/', getSchedule);
 router.put('/', setSchedule);
+router.post('/', setSchedule); // POST alias for mobile compatibility
+router.get('/blocked-dates', getBlockedDates);
 router.post('/slots/book', bookSlot);
 router.post('/block', blockDates);
+router.post('/block-dates', blockDates); // alias for mobile
 router.post('/unblock', unblockDates);
+router.post('/unblock-dates', unblockDates); // alias for mobile
 router.get('/blocked', getBlockedDates);
 
 module.exports = router;

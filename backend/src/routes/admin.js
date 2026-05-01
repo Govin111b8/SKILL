@@ -56,4 +56,23 @@ router.get('/cache-stats', (req, res) => {
   res.json({ success: true, data: getCacheStats() });
 });
 
+// Queue Stats (monitoring)
+const { getQueueStats } = require('../services/jobQueue');
+router.get('/queue-stats', (req, res) => {
+  res.json({ success: true, data: getQueueStats() });
+});
+
+// System Health
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      cache: getCacheStats(),
+      queues: getQueueStats(),
+    }
+  });
+});
+
 module.exports = router;

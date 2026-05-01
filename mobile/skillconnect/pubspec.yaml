@@ -55,6 +55,8 @@ dependencies:
   audioplayers: ^6.1.0
   # Phase 3: Payments
   uuid: ^4.5.1
+  # Phase 4: Voice search (Telugu/Hindi)
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:
