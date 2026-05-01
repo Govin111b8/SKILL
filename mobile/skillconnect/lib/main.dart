@@ -6,6 +6,8 @@ import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
 import 'services/theme_service.dart';
 import 'services/smart_location_service.dart';
+import 'services/analytics_service.dart';
+import 'services/performance_monitor.dart';
 import 'services/offline/offline_services.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
@@ -32,12 +34,18 @@ import 'screens/notifications/notification_preferences_screen.dart';
 import 'widgets/connectivity_banner.dart';
 
 void main() async {
+  // Track cold start time
+  PerformanceMonitor.instance.markAppStart();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize offline services
   await LocalCacheService.init();
   await ConnectivityService.instance.init();
   await OfflineQueueService.init();
+
+  // Initialize analytics
+  await AnalyticsService.instance.init();
 
   // Initialize smart location (non-blocking)
   SmartLocationService.instance.init();

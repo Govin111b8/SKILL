@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/models.dart';
 import '../../services/auth_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
+import '../../services/upload_service.dart';
+import '../../services/analytics_service.dart';
 import '../../widgets/voice/voice_note_widget.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -216,6 +220,34 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) setState(() => _sending = false);
   }
 
+  Future<void> _sendImage() async {
+    if (_threadId == null) return;
+    final picker = ImagePicker();
+    final result = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 70,
+    );
+    if (result == null) return;
+
+    setState(() => _sending = true);
+    try {
+      // Upload image
+      final imageUrl = await UploadService.uploadFile(result.path, 'chat_images');
+      // Send as image message
+      final m = await MessagingService.sendMessage(_threadId!, '📷 Image', imageUrl: imageUrl);
+      if (!_messages.any((x) => x.id == m.id)) {
+        setState(() => _messages = [..._messages, m]);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+      AnalyticsService.instance.track(AnalyticsEvent.imageSent);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image send failed: $e'), backgroundColor: Colors.red));
+    }
+    if (mounted) setState(() => _sending = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -283,6 +315,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
                     ),
                     child: Row(children: [
+                      // Image attach button
+                      IconButton(
+                        onPressed: _sending ? null : _sendImage,
+                        icon: Icon(Icons.image_outlined, color: cs.onSurfaceVariant, size: 22),
+                        tooltip: 'Send image',
+                      ),
                       // Voice note recorder
                       VoiceNoteRecorder(
                         onRecordingComplete: (filePath, duration) {

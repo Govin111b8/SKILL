@@ -50,4 +50,10 @@ router.post('/complaints/:id/resolve', admin.resolveComplaint);
 // Audit Log
 router.get('/audit-log', admin.getAuditLog);
 
+// Cache Stats (monitoring)
+const { getCacheStats } = require('../middleware/cache');
+router.get('/cache-stats', (req, res) => {
+  res.json({ success: true, data: getCacheStats() });
+});
+
 module.exports = router;
