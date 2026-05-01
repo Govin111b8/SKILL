@@ -25,6 +25,23 @@ function ProfessionalProfile() {
 
   useEffect(() => { fetchProfessional(); }, [id]);
 
+  // Check if favorited
+  useEffect(() => {
+    if (isAuthenticated) {
+      get(`/favorites/check/${id}`).then(res => {
+        setSaved(res.favorited || false);
+      }).catch(() => {});
+    }
+  }, [id, isAuthenticated]);
+
+  async function handleToggleFavorite() {
+    if (!isAuthenticated) return;
+    try {
+      const res = await post('/favorites/toggle', { professional_id: id });
+      setSaved(res.favorited);
+    } catch { /* swallow */ }
+  }
+
   async function fetchProfessional() {
     try {
       const res = await get(`/professionals/${id}`);
@@ -174,7 +191,7 @@ function ProfessionalProfile() {
                 <FiPhone size={18} /> Contact Info
               </button>
               <div className="profile-hero-cta-actions">
-                <button className={`profile-action-btn ${saved ? 'saved' : ''}`} onClick={() => setSaved(!saved)}>
+                <button className={`profile-action-btn ${saved ? 'saved' : ''}`} onClick={handleToggleFavorite}>
                   <FiHeart size={16} fill={saved ? '#ef4444' : 'none'} color={saved ? '#ef4444' : 'currentColor'} />
                   {saved ? 'Saved' : 'Save'}
                 </button>
