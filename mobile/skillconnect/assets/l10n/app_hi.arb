@@ -1,0 +1,53 @@
+{
+  "@@locale": "hi",
+  "appTitle": "स्किलकनेक्ट",
+  "home": "होम",
+  "services": "सेवाएं",
+  "bookings": "बुकिंग",
+  "chats": "चैट",
+  "profile": "प्रोफाइल",
+  "search": "खोज",
+  "notifications": "सूचनाएं",
+  "settings": "सेटिंग्स",
+  "login": "लॉगिन",
+  "register": "रजिस्टर",
+  "logout": "लॉग आउट",
+  "bookNow": "अभी बुक करें",
+  "rebookSamePro": "उसी प्रोफेशनल को दोबारा बुक करें",
+  "getInstantQuote": "तुरंत कोट पाएं",
+  "emergency": "आपातकाल",
+  "emergencyBooking": "आपातकालीन बुकिंग",
+  "payment": "भुगतान",
+  "payViaUpi": "UPI से भुगतान करें",
+  "cashOnService": "सेवा पर नकद",
+  "paymentSuccess": "भुगतान सफल!",
+  "liveTracking": "लाइव ट्रैकिंग",
+  "onTheWay": "रास्ते में",
+  "arrived": "पहुंच गए",
+  "inProgress": "काम चल रहा है",
+  "completed": "पूरा हो गया",
+  "dispute": "विवाद दर्ज करें",
+  "warranty": "वारंटी ट्रैकर",
+  "voiceNote": "वॉइस नोट",
+  "tapToRecord": "रिकॉर्ड करने के लिए टैप करें",
+  "recording": "रिकॉर्डिंग...",
+  "offline": "आप ऑफ़लाइन हैं",
+  "willSendWhenOnline": "ऑनलाइन होने पर भेजा जाएगा",
+  "tryingToReconnect": "फिर से कनेक्ट हो रहा है...",
+  "noConnection": "कोई कनेक्शन नहीं",
+  "connecting": "कनेक्ट हो रहा है...",
+  "pendingSync": "{count} सिंक बाकी",
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationSettings": "सूचना सेटिंग्स",
+  "bookingUpdates": "बुकिंग अपडेट",
+  "smartSuggestions": "स्मार्ट सुझाव",
+  "serviceReminders": "सेवा रिमाइंडर",
+  "offersPromotions": "ऑफ़र और प्रमोशन",
+  "languagePreference": "भाषा प्राथमिकता"
+}

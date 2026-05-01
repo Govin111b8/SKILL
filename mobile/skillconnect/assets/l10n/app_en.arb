@@ -1,0 +1,53 @@
+{
+  "@@locale": "en",
+  "appTitle": "SkillConnect",
+  "home": "Home",
+  "services": "Services",
+  "bookings": "Bookings",
+  "chats": "Chats",
+  "profile": "Profile",
+  "search": "Search",
+  "notifications": "Notifications",
+  "settings": "Settings",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "bookNow": "Book Now",
+  "rebookSamePro": "Book Same Professional Again",
+  "getInstantQuote": "Get Instant Quote",
+  "emergency": "Emergency",
+  "emergencyBooking": "Emergency Booking",
+  "payment": "Payment",
+  "payViaUpi": "Pay via UPI",
+  "cashOnService": "Cash on Service",
+  "paymentSuccess": "Payment Successful!",
+  "liveTracking": "Live Tracking",
+  "onTheWay": "On the Way",
+  "arrived": "Arrived",
+  "inProgress": "Work in Progress",
+  "completed": "Completed",
+  "dispute": "Raise Dispute",
+  "warranty": "Warranty Tracker",
+  "voiceNote": "Voice Note",
+  "tapToRecord": "Tap to record",
+  "recording": "Recording...",
+  "offline": "You're offline",
+  "willSendWhenOnline": "Will send when online",
+  "tryingToReconnect": "Trying to reconnect...",
+  "noConnection": "No connection",
+  "connecting": "Connecting...",
+  "pendingSync": "{count} pending sync",
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationSettings": "Notification Settings",
+  "bookingUpdates": "Booking Updates",
+  "smartSuggestions": "Smart Suggestions",
+  "serviceReminders": "Service Reminders",
+  "offersPromotions": "Offers & Promotions",
+  "languagePreference": "Language Preference"
+}
