@@ -117,22 +117,30 @@ const updateStorefront = async (req, res, next) => {
       operating_days,
     } = req.body;
 
+    // Use undefined check (not COALESCE) so empty strings can clear fields
+    const fields = { announcement, whatsapp_number, instagram_handle, website_url, cover_image_url, accent_color, show_rating, return_policy, operating_hours, operating_days };
+    const setClauses = [];
+    const values = [];
+    let paramIndex = 1;
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        setClauses.push(`${key} = $${paramIndex}`);
+        values.push(value);
+        paramIndex++;
+      }
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update.' });
+    }
+
+    setClauses.push('updated_at = NOW()');
+    values.push(id);
+
     const result = await query(
-      `UPDATE professionals
-       SET announcement = COALESCE($1, announcement),
-           whatsapp_number = COALESCE($2, whatsapp_number),
-           instagram_handle = COALESCE($3, instagram_handle),
-           website_url = COALESCE($4, website_url),
-           cover_image_url = COALESCE($5, cover_image_url),
-           accent_color = COALESCE($6, accent_color),
-           show_rating = COALESCE($7, show_rating),
-           return_policy = COALESCE($8, return_policy),
-           operating_hours = COALESCE($9, operating_hours),
-           operating_days = COALESCE($10, operating_days),
-           updated_at = NOW()
-       WHERE id = $11
-       RETURNING *`,
-      [announcement, whatsapp_number, instagram_handle, website_url, cover_image_url, accent_color, show_rating, return_policy, operating_hours, operating_days, id]
+      `UPDATE professionals SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+      values
     );
 
     res.status(200).json({
