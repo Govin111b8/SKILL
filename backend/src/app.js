@@ -40,6 +40,7 @@ const agentRoutes = require('./routes/agents');
 const matchingRoutes = require('./routes/matching');
 const seoRoutes = require('./routes/seo');
 const growthRoutes = require('./routes/growth');
+const aiRoutes = require('./routes/ai');
 
 const app = express();
 
@@ -136,6 +137,7 @@ app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoute
 app.use('/robots.txt', (req, res, next) => { req.url = '/robots.txt'; seoRoutes(req, res, next); });
 app.use('/api/seo', seoRoutes);
 app.use('/api/growth', growthRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));

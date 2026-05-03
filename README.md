@@ -120,6 +120,7 @@
 - [Accessibility](#-accessibility)
 - [Contributing](#-contributing)
 - [Roadmap](#-roadmap)
+- [AI Integration](#-ai-integration-new)
 - [FAQ](#-frequently-asked-questions)
 - [Acknowledgments & Inspiration](#-acknowledgments--inspiration)
 - [License](#-license)
@@ -3177,20 +3178,303 @@ git push origin feature/your-feature-name
 - [x] Fraud prevention
 - [x] Docker deployment
 
+### ✅ Completed (v1.1 — AI Integration)
+
+- [x] AI-powered Smart Search (NLP intent parsing)
+- [x] Intelligent provider matching with ML scoring
+- [x] Review sentiment analysis
+- [x] Auto-categorization of service requests
+- [x] AI Chatbot (SkillBot) for customer support
+- [x] Smart pricing suggestions based on market data
+- [x] Enhanced fraud detection with AI scoring
+
 ### 🔜 Planned (v2.0)
 
-- [ ] AI-powered service matching
 - [ ] Video consultations
 - [ ] Subscription plans for professionals
 - [ ] Multi-city expansion with geo-fencing
 - [ ] Integration with Google Maps SDK
 - [ ] Payment split (platform fee automation)
-- [ ] Machine learning fraud detection
+- [ ] Deep learning fraud detection (TensorFlow)
 - [ ] iOS App Store deployment
 - [ ] Automated testing CI/CD pipeline
 - [ ] Redis caching layer
 - [ ] Elasticsearch for full-text search
 - [ ] Service-level SLA tracking
+- [ ] Computer vision for portfolio quality scoring
+- [ ] Voice-to-booking (end-to-end voice commands)
+- [ ] Predictive demand forecasting
+- [ ] Auto-scheduling optimization
+
+---
+
+## 🤖 AI Integration (NEW)
+
+SkillConnect now includes a production-ready **AI integration layer** that enhances the platform with intelligent features. The system is **provider-agnostic** (supports OpenAI, Google Gemini, or local rule-based fallback) and designed for **graceful degradation** — if no AI API key is configured, all features fall back to deterministic rule-based logic.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AI Service Layer                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │   OpenAI     │  │   Gemini     │  │  Local/Fallback  │  │
+│  │  (GPT-4o)    │  │  (2.0 Flash) │  │  (Rule-based)    │  │
+│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘  │
+│         │                  │                    │            │
+│         └──────────────────┼────────────────────┘            │
+│                            │                                 │
+│                    ┌───────▼───────┐                         │
+│                    │  AI Provider  │                         │
+│                    │  Abstraction  │                         │
+│                    └───────┬───────┘                         │
+│                            │                                 │
+│  ┌─────────┬──────────┬───┼────┬───────────┬────────────┐   │
+│  │         │          │   │    │           │            │   │
+│  ▼         ▼          ▼   ▼    ▼           ▼            ▼   │
+│ Search  Recommend  Sentiment  Categorize  Pricing  Chatbot  │
+│ Intent  -ations    Analysis              Suggest           │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│              In-Memory Cache (TTL-based)                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### AI Features
+
+#### 1. 🔍 Smart Search Intent Parsing
+
+Converts natural language queries into structured search parameters.
+
+```
+Input:  "I need a plumber near Koramangala who can fix a leaking pipe tomorrow"
+Output: {
+  "category": "Plumbing",
+  "location": "Koramangala",
+  "urgency": "high",
+  "keywords": ["leaking", "pipe"],
+  "timeframe": "tomorrow"
+}
+```
+
+**API Endpoint:** `POST /api/ai/search-intent`
+
+```json
+// Request
+{ "q": "urgent electrician for short circuit in HSR Layout" }
+
+// Response
+{
+  "success": true,
+  "data": {
+    "category": "Electrical",
+    "location": "HSR Layout",
+    "urgency": "high",
+    "keywords": ["short circuit"],
+    "timeframe": null,
+    "budget_hint": null,
+    "language_detected": "en"
+  }
+}
+```
+
+#### 2. 🎯 Personalized Recommendations
+
+Context-aware service suggestions based on user's booking history, favorites, location, and seasonal patterns.
+
+**API Endpoint:** `POST /api/ai/recommendations` (requires auth)
+
+```json
+// Response
+{
+  "success": true,
+  "data": [
+    { "category": "AC Repair", "reason": "Summer maintenance season", "confidence": 0.85 },
+    { "category": "Pest Control", "reason": "Based on your recent cleaning booking", "confidence": 0.72 },
+    { "category": "Painting", "reason": "Festival home refresh", "confidence": 0.68 }
+  ]
+}
+```
+
+**Recommendation Factors:**
+- Recent booking history (last 10 bookings)
+- Favorite professionals' categories
+- Seasonal demand patterns (summer → AC, festivals → cleaning/painting)
+- Day of week and time of day
+- Related service cross-sell (plumbing → bathroom renovation)
+
+#### 3. 💬 Review Sentiment Analysis
+
+Analyzes review text to extract sentiment, confidence score, and key themes.
+
+**API Endpoint:** `POST /api/ai/sentiment`
+
+```json
+// Request
+{ "text": "Excellent work! Very punctual and professional. Fair pricing too." }
+
+// Response
+{
+  "success": true,
+  "data": {
+    "sentiment": "positive",
+    "score": 0.92,
+    "themes": ["punctuality", "quality", "pricing"],
+    "summary": "Highly positive review highlighting timeliness and fair rates"
+  }
+}
+```
+
+**Theme Categories Detected:**
+- `punctuality` — time-related mentions
+- `quality` — work quality references
+- `pricing` — cost/value mentions
+- `cleanliness` — tidiness mentions
+- `behavior` — politeness/rudeness
+
+#### 4. 🏷️ Auto-Categorization
+
+Automatically suggests the correct service category for free-text descriptions.
+
+**API Endpoint:** `POST /api/ai/categorize`
+
+```json
+// Request
+{ "description": "My kitchen sink is clogged and water isn't draining" }
+
+// Response
+{
+  "success": true,
+  "data": {
+    "category": "Plumbing",
+    "subcategory": "Drain Cleaning",
+    "confidence": 0.91
+  }
+}
+```
+
+#### 5. 💰 Smart Pricing Suggestions
+
+Market-data-informed pricing recommendations for professionals.
+
+**API Endpoint:** `POST /api/ai/pricing`
+
+```json
+// Request
+{ "category": "Plumbing", "location": "Bangalore", "complexity": "medium" }
+
+// Response
+{
+  "success": true,
+  "data": {
+    "min_price": 300,
+    "max_price": 2000,
+    "recommended": 800,
+    "factors": ["metro_city", "medium_complexity", "market_average"]
+  }
+}
+```
+
+#### 6. 🤖 AI Chatbot (SkillBot)
+
+Conversational customer support with booking context awareness.
+
+**API Endpoint:** `POST /api/ai/chat` (optional auth)
+
+```json
+// Request
+{ "message": "How do I cancel my booking?" }
+
+// Response
+{
+  "success": true,
+  "data": {
+    "response": "To cancel a booking, go to My Bookings > Select the booking > Tap Cancel. Note: cancellation policies may apply depending on the timing.",
+    "source": "rules"
+  }
+}
+```
+
+**SkillBot Capabilities:**
+- Booking guidance (search, create, cancel)
+- Payment information (methods, refunds, disputes)
+- Platform FAQ (how-to, policies, support)
+- Context-aware responses (uses user's recent bookings)
+- Multilingual support (responds in same language as user)
+
+#### 7. 🛡️ Enhanced Fraud Scoring
+
+AI-enhanced risk assessment for transactions and user activities.
+
+```json
+// Internal scoring output
+{
+  "score": 45,
+  "risk": "medium",
+  "flags": ["rapid_actions", "unusual_location"],
+  "action": "review"
+}
+```
+
+**Risk Factors Evaluated:**
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| `rapid_actions` | +30 | More than 10 actions in quick succession |
+| `new_account_high_value` | +20 | New account making expensive bookings |
+| `payment_failures` | +25 | 3+ failed payment attempts |
+| `unusual_location` | +15 | Activity from unexpected geography |
+| `suspicious_pattern` | +20 | Bot-like behavior patterns |
+
+**Actions:** `allow` (score ≤ 40) → `review` (40-70) → `block` (70+)
+
+### Configuration
+
+Set these environment variables to enable AI features:
+
+```bash
+# AI Provider (openai | gemini | local)
+AI_PROVIDER=openai
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-...your-key-here
+AI_MODEL=gpt-4o-mini
+
+# OR Google Gemini Configuration
+# AI_PROVIDER=gemini
+# GEMINI_API_KEY=AI...your-key-here
+
+# Cache settings
+AI_CACHE_TTL=3600  # seconds
+```
+
+> **Note:** Without any API key configured, ALL AI features still work using built-in rule-based logic. No external dependencies required for baseline functionality.
+
+### What Can Be Improved (Future AI Enhancements)
+
+| # | Improvement | Description | Impact |
+|---|-------------|-------------|--------|
+| 1 | **RAG-based FAQ** | Use Retrieval-Augmented Generation with platform docs for accurate chatbot responses | High |
+| 2 | **Image Quality Scoring** | Computer vision to rate portfolio photo quality and suggest improvements | Medium |
+| 3 | **Voice-to-Booking** | End-to-end voice command processing: "Book a plumber for tomorrow 3 PM" | High |
+| 4 | **Demand Forecasting** | Predict service demand by area/time using historical booking data | High |
+| 5 | **Dynamic Pricing** | Real-time price adjustment based on supply/demand, weather, events | Medium |
+| 6 | **Auto-Scheduling** | ML-optimized schedule suggestions for professionals | Medium |
+| 7 | **Review Summarization** | Auto-generate pro/con summaries from all reviews for a professional | Low |
+| 8 | **Skill Gap Analysis** | Identify underserved categories in a location and suggest to professionals | Medium |
+| 9 | **Churn Prediction** | Predict which users/pros might leave and trigger retention campaigns | High |
+| 10 | **Smart Notifications** | AI-optimized notification timing for maximum engagement | Medium |
+| 11 | **Quality Assurance** | Automated post-service quality verification via photo analysis | Medium |
+| 12 | **Language Translation** | Real-time chat translation between customer and professional | High |
+| 13 | **Route Optimization** | Optimal travel route suggestions for professionals with multiple bookings | Medium |
+| 14 | **Conversational Booking** | Full booking flow via natural language conversation | High |
+| 15 | **Professional Coaching** | AI tips for professionals to improve ratings and earnings | Low |
+| 16 | **Anomaly Detection** | Detect unusual review patterns (fake reviews, review bombing) | High |
+| 17 | **Content Moderation** | AI-based moderation of messages, reviews, and portfolio uploads | Medium |
+| 18 | **Embedding Search** | Vector similarity search for finding professionals by description | High |
+| 19 | **Predictive Maintenance** | Remind customers about recurring services before they need them | Medium |
+| 20 | **A/B Test Optimization** | AI-driven experiment allocation and early stopping | Low |
 
 ---
 
