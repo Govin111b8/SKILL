@@ -631,6 +631,342 @@ const requiredInProduction = ['JWT_SECRET', 'DB_HOST', 'DB_PASSWORD'];
 
 ## 🖥️ Backend API Server
 
+### Detailed Architecture Explanation
+
+The backend is a **monolithic but modular** Node.js application following a layered architecture pattern. Each layer has a specific responsibility:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        REQUEST LIFECYCLE                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. HTTP Request arrives at Express                                      │
+│     └─ Assigned UUID via requestId middleware                           │
+│                                                                          │
+│  2. Global Middleware Pipeline (order matters!)                          │
+│     ├─ requestId    → Generate X-Request-Id header                      │
+│     ├─ httpLogger   → Log method, URL, user-agent (Pino structured)    │
+│     ├─ helmet       → Set security headers (CSP, HSTS, X-Frame)        │
+│     ├─ compression  → Gzip responses (saves 60-80% bandwidth)          │
+│     ├─ cors         → Validate Origin header against whitelist         │
+│     ├─ rateLimit    → Token bucket algorithm (IP + user based)         │
+│     └─ express.json → Parse JSON body (100kb limit)                    │
+│                                                                          │
+│  3. Route Matching                                                       │
+│     └─ Express Router finds matching route definition                   │
+│                                                                          │
+│  4. Route-Level Middleware                                               │
+│     ├─ authenticate → JWT verification + user extraction               │
+│     ├─ authorize    → Role-based access control (RBAC)                 │
+│     ├─ validate     → express-validator schema enforcement             │
+│     ├─ fraudCheck   → Bot detection, idempotency, patterns             │
+│     └─ cache        → LRU cache check (GET requests only)              │
+│                                                                          │
+│  5. Controller Logic                                                     │
+│     ├─ Business logic execution                                         │
+│     ├─ Database queries (parameterized SQL via pg)                      │
+│     ├─ External service calls (Razorpay, SMS, Email)                   │
+│     └─ WebSocket notifications (real-time hub)                          │
+│                                                                          │
+│  6. Response                                                             │
+│     ├─ Standard envelope: { success, data, pagination }                │
+│     ├─ Cache storage (for GET 2xx responses)                           │
+│     └─ Response logging (status code, duration)                        │
+│                                                                          │
+│  7. Error Handling (if any step throws)                                  │
+│     ├─ errorHandler catches all thrown errors                           │
+│     ├─ 4xx → logger.warn + client-friendly message                     │
+│     ├─ 5xx → logger.error + sanitized message (production)             │
+│     └─ Stack trace included only in development mode                   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Authentication System — Deep Dive
+
+The auth system uses a **dual-token strategy** for security:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   TOKEN LIFECYCLE                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  LOGIN                                                           │
+│  ├─ Client sends email + password                               │
+│  ├─ Server checks account lockout status                        │
+│  │   └─ If locked: 429 "Account temporarily locked"             │
+│  ├─ Server retrieves user from DB by email                      │
+│  ├─ bcrypt.compare(password, hash) — 10 salt rounds             │
+│  │   ├─ If mismatch: increment failed_login_count               │
+│  │   │   └─ If count >= 5: lock for 15 minutes                 │
+│  │   └─ If match: reset failed_login_count to 0                │
+│  └─ Generate tokens:                                            │
+│      ├─ Access Token  (15 min TTL, type: "access")             │
+│      │   payload: { id, email, role, iat, exp }                │
+│      └─ Refresh Token (7 day TTL, type: "refresh")             │
+│          payload: { id, type: "refresh", iat, exp }            │
+│                                                                  │
+│  AUTHENTICATED REQUEST                                           │
+│  ├─ Client sends: Authorization: Bearer <access_token>          │
+│  ├─ auth.js middleware:                                         │
+│  │   ├─ Extract token from header                              │
+│  │   ├─ jwt.verify(token, JWT_SECRET)                          │
+│  │   ├─ REJECT if token.type === "refresh"                     │
+│  │   │   (prevents refresh token misuse as access token)       │
+│  │   ├─ Enrich with is_admin flag from DB (best-effort)        │
+│  │   └─ Attach decoded payload to req.user                     │
+│  └─ Controller can access req.user.id, req.user.role           │
+│                                                                  │
+│  TOKEN REFRESH                                                   │
+│  ├─ Client sends refresh token in body                          │
+│  ├─ Server verifies token.type === "refresh"                   │
+│  ├─ Server looks up user by decoded.id                         │
+│  └─ Issues new access + refresh token pair                     │
+│                                                                  │
+│  OPTIONAL AUTH (for search, public profiles)                    │
+│  ├─ optionalAuth middleware: same as authenticate               │
+│  ├─ But does NOT reject if token is missing                    │
+│  └─ Just sets req.user = null (allows search history saving)   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Security Decisions:**
+- **Why bcrypt with 10 rounds?** Balances security vs response time (~100ms hash time). Higher rounds for military-grade, lower for high-traffic APIs.
+- **Why reject refresh tokens in auth middleware?** Prevents XSS-stolen refresh tokens from granting API access.
+- **Why best-effort admin flag?** If DB is temporarily unreachable, regular users still authenticate — just admin endpoints fail gracefully.
+
+### Search Engine — Deep Dive
+
+The search system implements **multi-criteria filtering with Haversine geo-distance**:
+
+```sql
+-- The actual search query (simplified from searchController.js):
+
+SELECT 
+  p.*, 
+  u.name, u.location, u.government_id_verified,
+  COALESCE(AVG(r.rating), 0) as average_rating,
+  COUNT(DISTINCT r.id) as review_count,
+  -- Haversine formula for great-circle distance (Earth = 6371 km)
+  (6371 * acos(
+    cos(radians($lat)) * cos(radians(p.latitude)) * 
+    cos(radians(p.longitude) - radians($lng)) + 
+    sin(radians($lat)) * sin(radians(p.latitude))
+  )) AS distance
+FROM professionals p
+JOIN users u ON p.user_id = u.id
+LEFT JOIN reviews r ON p.id = r.professional_id
+-- Category filter (optional)
+JOIN professional_categories pc ON p.id = pc.professional_id
+WHERE 
+  pc.category_id = $category_id              -- Category filter
+  AND (u.name ILIKE '%query%' OR p.headline ILIKE '%query%')  -- Text search
+  AND p.pricing_estimate <= $max_price       -- Price filter
+  AND p.availability_status = $availability  -- Status filter
+GROUP BY p.id, u.id
+HAVING COALESCE(AVG(r.rating), 0) >= $min_rating  -- Rating filter
+  AND distance <= $radius_km                       -- Geo filter
+ORDER BY 
+  CASE $sort_by
+    WHEN 'reputation' THEN p.reputation_score
+    WHEN 'distance' THEN distance
+    WHEN 'experience' THEN p.years_of_experience
+  END DESC
+LIMIT $limit OFFSET $offset;
+```
+
+**How the search pipeline works:**
+
+1. **Input Sanitization** — `q.replace(/[%_\\]/g, '\\$&')` escapes LIKE wildcards to prevent pattern injection
+2. **Search History** — If user is authenticated, saves query to `search_history` (fire-and-forget, doesn't block response)
+3. **Dynamic Query Building** — Conditions are added only if the corresponding filter is provided (no useless WHERE clauses)
+4. **Haversine Calculation** — Computes distance in km between user's coordinates and each professional's stored lat/lng
+5. **Radius Filtering** — `HAVING distance <= radius_km` removes results outside the search area
+6. **Caching** — Results are cached in LRU cache for 60 seconds (cache key = full URL with params)
+
+### LRU Cache System — Deep Dive
+
+The backend implements a **custom LRU (Least Recently Used) cache** for high-read endpoints:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   CACHE ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Three independent cache instances:                              │
+│                                                                  │
+│  ┌───────────────────┐  ┌───────────────────┐                  │
+│  │  searchCache       │  │  categoryCache     │                  │
+│  │  • max: 200 items │  │  • max: 50 items   │                  │
+│  │  • TTL: 60s       │  │  • TTL: 10 min     │                  │
+│  │  • For: /search   │  │  • For: /categories │                  │
+│  └───────────────────┘  └───────────────────┘                  │
+│                                                                  │
+│  ┌───────────────────┐                                          │
+│  │  providerCache     │                                          │
+│  │  • max: 300 items │                                          │
+│  │  • TTL: 2 min     │                                          │
+│  │  • For: /pro/:id  │                                          │
+│  └───────────────────┘                                          │
+│                                                                  │
+│  How LRU works:                                                  │
+│  1. GET → If key exists and not expired → return (HIT)          │
+│  2. GET → Move key to "most recently used" position             │
+│  3. SET → If at capacity → evict oldest (least recently used)   │
+│  4. TTL → Expired entries are garbage-collected on next access  │
+│                                                                  │
+│  Cache headers:                                                  │
+│  • X-Cache: HIT  → Response served from cache                  │
+│  • X-Cache: MISS → Response from database (and cached)          │
+│                                                                  │
+│  Invalidation triggers:                                         │
+│  • New booking created → invalidate provider cache              │
+│  • Review submitted → invalidate search + provider cache        │
+│  • Profile updated → invalidate provider cache                  │
+│  • Category changed → invalidate category cache                 │
+│                                                                  │
+│  Production scaling note:                                       │
+│  • Current: handles ~5K concurrent users                       │
+│  • At scale: replace with Redis (multi-instance support)        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Job Queue System — Deep Dive
+
+The backend uses an **in-memory priority job queue** for background tasks:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   JOB QUEUE ARCHITECTURE                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Queue Properties:                                               │
+│  • Concurrency: 3 (max simultaneous jobs)                       │
+│  • Max retries: 3 per job (with exponential backoff)           │
+│  • Priority: Higher priority jobs execute first                 │
+│  • Retry delay: 1000ms × attempt² (1s, 4s, 9s)               │
+│                                                                  │
+│  Job Types:                                                      │
+│  ┌──────────────────┬────────────────────────────────────────┐  │
+│  │ notification      │ Push notification via FCM               │  │
+│  │ email             │ Transactional email via SendGrid        │  │
+│  │ sms               │ OTP/alert via SMS gateway              │  │
+│  │ emergency_broadcast│ Notify 10 nearby pros (high priority) │  │
+│  │ analytics         │ Event tracking (low priority)          │  │
+│  │ reputation_update │ Recalculate pro score                  │  │
+│  └──────────────────┴────────────────────────────────────────┘  │
+│                                                                  │
+│  Flow:                                                           │
+│  1. Controller calls queue.add('notification', data)            │
+│  2. Job is inserted by priority (higher = sooner execution)     │
+│  3. Worker picks up job when concurrency slot available         │
+│  4. Handler executes (e.g., send FCM push)                     │
+│  5. On failure: retry with backoff (max 3 attempts)            │
+│  6. On permanent failure: log error + mark as 'failed'         │
+│                                                                  │
+│  Batch Processing:                                               │
+│  queue.addBulk('notification', [user1, user2, ...])            │
+│  → Inserts N jobs at once (e.g., emergency broadcast to 10)    │
+│                                                                  │
+│  Production Note:                                                │
+│  Replace with Bull/BullMQ + Redis for:                          │
+│  • Multi-instance worker support                                │
+│  • Job persistence across restarts                              │
+│  • Dead letter queue                                            │
+│  • Job scheduling (delayed execution)                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Emergency Services — Deep Dive
+
+The emergency system implements **priority-based professional dispatch**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              EMERGENCY DISPATCH FLOW                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. CUSTOMER creates emergency request                          │
+│     POST /api/emergency                                         │
+│     Body: { category_id, description, lat, lng, address }       │
+│                                                                  │
+│  2. SYSTEM finds nearby professionals                           │
+│     SQL query with conditions:                                  │
+│     • accepts_emergency = TRUE (opted in)                       │
+│     • availability_status = 'available' (not busy)              │
+│     • category matches (e.g., plumbers for pipe leak)           │
+│     • Sorted by Haversine distance (nearest first)             │
+│     • LIMIT 10 (top 10 nearest available)                      │
+│                                                                  │
+│  3. SYSTEM notifies all 10 professionals                        │
+│     • Database notification record (for in-app)                │
+│     • Job queue: push notification (FCM)                       │
+│     • WebSocket: real-time alert (if online)                   │
+│     • Special emoji: 🚨 "Emergency Request Nearby"             │
+│                                                                  │
+│  4. FIRST professional to respond wins                          │
+│     PUT /api/emergency/:id/respond                              │
+│     • Sets status = 'assigned'                                 │
+│     • Records responded_at timestamp                           │
+│     • Rejects further responses (404 "already assigned")       │
+│     • Notifies customer: "Help is on the way!"                 │
+│                                                                  │
+│  5. BOOKING auto-created from emergency                         │
+│     • Status = 'in_progress' (skips quote/accept flow)         │
+│     • GPS tracking activated immediately                       │
+│     • Customer sees live location of professional              │
+│                                                                  │
+│  Race Condition Handling:                                        │
+│  • SQL: WHERE status = 'active' (atomic check-and-update)      │
+│  • Only first UPDATE succeeds (PostgreSQL row-level locking)    │
+│  • Others get "not found or already assigned"                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Warranty System — Deep Dive
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              WARRANTY LIFECYCLE                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. BOOKING COMPLETES → Warranty auto-created                   │
+│     • Duration: category.default_warranty_days (default 7)      │
+│     • starts_at = booking.completed_at                          │
+│     • expires_at = starts_at + warranty_days                    │
+│     • Duplicate check: one warranty per booking                 │
+│                                                                  │
+│  2. WITHIN WARRANTY PERIOD → Customer can claim                 │
+│     POST /api/warranties/:id/claim                              │
+│     Body: { reason: "Pipe is leaking again" }                  │
+│     • Validates: status = 'active' AND expires_at > NOW()      │
+│     • Sets status = 'claimed', claimed_at = NOW()              │
+│                                                                  │
+│  3. CLAIM → Creates re-service booking                          │
+│     • Same professional assigned                                │
+│     • No additional charge to customer                         │
+│     • Status = 'scheduled' (skips quote flow)                  │
+│     • Professional notified of warranty claim                  │
+│                                                                  │
+│  4. RESOLUTION                                                   │
+│     • Professional completes re-service → warranty fulfilled   │
+│     • If professional declines → admin escalation              │
+│     • If expired → customer must create new paid booking       │
+│                                                                  │
+│  Category-Specific Warranty Periods:                            │
+│  ├── Plumbing: 7 days                                          │
+│  ├── Electrical: 14 days                                       │
+│  ├── Painting: 30 days                                         │
+│  ├── Appliance Repair: 7 days                                  │
+│  └── Default: 7 days                                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Configuration
 
 All configuration is managed via environment variables (`.env`):
@@ -686,6 +1022,56 @@ Request → requestId → httpLogger → helmet → compression → cors → rat
 
 ## 🌐 Frontend Web App (React)
 
+### Frontend Architecture — Deep Dive
+
+The frontend is a **Single Page Application (SPA)** built with React 19 and Vite:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│             FRONTEND ARCHITECTURE                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ENTRY POINT                                                     │
+│  main.jsx → wraps App in AuthContext Provider                   │
+│  App.jsx  → React Router v7 with route definitions              │
+│                                                                  │
+│  STATE MANAGEMENT                                                │
+│  ├── AuthContext (React Context + useReducer)                   │
+│  │   ├── user object (name, email, role, token)                │
+│  │   ├── login/logout/register actions                         │
+│  │   ├── Auto token refresh on 401                             │
+│  │   └── Persisted to localStorage                             │
+│  └── Component-local state (useState/useEffect)                │
+│                                                                  │
+│  API CLIENT (api/client.js)                                      │
+│  ├── Axios-like fetch wrapper                                   │
+│  ├── Auto-attaches Authorization: Bearer header                │
+│  ├── Intercepts 401 → tries token refresh                      │
+│  ├── Intercepts 429 → shows "rate limited" toast               │
+│  └── Returns { success, data, error } envelope                 │
+│                                                                  │
+│  ROUTING (React Router v7)                                       │
+│  ├── Public routes: /, /login, /register, /search              │
+│  ├── Protected routes: wrapped in <ProtectedRoute>             │
+│  │   └── Redirects to /login if no auth token                 │
+│  ├── Admin routes: /admin/* (protected + role check)           │
+│  └── 404 catch-all: <NotFound /> component                    │
+│                                                                  │
+│  REAL-TIME (WebSocket)                                           │
+│  ├── Connected after login (ws://...?token=JWT)                │
+│  ├── Listens for: new_message, booking, notification           │
+│  ├── Triggers toast notifications for real-time events         │
+│  └── Auto-reconnect with exponential backoff                   │
+│                                                                  │
+│  BUILD (Vite)                                                    │
+│  ├── Development: HMR (Hot Module Replacement) ~50ms           │
+│  ├── Production: Tree-shaking + code splitting                 │
+│  ├── Output: dist/ folder (served by NGINX in Docker)          │
+│  └── Environment: VITE_API_URL for backend endpoint            │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Pages & Components
 
 | Page | Route | Description |
@@ -737,6 +1123,142 @@ Request → requestId → httpLogger → helmet → compression → cors → rat
 ---
 
 ## 📱 Mobile App (Flutter)
+
+### Architecture — Detailed Explanation
+
+The mobile app follows a **Provider-based MVVM architecture** with offline-first capabilities. Here's how each layer works:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│             FLUTTER APP ARCHITECTURE LAYERS                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  PRESENTATION LAYER (Screens + Widgets)                         │
+│  ├── StatelessWidget / StatefulWidget                           │
+│  ├── Consumes data from Providers via context.watch/read        │
+│  ├── Triggers actions via service methods                       │
+│  └── Never contains business logic or API calls                 │
+│                                                                  │
+│  STATE MANAGEMENT LAYER (Provider + ChangeNotifier)             │
+│  ├── AuthService — login state, token storage, auto-refresh     │
+│  ├── BookingService — booking CRUD, status updates              │
+│  ├── RealtimeService — WebSocket connection lifecycle           │
+│  ├── ThemeService — dark/light mode persistence                 │
+│  └── SmartLocationService — GPS, nearby providers              │
+│                                                                  │
+│  BUSINESS LOGIC LAYER (Services)                                │
+│  ├── ApiService — HTTP client with auth headers, error parsing  │
+│  ├── OfflineQueueService — action queue for offline mode        │
+│  ├── ConnectivityService — network state monitoring             │
+│  ├── LocalCacheService — Hive local database                   │
+│  ├── AnalyticsService — event tracking                         │
+│  ├── PushNotificationService — FCM integration                 │
+│  └── PerformanceMonitor — frame rate, memory tracking          │
+│                                                                  │
+│  DATA LAYER                                                      │
+│  ├── Models (models.dart) — User, Professional, Booking, etc.  │
+│  ├── API responses parsed into typed Dart objects               │
+│  ├── Hive boxes for offline storage (typed adapters)            │
+│  └── SharedPreferences for lightweight key-value (theme, lang)  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Smart Location Service — Deep Dive
+
+The location system implements **battery-aware GPS tracking with auto-refresh**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           SMART LOCATION LIFECYCLE                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  INITIALIZATION (app startup)                                    │
+│  1. Check location services enabled                             │
+│  2. Request permission (if not granted)                         │
+│  3. Get current position (high accuracy, 100m distance filter)  │
+│  4. Start 60-second refresh timer for nearby providers          │
+│                                                                  │
+│  PERMISSION HANDLING                                             │
+│  ├── Denied → Show "Location needed" message                   │
+│  ├── Denied Forever → Show settings redirect button            │
+│  └── Granted → Proceed with GPS                                │
+│                                                                  │
+│  DISTANCE FILTER: 100 meters                                    │
+│  • Only updates position when user moves >100m                 │
+│  • Saves battery on stationary users                           │
+│  • During active tracking: reduced to 10m (high precision)     │
+│                                                                  │
+│  NEARBY PROVIDERS REFRESH                                        │
+│  • Every 60 seconds: GET /api/search?lat=X&lng=Y&radius=10    │
+│  • Radius configurable by user (5-50 km)                       │
+│  • Results cached in memory (avoid redundant API calls)         │
+│                                                                  │
+│  BACKGROUND TRACKING (during active bookings)                    │
+│  • Stream subscription: continuous GPS updates                  │
+│  • Sent to server via WebSocket (5-second intervals)           │
+│  • Customer sees live movement on map                          │
+│  • Auto-stops when booking status = 'completed'                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Offline Queue Service — Deep Dive
+
+The offline queue implements **reliable action replay with retry logic**:
+
+```dart
+// How offline actions work (from offline_queue_service.dart):
+
+class OfflineAction {
+  final String id;       // Unique action identifier
+  final String type;     // 'booking', 'message', 'image_upload'
+  final String method;   // 'POST', 'PUT'
+  final String path;     // API endpoint path
+  final Map body;        // Request body (serialized to JSON)
+  final DateTime createdAt;
+  int retryCount;        // Incremented on each failed sync attempt
+}
+```
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           OFFLINE QUEUE FLOW                                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. USER ACTION (while offline)                                  │
+│     ├── User creates booking / sends message / posts review     │
+│     ├── ConnectivityService reports: offline                    │
+│     ├── Action serialized → Hive box ('offline_queue')          │
+│     └── UI shows: "Queued — will sync when online"              │
+│                                                                  │
+│  2. CONNECTIVITY RESTORED                                        │
+│     ├── ConnectivityService fires: NetworkStatus.online          │
+│     ├── OfflineQueueService.syncAll() triggered                 │
+│     └── Also: periodic retry every 30 seconds                  │
+│                                                                  │
+│  3. SYNC PROCESS                                                 │
+│     For each queued action (FIFO order):                        │
+│     ├── Make HTTP request (method + path + body)                │
+│     ├── If 2xx: Remove from queue ✅                            │
+│     ├── If 4xx: Remove (permanent failure, show error toast) ❌ │
+│     ├── If 5xx/network: Increment retryCount                   │
+│     │   ├── retryCount < 5: Keep in queue (retry later)        │
+│     │   └── retryCount >= 5: Remove + show "sync failed" ❌    │
+│     └── Emit pendingCountStream (UI updates badge count)        │
+│                                                                  │
+│  4. PERSISTENCE                                                  │
+│     • Queue stored in Hive (local NoSQL DB on device)           │
+│     • Survives app restart, device reboot                       │
+│     • Actions have creation timestamp (for ordering)            │
+│                                                                  │
+│  5. CONFLICT RESOLUTION                                          │
+│     • Booking creation: server rejects if professional busy    │
+│     • Messages: always succeed (append-only)                   │
+│     • Reviews: server rejects if booking not completed         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Architecture
 
@@ -827,6 +1349,69 @@ lib/
 ---
 
 ## 🗄️ Database
+
+### Design Philosophy & Decisions
+
+The database design follows these principles:
+- **UUID primary keys** — Prevents sequential ID enumeration attacks (no `user/1`, `user/2`)
+- **Timestamps on everything** — `created_at` / `updated_at` for audit trail
+- **Enum constraints** — Database-level type safety (not just application-level)
+- **Referential integrity** — Foreign keys with `ON DELETE CASCADE` where appropriate
+- **Haversine-ready** — Lat/Lng stored as DECIMAL(9,6) for geo queries
+- **pgcrypto** — UUID generation at the database level (`gen_random_uuid()`)
+
+### Migration Strategy
+
+Migrations are **numbered sequentially** and designed to be **idempotent** (safe to run multiple times):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              MIGRATION DEPENDENCY CHAIN                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  schema.sql (base)                                              │
+│  └── Creates: users, professionals, categories,                 │
+│      professional_categories, contacts, reviews,                │
+│      portfolio_items, complaints                                │
+│                                                                  │
+│  001_kyc.sql                                                     │
+│  └── Creates: kyc_documents (FK → users)                        │
+│      Adds: government_id_verified, selfie_verified to users     │
+│                                                                  │
+│  002_bookings_chat.sql                                           │
+│  └── Creates: bookings (with FSM status enum),                  │
+│      message_threads, messages, booking_status_log              │
+│      Creates: booking status enum type                          │
+│                                                                  │
+│  003_review_by_booking.sql                                       │
+│  └── Adds: booking_id FK to reviews table                       │
+│      Enforces: only completed-booking customers can review      │
+│                                                                  │
+│  004_seed_geo.sql                                                │
+│  └── Seeds: 50+ categories (5 parent, 46 subcategories)        │
+│      Seeds: sample professionals with lat/lng                   │
+│                                                                  │
+│  005_reputation_trigger.sql                                      │
+│  └── Creates: trigger function to auto-compute                  │
+│      reputation_score on review/booking changes                 │
+│      Formula: (rating×0.4) + (jobs×0.2) + (response×0.2)      │
+│              - (complaints×0.2)                                  │
+│                                                                  │
+│  006_phase1_features.sql                                         │
+│  └── Creates: favorites, analytics_events,                      │
+│      worker_schedule, worker_blocked_dates, time_slots          │
+│                                                                  │
+│  007_auth_admin_services.sql                                     │
+│  └── Creates: referrals, emergency_requests,                    │
+│      service_warranties, notifications                          │
+│      Adds: is_admin to users, search_history                   │
+│                                                                  │
+│  008_analytics_and_chat_images.sql                               │
+│  └── Adds: type + media_url columns to messages                │
+│      Creates: analytics funnel tracking views                  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Schema Overview
 
@@ -1762,6 +2347,115 @@ Professional Registration
 
 ## ⚡ Real-Time Features
 
+### WebSocket Architecture — Deep Dive
+
+The real-time system is built on the **native WebSocket protocol** (not Socket.io) for minimal overhead:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           WEBSOCKET HUB INTERNALS                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  DATA STRUCTURES (hub.js):                                       │
+│  const sockets = new Map();   // userId → Set<WebSocket>        │
+│  const presence = new Map();  // userId → { lastSeen, status }  │
+│                                                                  │
+│  CONNECTION LIFECYCLE:                                            │
+│  1. Client connects: ws://server/ws?token=JWT                   │
+│  2. Server extracts token from URL params                       │
+│  3. jwt.verify(token, secret) → userId                         │
+│  4. Add ws to sockets.get(userId) Set                          │
+│  5. Update presence: { lastSeen: now, status: 'online' }       │
+│  6. Send welcome: { type: 'hello', userId, ts }                │
+│                                                                  │
+│  MULTI-DEVICE SUPPORT:                                           │
+│  • sockets Map: userId → Set of connections (not single ws)    │
+│  • User on phone + laptop = 2 connections in the Set           │
+│  • sendTo(userId) broadcasts to ALL connections for that user  │
+│  • Disconnect one device → only that ws removed from Set       │
+│  • Last device disconnects → presence = 'offline'              │
+│                                                                  │
+│  HEARTBEAT (30-second sweep):                                    │
+│  • Server iterates all clients every 30s                       │
+│  • Sends WebSocket-level ping frame                            │
+│  • If no pong received → ws.terminate() (dead connection)      │
+│  • Prevents zombie connections consuming memory                │
+│                                                                  │
+│  MESSAGE TYPES HANDLED:                                          │
+│  ├── 'ping'          → respond with { type: 'pong', t }       │
+│  ├── 'typing'        → forward to msg.to userId               │
+│  ├── 'read_receipt'  → update DB + notify other party         │
+│  └── 'presence'      → update in-memory presence status       │
+│                                                                  │
+│  READ RECEIPT FLOW:                                              │
+│  1. Client sends: { type: 'read_receipt', threadId }           │
+│  2. Server: UPDATE messages SET read_at = NOW()                │
+│     WHERE thread_id = $1 AND sender_id <> $2 AND read_at NULL  │
+│  3. Server: UPDATE message_threads SET unread = 0              │
+│  4. Server: notify other party { type: 'messages_read' }       │
+│                                                                  │
+│  WHY NOT SOCKET.IO?                                              │
+│  • Native ws library: 0 dependencies, ~20KB vs Socket.io ~200KB│
+│  • No polling fallback needed (all modern clients support WS)  │
+│  • Direct control over heartbeat, close codes, binary frames   │
+│  • Flutter web_socket_channel works with raw WS (not Socket.io)│
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Notification Dispatch System
+
+The platform uses a **multi-channel notification strategy**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           NOTIFICATION CHANNELS                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  When an event occurs (new booking, message, etc.):             │
+│                                                                  │
+│  ┌─────────────────┐                                            │
+│  │  notifier.js    │── dispatches to all channels:             │
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐  1. IN-APP NOTIFICATION                   │
+│  │  Database       │  INSERT INTO notifications (...)           │
+│  │  notifications  │  • Appears in /notifications page         │
+│  │  table          │  • Badge count on bell icon               │
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐  2. REAL-TIME WEBSOCKET                   │
+│  │  hub.sendTo()   │  • If user is online → instant delivery  │
+│  │  WebSocket      │  • Shows as toast / chat bubble           │
+│  │  broadcast      │  • Typing indicators, read receipts       │
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐  3. PUSH NOTIFICATION (FCM)               │
+│  │  Job Queue      │  • If user is OFFLINE → device push      │
+│  │  → FCM API     │  • Queued via jobQueue (async, retried)   │
+│  │                 │  • Falls back to no-op if FCM not config  │
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐  4. EMAIL (transactional)                  │
+│  │  Job Queue      │  • Booking confirmations                  │
+│  │  → SendGrid    │  • Payment receipts                       │
+│  │                 │  • KYC approval/rejection                 │
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐  5. SMS (OTP / critical alerts)           │
+│  │  Job Queue      │  • OTP for phone verification             │
+│  │  → SMS Gateway │  • Emergency broadcasts                   │
+│  └─────────────────┘                                            │
+│                                                                  │
+│  GRACEFUL DEGRADATION:                                          │
+│  • If SendGrid not configured → email logged only (simulated)  │
+│  • If FCM not configured → push skipped silently              │
+│  • If SMS not configured → OTP logged to console              │
+│  • Core functionality NEVER blocked by notification failure    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### WebSocket Architecture
 
 The platform uses native WebSocket (`ws` library) for real-time communication:
@@ -1799,6 +2493,48 @@ Professional (Mobile)          Server               Customer (App)
 ---
 
 ## 💳 Payment Integration
+
+### Razorpay Integration — Deep Dive
+
+SkillConnect uses **Razorpay** (India's leading payment gateway) with a **server-to-server order creation** flow that ensures security:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           PAYMENT SECURITY MODEL                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  WHY SERVER-SIDE ORDER CREATION?                                │
+│  • Amount is set by SERVER (not client) → prevents tampering    │
+│  • Order ID is generated by Razorpay → ensures uniqueness       │
+│  • Client never sees KEY_SECRET → only KEY_ID (public)          │
+│  • Signature verification uses HMAC-SHA256 → cannot be forged   │
+│                                                                  │
+│  SIMULATED MODE (development without Razorpay keys)             │
+│  • If RAZORPAY_KEY_ID not set → all orders are "simulated"     │
+│  • Returns { simulated: true, order_id: "sim_xxxx" }           │
+│  • Signature verification always passes                        │
+│  • No real money charged                                       │
+│  • Full end-to-end flow testable without Razorpay account      │
+│                                                                  │
+│  WEBHOOK HANDLING                                                │
+│  • POST /api/webhooks/razorpay (no auth — Razorpay calls it)  │
+│  • Signature verified: HMAC-SHA256(body, WEBHOOK_SECRET)        │
+│  • Events handled: payment.captured, payment.failed             │
+│  • Idempotent: won't process same event twice                  │
+│                                                                  │
+│  REFUND FLOW                                                     │
+│  • Admin resolves dispute → triggers Razorpay refund API       │
+│  • Partial/full refund supported                               │
+│  • Refund status tracked in payments table                     │
+│  • Customer notified via push + in-app                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Amount conversion:** Razorpay uses **paise** (1 INR = 100 paise). The service handles conversion:
+```javascript
+amount: Math.round(amount * 100)  // ₹1500 → 150000 paise
+```
 
 ### Razorpay Flow
 
@@ -1954,6 +2690,51 @@ User presses 🎤 → speech_to_text SDK activates
 
 ## 🧪 Testing
 
+### Testing Strategy — Deep Dive
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           TESTING PYRAMID                                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│                    ╱╲                                            │
+│                   ╱  ╲    E2E Tests (Manual QA)                  │
+│                  ╱────╲   • Full booking flow                   │
+│                 ╱      ╲  • Payment processing                  │
+│                ╱________╲ • Multi-device sync                   │
+│               ╱          ╲                                      │
+│              ╱  Integration╲  Backend Tests (Jest + Supertest)   │
+│             ╱    Tests      ╲ • API endpoint testing            │
+│            ╱                 ╲• Database integration             │
+│           ╱___________________╲• Auth flow validation            │
+│          ╱                     ╲                                │
+│         ╱    Unit Tests         ╲ Widget Tests (Flutter)         │
+│        ╱    Component Tests      ╲ Component Tests (Vitest)     │
+│       ╱___________________________╲                             │
+│                                                                  │
+│  BACKEND TEST APPROACH (10 test files, Jest + Supertest)        │
+│  ├── Each test file targets one domain (auth, bookings, etc.)  │
+│  ├── Uses Supertest for HTTP-level testing (real Express app)  │
+│  ├── Database: real PostgreSQL (test database, not mocked)     │
+│  ├── Cleanup: transactions rolled back after each test         │
+│  ├── Fixtures: test users, categories created in beforeAll     │
+│  └── Coverage enforced: 50% minimum (branches, lines, funcs)  │
+│                                                                  │
+│  FRONTEND TEST APPROACH (Vitest + Testing Library)              │
+│  ├── Component rendering tests                                 │
+│  ├── User interaction simulation (click, type, submit)         │
+│  ├── API mocking (MSW or manual fetch mocks)                  │
+│  └── Accessibility: ARIA role verification                     │
+│                                                                  │
+│  MOBILE TEST APPROACH (Flutter test)                            │
+│  ├── Widget tests: verify UI renders correctly                 │
+│  ├── Golden tests: screenshot comparison                       │
+│  ├── Integration tests: full screen flows                      │
+│  └── Service tests: mock API responses                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Backend Tests (Jest + Supertest)
 
 ```bash
@@ -2036,6 +2817,65 @@ cd mobile/skillconnect && flutter analyze
 ---
 
 ## 📦 Deployment
+
+### Deployment Architecture — Deep Dive
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           DOCKER COMPOSE ORCHESTRATION                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  docker-compose.yml defines 3 services:                         │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SERVICE: db (PostgreSQL 16 Alpine)                      │    │
+│  ├─────────────────────────────────────────────────────────┤    │
+│  │  • Image: postgres:16-alpine                            │    │
+│  │  • Port: 5432 (exposed to other containers)             │    │
+│  │  • Volume: postgres_data (persistent across restarts)   │    │
+│  │  • Health check: pg_isready (every 5s)                  │    │
+│  │  • Auto-creates database on first run                   │    │
+│  │  • Environment: POSTGRES_DB, POSTGRES_USER, PASSWORD    │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SERVICE: backend (Node.js API)                          │    │
+│  ├─────────────────────────────────────────────────────────┤    │
+│  │  • Build: ./backend/Dockerfile                          │    │
+│  │  • Base: node:22-alpine (minimal ~40MB image)           │    │
+│  │  • Port: 5000                                           │    │
+│  │  • depends_on: db (waits for health check)              │    │
+│  │  • Restart: always (auto-restart on crash)              │    │
+│  │  • Runs schema + migrations on startup                  │    │
+│  │  • Serves: /api/*, /ws, /uploads/*, /app/              │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  SERVICE: frontend (NGINX + React build)                 │    │
+│  ├─────────────────────────────────────────────────────────┤    │
+│  │  • Build: multi-stage (npm build → nginx serve)         │    │
+│  │  • Base: nginx:alpine (~5MB image)                      │    │
+│  │  • Port: 80 (HTTP) / 443 (HTTPS with SSL)             │    │
+│  │  • Serves: static React build (dist/)                   │    │
+│  │  • Reverse proxy: /api → backend:5000                  │    │
+│  │  • SPA fallback: all routes → index.html               │    │
+│  │  • Gzip: enabled for JS/CSS/HTML                       │    │
+│  │  • Cache headers: 1 year for hashed assets             │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  STARTUP ORDER:                                                  │
+│  1. PostgreSQL starts → becomes healthy (pg_isready)            │
+│  2. Backend starts → connects to DB, runs migrations            │
+│  3. Frontend starts → serves static files + proxies API         │
+│                                                                  │
+│  SCALING:                                                        │
+│  docker-compose up -d --scale backend=3                         │
+│  • Creates 3 backend instances behind NGINX round-robin         │
+│  • Requires: shared session (Redis) or stateless auth (JWT ✅) │
+│  • WebSocket: sticky sessions needed (or separate WS gateway)  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Docker Compose (Production-Ready)
 
