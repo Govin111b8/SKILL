@@ -18,6 +18,9 @@ function mapProfessional(p) {
     available: p.availability_status === 'available',
     pricing: p.pricing_estimate || p.pricing,
     verified: p.reputation_score >= 4,
+    provider_type: p.provider_type || 'individual',
+    company_name: p.company_name,
+    team_size: p.team_size,
     categories: p.categories?.map(c => typeof c === 'string' ? c : c.name) || [],
   };
 }
@@ -51,6 +54,7 @@ function SearchResults() {
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
     available: searchParams.get('available') === 'true',
+    provider_type: searchParams.get('provider_type') || '',
   });
 
   const query = searchParams.get('q') || '';
@@ -69,6 +73,7 @@ function SearchResults() {
       if (filters.minPrice) params.set('minPrice', filters.minPrice);
       if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
       if (filters.available) params.set('available', 'true');
+      if (filters.provider_type) params.set('provider_type', filters.provider_type);
       params.set('page', page);
       if (sort !== 'relevance') params.set('sort', sort);
 
@@ -106,6 +111,7 @@ function SearchResults() {
   if (filters.minPrice) activeFilters.push({ key: 'minPrice', label: `Min $${filters.minPrice}` });
   if (filters.maxPrice) activeFilters.push({ key: 'maxPrice', label: `Max $${filters.maxPrice}` });
   if (filters.available) activeFilters.push({ key: 'available', label: 'Available now' });
+  if (filters.provider_type) activeFilters.push({ key: 'provider_type', label: filters.provider_type === 'organization' ? 'Companies' : 'Individuals' });
 
   const ratingStars = [0, 3, 4, 4.5, 5];
 
@@ -167,6 +173,21 @@ function SearchResults() {
             <div className="toggle-thumb" />
           </div>
         </label>
+      </div>
+
+      <div className="filter-group">
+        <label>Provider Type</label>
+        <div className="filter-cat-grid">
+          {[{ value: '', label: 'All' }, { value: 'individual', label: 'Individual' }, { value: 'organization', label: 'Company' }].map(opt => (
+            <button
+              key={opt.value}
+              className={`filter-cat-btn ${filters.provider_type === opt.value ? 'active' : ''}`}
+              onClick={() => handleFilterChange('provider_type', opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {activeFilters.length > 0 && (
