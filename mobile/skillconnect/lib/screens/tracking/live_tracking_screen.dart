@@ -1,17 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/realtime_service.dart';
+import '../messages/chat_screen.dart';
 
 /// Live job tracking screen — shows real-time provider location and status
 /// during active bookings (similar to Swiggy/Zomato tracking).
 class LiveTrackingScreen extends StatefulWidget {
   final String bookingId;
   final String professionalName;
+  final String? professionalUserId;
+  final String? professionalPhone;
 
   const LiveTrackingScreen({
     super.key,
     required this.bookingId,
     required this.professionalName,
+    this.professionalUserId,
+    this.professionalPhone,
   });
 
   @override
@@ -173,8 +179,16 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // TODO: Open chat with provider
-                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            otherName: widget.professionalName,
+                            otherUserId: widget.professionalUserId,
+                            bookingId: widget.bookingId,
+                          ),
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.chat),
                     label: const Text('Message'),
@@ -183,8 +197,20 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Call provider
+                    onPressed: () async {
+                      final phone = widget.professionalPhone;
+                      if (phone != null && phone.isNotEmpty) {
+                        final uri = Uri(scheme: 'tel', path: phone);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Phone number not available')),
+                          );
+                        }
+                      }
                     },
                     icon: const Icon(Icons.phone),
                     label: const Text('Call'),

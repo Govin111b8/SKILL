@@ -32,6 +32,59 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
     }
   }
 
+  Future<void> _showClaimDialog(Map<String, dynamic> warranty) async {
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Claim Warranty'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Service: ${warranty['service_name'] ?? 'N/A'}'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Reason for claim',
+                hintText: 'Describe the issue...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Submit Claim')),
+        ],
+      ),
+    );
+
+    if (confirmed == true && reasonController.text.trim().isNotEmpty) {
+      try {
+        await ApiService.post(
+          '/warranties/${warranty['id']}/claim',
+          {'reason': reasonController.text.trim()},
+          auth: true,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Warranty claim submitted successfully')),
+          );
+          _load(); // Refresh list
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to submit claim: $e')),
+          );
+        }
+      }
+    }
+    reasonController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,9 +176,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Navigate to warranty claim flow
-                  },
+                  onPressed: () => _showClaimDialog(warranty),
                   icon: const Icon(Icons.support_agent, size: 18),
                   label: const Text('Claim Warranty'),
                 ),
