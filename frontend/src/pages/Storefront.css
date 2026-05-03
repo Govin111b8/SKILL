@@ -1,0 +1,150 @@
+.storefront {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+
+/* Hero */
+.storefront-hero {
+  position: relative;
+  height: 280px;
+  background: linear-gradient(135deg, var(--primary, #6366f1), var(--secondary, #8b5cf6));
+  background-size: cover;
+  background-position: center;
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+}
+.storefront-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+}
+.storefront-hero-content { color: #fff; }
+.storefront-avatar {
+  width: 64px; height: 64px; border-radius: 50%; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: var(--primary, #6366f1);
+  overflow: hidden; margin-bottom: 8px;
+}
+.storefront-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.storefront-hero-content h1 { font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 6px; }
+.verified-icon { color: #60a5fa; }
+.storefront-headline { margin: 4px 0 0; opacity: 0.85; font-size: 0.9rem; }
+.storefront-hero-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 0.85rem; opacity: 0.8; }
+.storefront-hero-meta span { display: flex; align-items: center; gap: 4px; }
+.storefront-hero-actions {
+  position: absolute; top: 16px; right: 16px; display: flex; gap: 8px;
+}
+.storefront-hero-actions button {
+  background: rgba(255,255,255,0.2); border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.storefront-hero-actions button.active { color: #f43f5e; }
+
+/* Announcement */
+.storefront-announcement {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: var(--primary-container, #e0e7ff);
+  color: var(--on-primary-container, #3730a3); font-size: 0.85rem; font-weight: 500;
+}
+
+/* Badges */
+.storefront-badges { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 16px; font-size: 0.75rem; font-weight: 500;
+  background: #f1f5f9; color: #475569;
+}
+.badge-verified { background: #dcfce7; color: #166534; }
+.badge-fast { background: #fff7ed; color: #9a3412; }
+.badge-top { background: #fef9c3; color: #854d0e; }
+.badge-jobs { background: #dbeafe; color: #1e40af; }
+
+/* Tabs */
+.storefront-tabs {
+  display: flex; border-bottom: 1px solid #e2e8f0; padding: 0 16px;
+  position: sticky; top: 0; background: var(--bg, #fff); z-index: 10;
+}
+.storefront-tabs button {
+  flex: 1; padding: 12px 0; border: none; background: none; cursor: pointer;
+  font-size: 0.9rem; font-weight: 500; color: #64748b;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+}
+.storefront-tabs button.active {
+  color: var(--primary, #6366f1); border-bottom-color: var(--primary, #6366f1);
+}
+
+/* Content */
+.storefront-content { padding: 16px; }
+
+/* Portfolio */
+.portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.portfolio-item { border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+.portfolio-item img { width: 100%; height: 160px; object-fit: cover; }
+.portfolio-item-info { padding: 10px; }
+.portfolio-item-info h4 { margin: 0; font-size: 0.9rem; }
+.portfolio-item-info p { margin: 4px 0 0; font-size: 0.8rem; color: #64748b; }
+
+/* Reviews */
+.reviews-summary { display: flex; gap: 24px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.reviews-avg { text-align: center; }
+.avg-number { font-size: 2.5rem; font-weight: 700; display: block; }
+.review-count { font-size: 0.8rem; color: #64748b; }
+.rating-bars { flex: 1; }
+.rating-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.8rem; }
+.rating-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.rating-bar-fill { height: 100%; background: #f59e0b; border-radius: 4px; }
+.rating-count { width: 24px; text-align: right; font-size: 0.75rem; }
+
+/* Info */
+.info-section { margin-bottom: 20px; }
+.info-section h3 { margin: 0 0 8px; font-size: 1rem; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.info-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; background: #f8fafc; }
+.info-item strong { display: block; font-size: 0.8rem; color: #64748b; }
+.info-item span { font-size: 0.9rem; }
+.status-available { color: #16a34a; }
+.status-busy { color: #f59e0b; }
+.status-offline { color: #94a3b8; }
+
+/* Contact */
+.storefront-contact h3 { margin: 0 0 16px; }
+.contact-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.contact-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 500;
+  text-decoration: none; border: 1px solid #e2e8f0; color: #334155; transition: all 0.2s;
+}
+.contact-btn:hover { background: #f1f5f9; }
+.contact-btn.whatsapp { border-color: #25d366; color: #25d366; }
+.contact-btn.instagram { border-color: #e4405f; color: #e4405f; }
+.contact-btn.website { border-color: #6366f1; color: #6366f1; }
+.contact-btn.message-btn {
+  width: 100%; justify-content: center; background: var(--primary, #6366f1);
+  color: #fff; border: none; margin-top: 8px;
+}
+
+.empty-state { text-align: center; color: #94a3b8; padding: 40px 0; }
+.storefront-error { text-align: center; padding: 60px 20px; color: #ef4444; }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .storefront-tabs { background: #1e293b; border-color: #334155; }
+  .storefront-tabs button { color: #94a3b8; }
+  .storefront-announcement { background: #312e81; color: #c7d2fe; }
+  .badge { background: #334155; color: #cbd5e1; }
+  .portfolio-item { border-color: #334155; }
+  .info-item { background: #1e293b; }
+  .contact-btn { border-color: #475569; color: #e2e8f0; }
+  .contact-btn:hover { background: #334155; }
+}
+
+@media (max-width: 600px) {
+  .storefront-hero { height: 220px; }
+  .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+  .reviews-summary { flex-direction: column; }
+}
