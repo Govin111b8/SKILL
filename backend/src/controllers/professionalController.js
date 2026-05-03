@@ -37,7 +37,7 @@ const createProfile = async (req, res, next) => {
       `INSERT INTO professionals (id, user_id, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
        RETURNING *`,
-      [id, userId, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered || null]
+      [id, userId, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered ?? null]
     );
 
     // Associate categories
@@ -158,7 +158,7 @@ const updateProfile = async (req, res, next) => {
            updated_at = NOW()
        WHERE id = $13
        RETURNING *`,
-      [headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered || null, id]
+      [headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered ?? null, id]
     );
 
     // Update categories if provided
