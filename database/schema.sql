@@ -72,6 +72,16 @@ CREATE TABLE professionals (
     response_time_hours DECIMAL(5, 2),
     subscription_plan subscription_plan NOT NULL DEFAULT 'basic',
     subscription_expires_at TIMESTAMPTZ,
+    announcement TEXT,
+    whatsapp_number VARCHAR(20),
+    instagram_handle VARCHAR(100),
+    website_url TEXT,
+    cover_image_url TEXT,
+    accent_color VARCHAR(7) DEFAULT '#6366F1',
+    show_rating BOOLEAN NOT NULL DEFAULT TRUE,
+    return_policy TEXT,
+    operating_hours TEXT,
+    operating_days TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
