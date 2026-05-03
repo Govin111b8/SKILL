@@ -1,0 +1,169 @@
+/* ── Trust & Safety Section ──────────────────── */
+.trust-section {
+  padding: 5rem 0;
+  background: linear-gradient(180deg, #faf9ff 0%, white 100%);
+}
+
+.trust-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.trust-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  border: 1px solid var(--gray-100);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.trust-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--badge-color);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.trust-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+.trust-card:hover::before {
+  opacity: 1;
+}
+
+.trust-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--badge-color) 10%, transparent);
+  color: var(--badge-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.trust-card h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.4rem;
+}
+
+.trust-card p {
+  font-size: 0.82rem;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+/* Live Activity Bar */
+.trust-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid var(--gray-100);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: livePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.live-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.live-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.live-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--gray-600);
+}
+.live-stat-item strong {
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+/* Press / As Featured In */
+.press-section {
+  text-align: center;
+}
+
+.press-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+.press-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.press-logo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-300);
+  text-decoration: none;
+  transition: color 0.2s;
+  letter-spacing: -0.02em;
+}
+.press-logo:hover {
+  color: var(--gray-500);
+}
+
+@media (max-width: 640px) {
+  .trust-grid { grid-template-columns: 1fr; }
+  .trust-live-bar { flex-direction: column; align-items: flex-start; }
+  .live-stats { margin-left: 0; width: 100%; }
+  .press-logos { gap: 1.25rem; }
+}

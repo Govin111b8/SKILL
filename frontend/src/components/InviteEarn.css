@@ -1,0 +1,145 @@
+/* ── Invite & Earn Card ──────────────────────── */
+.invite-earn-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--gray-100);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.invite-earn-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.invite-earn-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.invite-earn-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.invite-earn-header p {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
+.invite-earn-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--gray-50);
+  border-radius: 10px;
+}
+
+.invite-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.invite-stat--earnings {
+  color: #f97316;
+}
+
+.invite-link-box {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.invite-link-input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  background: var(--gray-50);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+.invite-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--primary, #4f46e5);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.invite-copy-btn:hover {
+  background: var(--primary-dark, #3730a3);
+}
+
+.invite-share-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invite-share-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.invite-share-btn--whatsapp {
+  background: #25D366;
+  color: white;
+}
+.invite-share-btn--whatsapp:hover {
+  background: #20bd5a;
+}
+
+.invite-share-btn--generic {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+}
+.invite-share-btn--generic:hover {
+  background: var(--gray-200);
+}
+
+@media (max-width: 480px) {
+  .invite-share-row {
+    flex-direction: column;
+  }
+}

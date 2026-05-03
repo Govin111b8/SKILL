@@ -1,0 +1,86 @@
+/* ── Announcement Bar ────────────────────────── */
+.announcement-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 2.5rem 0.5rem 1rem;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 500;
+  z-index: 1100;
+  min-height: 38px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.announcement-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.announcement-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.announcement-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: background 0.2s;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.announcement-cta:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+.announcement-close {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.announcement-close:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+@media (max-width: 600px) {
+  .announcement-bar {
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  .announcement-text {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+}

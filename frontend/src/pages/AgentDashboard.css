@@ -1,0 +1,211 @@
+.agent-dashboard {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.agent-header {
+  margin-bottom: 2rem;
+}
+
+.agent-header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.agent-code-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0f4ff;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.agent-code-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.agent-code {
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4f46e5;
+  font-size: 1.1rem;
+  padding: 0.25rem;
+}
+
+.agent-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.agent-kyc.verified { color: #16a34a; }
+.agent-kyc.pending { color: #d97706; }
+
+.agent-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  color: #4f46e5;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.action-btn.primary {
+  background: #4f46e5;
+  color: #fff;
+}
+.action-btn.primary:hover { background: #4338ca; }
+
+.action-btn.secondary {
+  background: #10b981;
+  color: #fff;
+}
+.action-btn.secondary:hover { background: #059669; }
+
+.action-btn.outline {
+  background: #fff;
+  color: #4f46e5;
+  border: 1px solid #4f46e5;
+}
+.action-btn.outline:hover { background: #f0f4ff; }
+
+.agent-section {
+  margin-bottom: 2rem;
+}
+
+.agent-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.reward-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.reward-card {
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.reward-action {
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+}
+
+.reward-count { font-weight: 700; font-size: 1.1rem; }
+.reward-total { color: #16a34a; font-weight: 600; }
+
+.reward-status-bar {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.onboarded-list, .txn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.onboarded-item, .txn-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.onboarded-name, .txn-desc { flex: 1; font-weight: 500; }
+.onboarded-role { text-transform: capitalize; color: #6b7280; font-size: 0.85rem; }
+.onboarded-date, .txn-date { font-size: 0.8rem; color: #9ca3af; }
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.badge.green { background: #d1fae5; color: #065f46; }
+.badge.blue { background: #dbeafe; color: #1e40af; }
+.badge.gray { background: #f3f4f6; color: #6b7280; }
+
+.txn-item.credit .txn-amount { color: #16a34a; font-weight: 700; }
+.txn-item.debit .txn-amount { color: #dc2626; font-weight: 700; }
+.txn-item.withdrawal .txn-amount { color: #d97706; font-weight: 700; }
+
+.empty-text { color: #9ca3af; font-style: italic; }
+.agent-error { text-align: center; padding: 3rem; color: #dc2626; }
+
+@media (max-width: 600px) {
+  .agent-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .agent-actions { flex-direction: column; }
+  .onboarded-item { flex-wrap: wrap; }
+}

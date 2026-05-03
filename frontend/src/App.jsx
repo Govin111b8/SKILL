@@ -33,13 +33,21 @@ import AdminKYC from './pages/admin/AdminKYC';
 import AdminDisputes from './pages/admin/AdminDisputes';
 import Storefront from './pages/Storefront';
 import StorefrontSetup from './pages/StorefrontSetup';
+import AgentDashboard from './pages/AgentDashboard';
+import AgentOnboard from './pages/AgentOnboard';
+import AgentWallet from './pages/AgentWallet';
+import AgentLeaderboard from './pages/AgentLeaderboard';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
+import AnnouncementBar from './components/AnnouncementBar';
+import CookieConsent from './components/CookieConsent';
+import AppInstallBanner from './components/AppInstallBanner';
 import './App.css';
 
 function App() {
   return (
     <div className="app">
+      <AnnouncementBar />
       <Navbar />
       <main className="app-main">
         <Routes>
@@ -228,12 +236,47 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Agent Routes */}
+          <Route
+            path="/agent/dashboard"
+            element={
+              <ProtectedRoute>
+                <AgentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agent/onboard/:type"
+            element={
+              <ProtectedRoute>
+                <AgentOnboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agent/wallet"
+            element={
+              <ProtectedRoute>
+                <AgentWallet />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agent/leaderboard"
+            element={
+              <ProtectedRoute>
+                <AgentLeaderboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
       <BottomNav />
       <Toast />
+      <CookieConsent />
+      <AppInstallBanner />
     </div>
   );
 }

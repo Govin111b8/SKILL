@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FiUser, FiBriefcase, FiUsers, FiArrowRight } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import './Register.css';
 
@@ -87,26 +88,66 @@ function Register() {
 
   return (
     <div className="register-page">
-      <div className="register-card">
-        <h1>Create Account</h1>
-        <p className="register-subtitle">Join SkillConnect today</p>
-
-        <div className="role-toggle">
-          <button
-            type="button"
-            className={`role-btn ${role === 'customer' ? 'active' : ''}`}
-            onClick={() => setRole('customer')}
-          >
-            Customer
-          </button>
-          <button
-            type="button"
-            className={`role-btn ${role === 'professional' ? 'active' : ''}`}
-            onClick={() => setRole('professional')}
-          >
-            Professional
-          </button>
+      {/* Left visual panel */}
+      <div className="register-visual">
+        <div className="register-visual-blobs">
+          <div className="rv-blob rv-blob-1" />
+          <div className="rv-blob rv-blob-2" />
         </div>
+        <div className="register-visual-content">
+          <span className="rv-icon">🚀</span>
+          <h2>Start Your Journey</h2>
+          <p>Join thousands of professionals and customers on India&apos;s fastest-growing service marketplace.</p>
+          <div className="register-visual-stats">
+            <div className="rv-stat">
+              <span className="rv-stat-value">5K+</span>
+              <span className="rv-stat-label">Professionals</span>
+            </div>
+            <div className="rv-stat">
+              <span className="rv-stat-value">25K+</span>
+              <span className="rv-stat-label">Happy Clients</span>
+            </div>
+            <div className="rv-stat">
+              <span className="rv-stat-value">100+</span>
+              <span className="rv-stat-label">Cities</span>
+            </div>
+            <div className="rv-stat">
+              <span className="rv-stat-value">4.8★</span>
+              <span className="rv-stat-label">Avg Rating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="register-form-side">
+        <div className="register-card">
+          <h1>Create Account</h1>
+          <p className="register-subtitle">Join SkillConnect today</p>
+
+          <div className="role-toggle">
+            <button
+              type="button"
+              className={`role-btn ${role === 'customer' ? 'active' : ''}`}
+              onClick={() => setRole('customer')}
+            >
+              <FiUser size={15} /> Customer
+            </button>
+            <button
+              type="button"
+              className={`role-btn ${role === 'professional' ? 'active' : ''}`}
+              onClick={() => setRole('professional')}
+            >
+              <FiBriefcase size={15} /> Professional
+            </button>
+            <button
+              type="button"
+              className={`role-btn ${role === 'agent' ? 'active' : ''}`}
+              onClick={() => setRole('agent')}
+            >
+              <FiUsers size={15} /> Agent
+            </button>
+          </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -291,13 +332,14 @@ function Register() {
           )}
 
           <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Creating Account...' : <>Create Account <FiArrowRight size={16} /></>}
           </button>
         </form>
 
         <p className="register-footer">
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
+        </div>
       </div>
     </div>
   );

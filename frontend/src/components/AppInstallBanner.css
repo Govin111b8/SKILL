@@ -1,0 +1,102 @@
+/* ── App Install Banner ──────────────────────── */
+.app-install-banner {
+  position: fixed;
+  bottom: calc(62px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 800;
+  width: calc(100% - 1.5rem);
+  max-width: 480px;
+  animation: aibSlideUp 0.4s ease;
+}
+
+@keyframes aibSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.aib-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid var(--gray-100);
+}
+
+.aib-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aib-text {
+  flex: 1;
+  min-width: 0;
+}
+.aib-text strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--gray-900);
+  margin-bottom: 0.1rem;
+}
+.aib-text span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aib-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  background: var(--primary, #4f46e5);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.aib-install-btn:hover {
+  background: var(--primary-dark, #3730a3);
+}
+
+.aib-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.aib-close:hover {
+  background: var(--gray-200);
+}
+
+@media (min-width: 769px) {
+  .app-install-banner {
+    bottom: 1.5rem;
+  }
+}

@@ -32,8 +32,8 @@ router.post(
       .withMessage('Password must contain at least one special character'),
     body('phone').optional({ checkFalsy: true }).trim(),
     body('role')
-      .isIn(['customer', 'professional'])
-      .withMessage('Role must be customer or professional'),
+      .isIn(['customer', 'professional', 'agent'])
+      .withMessage('Role must be customer, professional, or agent'),
     body('location').optional({ checkFalsy: true }).trim(),
   ]),
   register
