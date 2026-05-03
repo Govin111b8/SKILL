@@ -38,6 +38,8 @@ const webhookRoutes = require('./routes/webhooks');
 const storefrontRoutes = require('./routes/storefront');
 const agentRoutes = require('./routes/agents');
 const matchingRoutes = require('./routes/matching');
+const seoRoutes = require('./routes/seo');
+const growthRoutes = require('./routes/growth');
 
 const app = express();
 
@@ -128,6 +130,12 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/storefront', storefrontRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/match', matchingRoutes);
+
+// SEO — sitemap.xml and robots.txt (no rate limiting, public)
+app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });
+app.use('/robots.txt', (req, res, next) => { req.url = '/robots.txt'; seoRoutes(req, res, next); });
+app.use('/api/seo', seoRoutes);
+app.use('/api/growth', growthRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));

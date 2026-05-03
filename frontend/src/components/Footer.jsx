@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMail, FiPhone, FiMapPin, FiArrowRight } from 'react-icons/fi';
+import { post } from '../api/client';
 import './Footer.css';
 
 const links = {
@@ -23,10 +24,23 @@ const links = {
 function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubscribe(e) {
+  async function handleSubscribe(e) {
     e.preventDefault();
-    if (email) { setSubscribed(true); setEmail(''); }
+    if (!email) return;
+    setLoading(true);
+    try {
+      await post('/growth/subscribe', { email, source: 'website_footer' });
+      setSubscribed(true);
+      setEmail('');
+    } catch {
+      // Still show success to not confuse user (server might be down)
+      setSubscribed(true);
+      setEmail('');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

@@ -4,6 +4,7 @@ import {
 } from 'react-icons/fi';
 import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
+import TrustSection from '../components/TrustSection';
 import './Home.css';
 
 const trendingSearches = [
@@ -206,6 +207,9 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* TRUST & SAFETY */}
+      <TrustSection />
 
       {/* CTA */}
       <section className="cta-section">

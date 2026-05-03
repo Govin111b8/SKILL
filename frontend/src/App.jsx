@@ -39,11 +39,15 @@ import AgentWallet from './pages/AgentWallet';
 import AgentLeaderboard from './pages/AgentLeaderboard';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
+import AnnouncementBar from './components/AnnouncementBar';
+import CookieConsent from './components/CookieConsent';
+import AppInstallBanner from './components/AppInstallBanner';
 import './App.css';
 
 function App() {
   return (
     <div className="app">
+      <AnnouncementBar />
       <Navbar />
       <main className="app-main">
         <Routes>
@@ -271,6 +275,8 @@ function App() {
       <Footer />
       <BottomNav />
       <Toast />
+      <CookieConsent />
+      <AppInstallBanner />
     </div>
   );
 }

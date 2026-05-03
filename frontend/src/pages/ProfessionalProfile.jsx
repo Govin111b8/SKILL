@@ -10,6 +10,7 @@ import OnlineIndicator from '../components/OnlineIndicator';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ShareButton from '../components/ShareButton';
 import './ProfessionalProfile.css';
 
 function ProfessionalProfile() {
@@ -211,6 +212,12 @@ function ProfessionalProfile() {
                 <button className="profile-action-btn" onClick={() => navigator.share?.({ title: name, url: window.location.href })}>
                   <FiShare2 size={16} /> Share
                 </button>
+                <ShareButton
+                  variant="whatsapp"
+                  title={`${name} on SkillConnect`}
+                  text={`Check out ${name} on SkillConnect — ${professional?.headline || 'Top-rated professional'}. Book now!`}
+                  url={window.location.href}
+                />
               </div>
               {pricing && (
                 <div className="profile-pricing-tag">
