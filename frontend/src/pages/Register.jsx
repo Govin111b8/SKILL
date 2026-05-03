@@ -106,6 +106,13 @@ function Register() {
           >
             Professional
           </button>
+          <button
+            type="button"
+            className={`role-btn ${role === 'agent' ? 'active' : ''}`}
+            onClick={() => setRole('agent')}
+          >
+            Agent
+          </button>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}

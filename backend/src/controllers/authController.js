@@ -91,6 +91,15 @@ const register = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
+    // Auto-create agent profile if registering as agent
+    if (role === 'agent') {
+      const agentCode = `AG${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      await query(
+        `INSERT INTO agents (user_id, agent_code) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING`,
+        [user.id, agentCode]
+      );
+    }
+
     logger.info({ userId: user.id, role: user.role }, 'User registered');
 
     res.status(201).json({

@@ -1,0 +1,90 @@
+.agent-leaderboard {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.agent-leaderboard h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-filter {
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-filter select {
+  padding: 0.6rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-width: 200px;
+}
+
+.leaderboard-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lb-header, .lb-row {
+  display: grid;
+  grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr;
+  padding: 0.75rem 1rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lb-header {
+  background: #f3f4f6;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.lb-row {
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+}
+
+.lb-row.top-1 { background: #fef9c3; }
+.lb-row.top-2 { background: #f0f4ff; }
+.lb-row.top-3 { background: #fef2f2; }
+
+.lb-rank {
+  font-weight: 700;
+  text-align: center;
+}
+
+.lb-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.lb-level {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.lb-earned {
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+}
+
+@media (max-width: 600px) {
+  .lb-header, .lb-row {
+    grid-template-columns: 40px 1.5fr 1fr 1fr;
+  }
+  .lb-zone, .lb-customers { display: none; }
+}
