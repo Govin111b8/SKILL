@@ -9,6 +9,9 @@ import '../../services/booking_service.dart';
 import '../../services/realtime_service.dart';
 import '../bookings/booking_detail_screen.dart';
 import '../profile/edit_professional_profile_screen.dart';
+import '../schedule/schedule_management_screen.dart';
+import '../earnings/earnings_screen.dart';
+import '../../widgets/availability_toggle.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -125,6 +128,32 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
             else if (_error != null)
               _errorCard()
             else ...[
+
+              // Availability toggle
+              const AvailabilityToggle(),
+              const SizedBox(height: 16),
+
+              // Quick action buttons
+              Row(children: [
+                Expanded(child: _QuickAction(
+                  icon: Icons.calendar_month,
+                  label: 'Schedule',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleManagementScreen())),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickAction(
+                  icon: Icons.account_balance_wallet,
+                  label: 'Earnings',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EarningsScreen())),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickAction(
+                  icon: Icons.emergency,
+                  label: 'Emergency',
+                  onTap: () => Navigator.pushNamed(context, '/emergency'),
+                )),
+              ]),
+              const SizedBox(height: 20),
 
               // Quick stats row
               _quickStats(cs),
@@ -389,6 +418,35 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
         const SizedBox(height: 8),
         OutlinedButton(onPressed: _load, child: const Text('Retry')),
       ])),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickAction({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: cs.primary, size: 24),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurface)),
+          ]),
+        ),
+      ),
     );
   }
 }

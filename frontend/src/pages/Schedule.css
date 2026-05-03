@@ -1,0 +1,120 @@
+.schedule-page { padding: 2rem 0; }
+.schedule-page .page-header { margin-bottom: 2rem; }
+.schedule-page .page-header h1 { display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; }
+
+.schedule-section {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+.schedule-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.week-schedule { display: flex; flex-direction: column; gap: 0.75rem; }
+.day-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  align-items: flex-start;
+}
+.day-label {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.day-name { font-weight: 600; font-size: 0.9rem; }
+.day-slots { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+.day-off { color: var(--gray-400); font-size: 0.85rem; font-style: italic; }
+
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.time-select {
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  font-size: 0.85rem;
+  background: white;
+}
+.slot-separator { color: var(--gray-400); font-size: 0.85rem; }
+.slot-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.toggle-label { color: var(--gray-600); }
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: white;
+  transition: var(--transition);
+}
+.btn-icon:hover { background: var(--gray-100); }
+.btn-icon--sm { width: 24px; height: 24px; }
+.btn-icon--danger:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+.block-date-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.block-date-form .form-input {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  font-size: 0.9rem;
+}
+
+.blocked-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.blocked-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #fef2f2;
+  border-radius: var(--radius);
+  border: 1px solid #fecaca;
+}
+.blocked-date { font-weight: 600; font-size: 0.9rem; }
+.blocked-reason { flex: 1; color: var(--gray-500); font-size: 0.85rem; }
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.alert--success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.alert--error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.text-muted { color: var(--gray-400); font-size: 0.9rem; }

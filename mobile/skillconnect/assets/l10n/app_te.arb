@@ -1,0 +1,53 @@
+{
+  "@@locale": "te",
+  "appTitle": "స్కిల్‌కనెక్ట్",
+  "home": "హోమ్",
+  "services": "సేవలు",
+  "bookings": "బుకింగ్‌లు",
+  "chats": "చాట్‌లు",
+  "profile": "ప్రొఫైల్",
+  "search": "శోధన",
+  "notifications": "నోటిఫికేషన్లు",
+  "settings": "సెట్టింగ్‌లు",
+  "login": "లాగిన్",
+  "register": "రిజిస్టర్",
+  "logout": "లాగ్ అవుట్",
+  "bookNow": "ఇప్పుడు బుక్ చేయండి",
+  "rebookSamePro": "అదే ప్రొఫెషనల్‌ని మళ్ళీ బుక్ చేయండి",
+  "getInstantQuote": "తక్షణ కోట్ పొందండి",
+  "emergency": "అత్యవసరం",
+  "emergencyBooking": "అత్యవసర బుకింగ్",
+  "payment": "చెల్లింపు",
+  "payViaUpi": "UPI ద్వారా చెల్లించండి",
+  "cashOnService": "సేవపై నగదు",
+  "paymentSuccess": "చెల్లింపు విజయవంతం!",
+  "liveTracking": "లైవ్ ట్రాకింగ్",
+  "onTheWay": "మార్గంలో ఉన్నారు",
+  "arrived": "చేరుకున్నారు",
+  "inProgress": "పని జరుగుతోంది",
+  "completed": "పూర్తయింది",
+  "dispute": "వివాదం నమోదు",
+  "warranty": "వారంటీ ట్రాకర్",
+  "voiceNote": "వాయిస్ నోట్",
+  "tapToRecord": "రికార్డ్ చేయడానికి ట్యాప్ చేయండి",
+  "recording": "రికార్డింగ్...",
+  "offline": "మీరు ఆఫ్‌లైన్‌లో ఉన్నారు",
+  "willSendWhenOnline": "ఆన్‌లైన్‌లో వచ్చినప్పుడు పంపుతాము",
+  "tryingToReconnect": "మళ్ళీ కనెక్ట్ అవ్వడానికి ప్రయత్నిస్తోంది...",
+  "noConnection": "కనెక్షన్ లేదు",
+  "connecting": "కనెక్ట్ అవుతోంది...",
+  "pendingSync": "{count} పెండింగ్ సింక్",
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationSettings": "నోటిఫికేషన్ సెట్టింగ్‌లు",
+  "bookingUpdates": "బుకింగ్ అప్‌డేట్‌లు",
+  "smartSuggestions": "స్మార్ట్ సూచనలు",
+  "serviceReminders": "సేవ రిమైండర్‌లు",
+  "offersPromotions": "ఆఫర్లు & ప్రమోషన్లు",
+  "languagePreference": "భాషా ప్రాధాన్యత"
+}

@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/voice_search_button.dart';
 import '../../data/services_catalog.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -283,6 +284,10 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(width: 8),
               FilledButton(onPressed: () => _search(), child: const Text('Go')),
               const SizedBox(width: 4),
+              VoiceSearchButton(onResult: (text) {
+                _searchCtl.text = text;
+                _search();
+              }),
               IconButton(
                 icon: Badge(
                   isLabelVisible: hasFilters,

@@ -45,6 +45,10 @@
   background: #dcfce7;
   color: #15803d;
 }
+.pro-badge--govt {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
 .pro-badge--org {
   background: #ede9fe;
   color: #6d28d9;
@@ -161,6 +165,32 @@
   font-size: 0.78rem;
   color: var(--gray-400);
 }
+
+/* Trust metrics */
+.pro-card-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.pro-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--gray-100);
+}
+.pro-metric--score {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
 
 .pro-card-location {
   display: flex;

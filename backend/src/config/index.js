@@ -75,6 +75,35 @@ const config = {
   logging: {
     level: process.env.LOG_LEVEL || ((process.env.NODE_ENV || 'development') === 'production' ? 'info' : 'debug'),
   },
+
+  // External services
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+  },
+
+  email: {
+    sendgridApiKey: process.env.SENDGRID_API_KEY || '',
+    from: process.env.EMAIL_FROM || 'noreply@skillconnect.in',
+  },
+
+  sms: {
+    provider: process.env.SMS_PROVIDER || 'none',
+  },
+
+  storage: {
+    provider: process.env.STORAGE_PROVIDER || 'local',
+    s3Bucket: process.env.S3_BUCKET || '',
+    awsRegion: process.env.AWS_REGION || 'ap-south-1',
+  },
+
+  fcm: {
+    serverKey: process.env.FCM_SERVER_KEY || '',
+    projectId: process.env.FCM_PROJECT_ID || '',
+  },
+
+  appUrl: process.env.APP_URL || 'http://localhost:3000',
 };
 
 module.exports = { config, validateConfig };

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiMapPin, FiStar, FiArrowRight, FiCheck } from 'react-icons/fi';
+import { FiMapPin, FiStar, FiArrowRight, FiCheck, FiClock, FiBriefcase, FiShield, FiAward } from 'react-icons/fi';
 import StarRating from './StarRating';
 import './ProfessionalCard.css';
 
@@ -17,6 +17,11 @@ function ProfessionalCard({ professional }) {
   const isVerified = verified ?? (parseFloat(professional.reputation_score) >= 4);
   const rawCategories = professional.categories || [];
   const categories = rawCategories.map(c => typeof c === 'string' ? c : c.name);
+  const yearsExp = professional.years_of_experience || professional.experience;
+  const completedJobs = professional.completed_jobs || 0;
+  const responseTime = professional.response_time_hours;
+  const govIdVerified = professional.government_id_verified;
+  const reputationScore = professional.reputation_score;
 
   const initial = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
@@ -32,6 +37,11 @@ function ProfessionalCard({ professional }) {
         {isVerified && (
           <span className="pro-badge pro-badge--verified">
             <FiCheck size={10} /> Verified
+          </span>
+        )}
+        {govIdVerified && (
+          <span className="pro-badge pro-badge--govt">
+            <FiShield size={10} /> ID Verified
           </span>
         )}
         {available !== undefined && (
@@ -54,7 +64,7 @@ function ProfessionalCard({ professional }) {
         )}
         {rating >= 4.8 && (
           <div className="pro-top-badge">
-            <FiStar size={10} fill="#f59e0b" /> Top Rated
+            <FiAward size={10} fill="#f59e0b" /> Top Rated
           </div>
         )}
       </div>
@@ -66,8 +76,32 @@ function ProfessionalCard({ professional }) {
 
         <div className="pro-card-rating">
           <StarRating rating={rating || 0} readonly size={14} />
-          <span className="pro-rating-num">{rating ? rating.toFixed(1) : '—'}</span>
-          <span className="pro-rating-count">({reviews_count || 0})</span>
+          <span className="pro-rating-num">{rating ? Number(rating).toFixed(1) : '—'}</span>
+          <span className="pro-rating-count">({reviews_count || 0} reviews)</span>
+        </div>
+
+        {/* Trust metrics row */}
+        <div className="pro-card-metrics">
+          {yearsExp > 0 && (
+            <span className="pro-metric" title="Years of experience">
+              <FiBriefcase size={12} /> {yearsExp}yr{yearsExp > 1 ? 's' : ''}
+            </span>
+          )}
+          {completedJobs > 0 && (
+            <span className="pro-metric" title="Completed jobs">
+              <FiCheck size={12} /> {completedJobs} jobs
+            </span>
+          )}
+          {responseTime && responseTime > 0 && (
+            <span className="pro-metric" title="Average response time">
+              <FiClock size={12} /> {responseTime < 1 ? '<1hr' : `${Math.round(responseTime)}hr`}
+            </span>
+          )}
+          {reputationScore > 0 && (
+            <span className="pro-metric pro-metric--score" title="Trust score">
+              <FiStar size={12} /> {Number(reputationScore).toFixed(1)}
+            </span>
+          )}
         </div>
 
         {location && (

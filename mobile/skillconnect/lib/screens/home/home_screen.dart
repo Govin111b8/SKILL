@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import '../../widgets/professional_card.dart';
 import '../../widgets/review_prompt.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/nearby_providers_section.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
@@ -143,6 +144,33 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ReviewPromptBanner(),
             ),
 
+            // ── Quick actions ─────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(children: [
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Photo Quote',
+                  color: const Color(0xFF06B6D4),
+                  onTap: () => Navigator.pushNamed(context, '/instant-quote'),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.emergency_rounded,
+                  label: 'Emergency',
+                  color: const Color(0xFFEF4444),
+                  onTap: () => Navigator.pushNamed(context, '/emergency'),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.verified_user_rounded,
+                  label: 'Warranty',
+                  color: const Color(0xFF10B981),
+                  onTap: () => Navigator.pushNamed(context, '/warranty'),
+                )),
+              ]),
+            ),
+
             // ── Service hubs ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -230,6 +258,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // ── Nearby available providers (smart location) ─────
+            const NearbyProvidersSection(),
+
             // ── Top-rated professionals ───────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
@@ -274,6 +305,41 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withAlpha(20),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withAlpha(60)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        ]),
       ),
     );
   }

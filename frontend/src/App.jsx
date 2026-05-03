@@ -20,6 +20,17 @@ import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import Payment from './pages/Payment';
 import Favorites from './pages/Favorites';
+import Earnings from './pages/Earnings';
+import Schedule from './pages/Schedule';
+import Emergency from './pages/Emergency';
+import Referrals from './pages/Referrals';
+import Disputes from './pages/Disputes';
+import Warranties from './pages/Warranties';
+import Analytics from './pages/Analytics';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminKYC from './pages/admin/AdminKYC';
+import AdminDisputes from './pages/admin/AdminDisputes';
 import Storefront from './pages/Storefront';
 import StorefrontSetup from './pages/StorefrontSetup';
 import NotFound from './pages/NotFound';
@@ -125,6 +136,95 @@ function App() {
             element={
               <ProtectedRoute>
                 <Favorites />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/earnings"
+            element={
+              <ProtectedRoute>
+                <Earnings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <Schedule />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emergency"
+            element={
+              <ProtectedRoute>
+                <Emergency />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/referrals"
+            element={
+              <ProtectedRoute>
+                <Referrals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/disputes"
+            element={
+              <ProtectedRoute>
+                <Disputes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/warranties"
+            element={
+              <ProtectedRoute>
+                <Warranties />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kyc"
+            element={
+              <ProtectedRoute>
+                <AdminKYC />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/disputes"
+            element={
+              <ProtectedRoute>
+                <AdminDisputes />
               </ProtectedRoute>
             }
           />

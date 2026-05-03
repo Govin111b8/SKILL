@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { config } = require('../config');
+const { query } = require('../config/database');
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
@@ -20,6 +21,20 @@ const authenticate = (req, res, next) => {
         message: 'Invalid token type.',
       });
     }
+
+    // Enrich with is_admin flag from database (best-effort, doesn't fail auth)
+    if (decoded.id) {
+      try {
+        const userRes = await query('SELECT is_admin FROM users WHERE id = $1', [decoded.id]);
+        if (userRes.rows.length > 0) {
+          decoded.is_admin = userRes.rows[0].is_admin;
+        }
+      } catch (_) {
+        // DB lookup failed — continue without admin flag (non-critical)
+        decoded.is_admin = false;
+      }
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

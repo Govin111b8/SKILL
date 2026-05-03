@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const hub = require('../realtime/hub');
 const { notify } = require('../utils/notifier');
+const { completeReferral } = require('./referralController');
 
 // Resolve professional row + owner user_id
 async function getPro(professionalId) {
@@ -251,6 +252,47 @@ exports.transition = async (req, res, next) => {
         hub.sendTo(b.pro_user_id, sysMsgPayload);
       }
     } catch (_) { /* non-critical — don't fail the transition */ }
+
+    // Auto-create warranty when booking is completed
+    if (to === 'completed') {
+      try {
+        const catInfo = await query(
+          `SELECT default_warranty_days FROM categories WHERE id = $1`,
+          [b.category_id]
+        );
+        const warrantyDays = catInfo.rows[0]?.default_warranty_days || 7;
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + warrantyDays);
+
+        // Only create if not already exists
+        const existing = await query('SELECT id FROM service_warranties WHERE booking_id = $1', [b.id]);
+        if (existing.rows.length === 0) {
+          await query(
+            `INSERT INTO service_warranties (booking_id, professional_id, customer_id, category_id, warranty_days, starts_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [b.id, b.professional_id, b.customer_id, b.category_id, warrantyDays, startsAt, expiresAt]
+          );
+        }
+
+        // Auto-increment completed_jobs on professional
+        await query(`UPDATE professionals SET completed_jobs = completed_jobs + 1 WHERE id = $1`, [b.professional_id]);
+
+        // Auto-release escrow payment when booking completes
+        try {
+          await query(
+            `UPDATE payments SET status = 'released', escrow_released_at = NOW(), updated_at = NOW()
+             WHERE booking_id = $1 AND status = 'held_in_escrow'`,
+            [b.id]
+          );
+        } catch (_) { /* non-critical */ }
+
+        // Complete referral reward (first booking completion)
+        try {
+          await completeReferral(b.customer_id);
+        } catch (_) { /* ignore */ }
+      } catch (_) { /* non-critical */ }
+    }
 
     res.json({ success: true, data: updated });
   } catch (e) { next(e); }

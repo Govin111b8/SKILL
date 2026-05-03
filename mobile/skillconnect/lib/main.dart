@@ -5,6 +5,11 @@ import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
 import 'services/theme_service.dart';
+import 'services/smart_location_service.dart';
+import 'services/analytics_service.dart';
+import 'services/performance_monitor.dart';
+import 'services/offline/offline_services.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -19,9 +24,34 @@ import 'screens/bookings/bookings_list_screen.dart';
 import 'screens/messages/threads_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/search/search_screen.dart';
+import 'screens/search/instant_quote_screen.dart';
+import 'screens/emergency/emergency_booking_screen.dart';
+import 'screens/payments/payment_screen.dart';
+import 'screens/tracking/live_tracking_screen.dart';
+import 'screens/disputes/dispute_screen.dart';
+import 'screens/warranty/warranty_screen.dart';
+import 'screens/notifications/notification_preferences_screen.dart';
+import 'screens/schedule/schedule_management_screen.dart';
+import 'screens/earnings/earnings_screen.dart';
+import 'widgets/connectivity_banner.dart';
 
 void main() async {
+  // Track cold start time
+  PerformanceMonitor.instance.markAppStart();
+
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize offline services
+  await LocalCacheService.init();
+  await ConnectivityService.instance.init();
+  await OfflineQueueService.init();
+
+  // Initialize analytics
+  await AnalyticsService.instance.init();
+
+  // Initialize smart location (non-blocking)
+  SmartLocationService.instance.init();
+
   final authService = AuthService();
   final themeService = ThemeService();
   await Future.wait([authService.init(), themeService.init()]);
@@ -30,6 +60,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider.value(value: themeService),
+        ChangeNotifierProvider.value(value: ConnectivityService.instance),
+        ChangeNotifierProvider.value(value: SmartLocationService.instance),
       ],
       child: const SkillConnectApp(),
     ),
@@ -172,6 +204,9 @@ class SkillConnectApp extends StatelessWidget {
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
       themeMode: themeMode,
+      // i18n: Regional language support (Telugu-first)
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Consumer<AuthService>(
         builder: (_, auth, __) {
           final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
@@ -183,6 +218,12 @@ class SkillConnectApp extends StatelessWidget {
         '/register': (_) => const RegisterScreen(),
         '/home': (_) => const MainShell(),
         '/contacts': (_) => const MyContactsScreen(),
+        '/instant-quote': (_) => const InstantQuoteScreen(),
+        '/emergency': (_) => const EmergencyBookingScreen(),
+        '/warranty': (_) => const WarrantyScreen(),
+        '/notification-preferences': (_) => const NotificationPreferencesScreen(),
+        '/schedule': (_) => const ScheduleManagementScreen(),
+        '/earnings': (_) => const EarningsScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/professional') {
@@ -203,6 +244,28 @@ class SkillConnectApp extends StatelessWidget {
             categoryName: args['categoryName']?.toString() ?? '',
             categoryDescription: args['description']?.toString(),
             isRoot: args['isRoot'] == true,
+          ));
+        }
+        if (settings.name == '/payment') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(builder: (_) => PaymentScreen(
+            bookingId: args['bookingId'] as String,
+            amount: (args['amount'] as num).toDouble(),
+            professionalName: args['professionalName'] as String? ?? 'Professional',
+          ));
+        }
+        if (settings.name == '/tracking') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(builder: (_) => LiveTrackingScreen(
+            bookingId: args['bookingId'] as String,
+            professionalName: args['professionalName'] as String? ?? 'Professional',
+          ));
+        }
+        if (settings.name == '/dispute') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(builder: (_) => DisputeScreen(
+            bookingId: args['bookingId'] as String,
+            bookingTitle: args['bookingTitle'] as String? ?? 'Booking',
           ));
         }
         return null;
@@ -291,7 +354,9 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: Stack(children: [
         Column(children: [
-          // Connection status banner
+          // Connectivity-aware banner (offline/slow network)
+          const ConnectivityBanner(),
+          // Connection status banner (WebSocket)
           if (_connStatus != ConnectionStatus.connected)
             Material(
               color: _connStatus == ConnectionStatus.connecting

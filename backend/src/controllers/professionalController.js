@@ -244,4 +244,20 @@ const getProfileByUser = async (req, res, next) => {
   }
 };
 
-module.exports = { createProfile, getProfile, updateProfile, toggleAvailability, getProfileByUser };
+const getAvailability = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const result = await query(
+      'SELECT availability_status FROM professionals WHERE user_id = $1',
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found.' });
+    }
+    res.json({ success: true, availability_status: result.rows[0].availability_status });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createProfile, getProfile, updateProfile, toggleAvailability, getAvailability, getProfileByUser };

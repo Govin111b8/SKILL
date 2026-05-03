@@ -1,0 +1,55 @@
+import 'app_localizations.dart';
+
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn() : super('en');
+
+  @override String get appTitle => 'SkillConnect';
+  @override String get home => 'Home';
+  @override String get services => 'Services';
+  @override String get bookings => 'Bookings';
+  @override String get chats => 'Chats';
+  @override String get profile => 'Profile';
+  @override String get search => 'Search';
+  @override String get notifications => 'Notifications';
+  @override String get settings => 'Settings';
+  @override String get login => 'Login';
+  @override String get register => 'Register';
+  @override String get logout => 'Logout';
+  @override String get bookNow => 'Book Now';
+  @override String get rebookSamePro => 'Book Same Professional Again';
+  @override String get getInstantQuote => 'Get Instant Quote';
+  @override String get emergency => 'Emergency';
+  @override String get emergencyBooking => 'Emergency Booking';
+  @override String get payment => 'Payment';
+  @override String get payViaUpi => 'Pay via UPI';
+  @override String get cashOnService => 'Cash on Service';
+  @override String get paymentSuccess => 'Payment Successful!';
+  @override String get liveTracking => 'Live Tracking';
+  @override String get onTheWay => 'On the Way';
+  @override String get arrived => 'Arrived';
+  @override String get inProgress => 'Work in Progress';
+  @override String get completed => 'Completed';
+  @override String get dispute => 'Raise Dispute';
+  @override String get warranty => 'Warranty Tracker';
+  @override String get voiceNote => 'Voice Note';
+  @override String get tapToRecord => 'Tap to record';
+  @override String get recording => 'Recording...';
+  @override String get offline => "You're offline";
+  @override String get willSendWhenOnline => 'Will send when online';
+  @override String get tryingToReconnect => 'Trying to reconnect...';
+  @override String get noConnection => 'No connection';
+  @override String get connecting => 'Connecting...';
+  @override String pendingSync(int count) => '$count pending sync';
+  @override String get notificationSettings => 'Notification Settings';
+  @override String get bookingUpdates => 'Booking Updates';
+  @override String get smartSuggestions => 'Smart Suggestions';
+  @override String get serviceReminders => 'Service Reminders';
+  @override String get offersPromotions => 'Offers & Promotions';
+  @override String get languagePreference => 'Language Preference';
+  @override String get nearbyProviders => 'Nearby Providers';
+  @override String get viewAll => 'View All';
+  @override String get cancel => 'Cancel';
+  @override String get confirm => 'Confirm';
+  @override String get retry => 'Retry';
+  @override String get done => 'Done';
+}
