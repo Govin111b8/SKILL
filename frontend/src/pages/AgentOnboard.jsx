@@ -88,7 +88,7 @@ function AgentOnboard() {
           <div className="form-group">
             <label htmlFor="password">Temporary Password *</label>
             <input
-              id="password" name="password" type="text" required minLength={8}
+              id="password" name="password" type="password" required minLength={8}
               value={form.password} onChange={handleChange}
               placeholder="Set a temporary password (min 8 chars)"
             />
