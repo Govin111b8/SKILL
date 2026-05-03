@@ -6,6 +6,7 @@ import './ProfessionalCard.css';
 function ProfessionalCard({ professional }) {
   const {
     id, name, headline, photo, location, verified,
+    provider_type, company_name,
   } = professional;
 
   // Handle both API field names and mapped names
@@ -28,6 +29,11 @@ function ProfessionalCard({ professional }) {
     <div className="pro-card">
       {/* Top badges */}
       <div className="pro-card-badges">
+        {provider_type === 'organization' && (
+          <span className="pro-badge pro-badge--org">
+            🏢 {company_name || 'Company'}
+          </span>
+        )}
         {isVerified && (
           <span className="pro-badge pro-badge--verified">
             <FiCheck size={10} /> Verified

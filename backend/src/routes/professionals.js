@@ -57,6 +57,19 @@ router.post(
     body('category_ids')
       .isArray({ min: 1 })
       .withMessage('At least one category is required'),
+    body('provider_type')
+      .optional()
+      .isIn(['individual', 'organization'])
+      .withMessage('Provider type must be individual or organization'),
+    body('company_name')
+      .optional()
+      .trim()
+      .isLength({ max: 255 })
+      .withMessage('Company name must be 255 characters or less'),
+    body('team_size')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Team size must be a positive integer'),
   ]),
   createProfile
 );

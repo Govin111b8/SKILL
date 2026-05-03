@@ -35,6 +35,7 @@ const emergencyRoutes = require('./routes/emergency');
 const referralRoutes = require('./routes/referrals');
 const adminRoutes = require('./routes/admin');
 const webhookRoutes = require('./routes/webhooks');
+const storefrontRoutes = require('./routes/storefront');
 
 const app = express();
 
@@ -122,6 +123,7 @@ app.use('/api/emergency', emergencyRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/storefront', storefrontRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));

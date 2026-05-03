@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../models/models.dart';
-import '../screens/profile/professional_profile_screen.dart';
+import '../screens/storefront/storefront_screen.dart';
 import 'trust_badge.dart';
 
 class ProfessionalCard extends StatelessWidget {
@@ -31,7 +31,7 @@ class ProfessionalCard extends StatelessWidget {
         onTap: () {
           HapticFeedback.selectionClick();
           Navigator.push(context, MaterialPageRoute(
-            builder: (_) => ProfessionalProfileScreen(professionalId: p.id),
+            builder: (_) => StorefrontScreen(professionalId: p.id),
           ));
         },
         child: Padding(

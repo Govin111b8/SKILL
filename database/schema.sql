@@ -24,6 +24,8 @@ CREATE TYPE complaint_type AS ENUM ('fraud', 'harassment', 'poor_service', 'fake
 
 CREATE TYPE complaint_status AS ENUM ('pending', 'warning_issued', 'suspended', 'banned', 'resolved');
 
+CREATE TYPE provider_type AS ENUM ('individual', 'organization');
+
 -- ============================================================
 -- TABLES
 -- ============================================================
@@ -55,10 +57,11 @@ CREATE TABLE categories (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3. Professionals - Extended profile for professional users
+-- 3. Professionals - Extended profile for professional users (individual or organization)
 CREATE TABLE professionals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    provider_type provider_type NOT NULL DEFAULT 'individual',
     headline TEXT,
     bio TEXT,
     years_of_experience INTEGER,
@@ -72,6 +75,21 @@ CREATE TABLE professionals (
     response_time_hours DECIMAL(5, 2),
     subscription_plan subscription_plan NOT NULL DEFAULT 'basic',
     subscription_expires_at TIMESTAMPTZ,
+    announcement TEXT,
+    whatsapp_number VARCHAR(20),
+    instagram_handle VARCHAR(100),
+    website_url TEXT,
+    cover_image_url TEXT,
+    accent_color VARCHAR(7) DEFAULT '#6366F1',
+    show_rating BOOLEAN NOT NULL DEFAULT TRUE,
+    return_policy TEXT,
+    operating_hours TEXT,
+    operating_days TEXT,
+    -- Organization-specific fields
+    company_name VARCHAR(255),
+    company_registration_number VARCHAR(100),
+    team_size INTEGER,
+    services_offered TEXT[],
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -136,6 +154,7 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 
 CREATE INDEX idx_professionals_user_id ON professionals(user_id);
+CREATE INDEX idx_professionals_provider_type ON professionals(provider_type);
 CREATE INDEX idx_professionals_reputation_score ON professionals(reputation_score DESC);
 CREATE INDEX idx_professionals_location ON professionals(latitude, longitude);
 

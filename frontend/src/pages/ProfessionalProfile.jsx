@@ -92,6 +92,7 @@ function ProfessionalProfile() {
     name, headline, photo, rating, reviews_count, location,
     bio, years_of_experience, pricing, categories,
     portfolio, reviews, phone, email, available, verified,
+    provider_type, company_name, team_size, services_offered,
   } = professional;
 
   const initials = name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -134,6 +135,18 @@ function ProfessionalProfile() {
                 </div>
 
                 {headline && <p className="profile-headline">{headline}</p>}
+
+                {provider_type && (
+                  <span className={`provider-type-badge ${provider_type}`}>
+                    {provider_type === 'organization' ? `🏢 ${company_name || 'Company'}` : '👤 Individual'}
+                  </span>
+                )}
+
+                {provider_type === 'organization' && team_size && (
+                  <span className="profile-meta-item team-size-badge">
+                    👥 Team of {team_size}
+                  </span>
+                )}
 
                 <div className="profile-meta-row">
                   <div className="profile-rating-display">

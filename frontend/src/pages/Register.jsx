@@ -10,6 +10,7 @@ const CATEGORIES = [
 
 function Register() {
   const [role, setRole] = useState('customer');
+  const [providerType, setProviderType] = useState('individual');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,6 +22,8 @@ function Register() {
     bio: '',
     years_of_experience: '',
     category: '',
+    company_name: '',
+    team_size: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -64,6 +67,11 @@ function Register() {
       payload.bio = formData.bio;
       payload.years_of_experience = Number(formData.years_of_experience) || 0;
       payload.category = formData.category;
+      payload.provider_type = providerType;
+      if (providerType === 'organization') {
+        payload.company_name = formData.company_name;
+        payload.team_size = Number(formData.team_size) || undefined;
+      }
     }
 
     setLoading(true);
@@ -179,6 +187,54 @@ function Register() {
 
           {role === 'professional' && (
             <>
+              <div className="provider-type-toggle">
+                <label className="provider-type-label">Provider Type</label>
+                <div className="provider-type-options">
+                  <button
+                    type="button"
+                    className={`provider-type-btn ${providerType === 'individual' ? 'active' : ''}`}
+                    onClick={() => setProviderType('individual')}
+                  >
+                    Individual / Freelancer
+                  </button>
+                  <button
+                    type="button"
+                    className={`provider-type-btn ${providerType === 'organization' ? 'active' : ''}`}
+                    onClick={() => setProviderType('organization')}
+                  >
+                    Company / Consultancy
+                  </button>
+                </div>
+              </div>
+
+              {providerType === 'organization' && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="company_name">Company Name *</label>
+                    <input
+                      id="company_name"
+                      name="company_name"
+                      type="text"
+                      value={formData.company_name}
+                      onChange={handleChange}
+                      placeholder="e.g., ABC Electrical Services Pvt Ltd"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="team_size">Team Size</label>
+                    <input
+                      id="team_size"
+                      name="team_size"
+                      type="number"
+                      min="1"
+                      value={formData.team_size}
+                      onChange={handleChange}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
                 <label htmlFor="headline">Professional Headline</label>
                 <input

@@ -1,0 +1,141 @@
+.storefront-setup {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.setup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.setup-header h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.preview-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--primary, #6366f1);
+  color: var(--primary, #6366f1);
+  background: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.preview-btn:hover {
+  background: var(--primary, #6366f1);
+  color: #fff;
+}
+
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"],
+.form-group input[type="url"],
+.form-group textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary, #6366f1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.color-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-input input[type="color"] {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.color-input input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.checkbox-group {
+  justify-content: center;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.save-btn {
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary, #6366f1);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .form-group label { color: #cbd5e1; }
+  .form-group input, .form-group textarea {
+    background: #1e293b;
+    border-color: #475569;
+    color: #e2e8f0;
+  }
+}

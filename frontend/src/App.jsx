@@ -31,6 +31,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminKYC from './pages/admin/AdminKYC';
 import AdminDisputes from './pages/admin/AdminDisputes';
+import Storefront from './pages/Storefront';
+import StorefrontSetup from './pages/StorefrontSetup';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import './App.css';
@@ -46,6 +48,15 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/professionals/:id" element={<ProfessionalProfile />} />
+          <Route path="/professionals/:id/storefront" element={<Storefront />} />
+          <Route
+            path="/dashboard/storefront"
+            element={
+              <ProtectedRoute>
+                <StorefrontSetup />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/categories" element={<Categories />} />
           <Route path="/categories/:slug" element={<CategoryDetail />} />
           <Route

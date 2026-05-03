@@ -85,6 +85,17 @@ class Professional {
   final int kycLevel;
   final int trustScore;
   final bool govIdVerified;
+  // Storefront fields
+  final String? announcement;
+  final String? whatsappNumber;
+  final String? instagramHandle;
+  final String? websiteUrl;
+  final String? coverImageUrl;
+  final String? accentColor;
+  final bool showRating;
+  final String? returnPolicy;
+  final String? operatingHours;
+  final String? operatingDays;
 
   Professional({
     required this.id, this.userId, required this.name, this.email, this.location,
@@ -93,6 +104,9 @@ class Professional {
     this.completedJobs = 0, this.responseTimeHours, this.subscriptionPlan,
     this.categories = const [], this.distance,
     this.kycLevel = 0, this.trustScore = 0, this.govIdVerified = false,
+    this.announcement, this.whatsappNumber, this.instagramHandle,
+    this.websiteUrl, this.coverImageUrl, this.accentColor,
+    this.showRating = true, this.returnPolicy, this.operatingHours, this.operatingDays,
   });
 
   factory Professional.fromJson(Map<String, dynamic> json) => Professional(
@@ -116,6 +130,16 @@ class Professional {
     kycLevel: _toInt(json['kyc_level']),
     trustScore: _toInt(json['trust_score']),
     govIdVerified: json['government_id_verified'] == true || json['government_id_verified']?.toString() == 'true',
+    announcement: _toStringOrNull(json['announcement']),
+    whatsappNumber: _toStringOrNull(json['whatsapp_number']),
+    instagramHandle: _toStringOrNull(json['instagram_handle']),
+    websiteUrl: _toStringOrNull(json['website_url']),
+    coverImageUrl: _toStringOrNull(json['cover_image_url']),
+    accentColor: _toStringOrNull(json['accent_color']),
+    showRating: json['show_rating'] != false,
+    returnPolicy: _toStringOrNull(json['return_policy']),
+    operatingHours: _toStringOrNull(json['operating_hours']),
+    operatingDays: _toStringOrNull(json['operating_days']),
   );
 }
 
