@@ -13,6 +13,11 @@ const createProfile = async (req, res, next) => {
       latitude,
       longitude,
       category_ids,
+      provider_type = 'individual',
+      company_name,
+      company_registration_number,
+      team_size,
+      services_offered,
     } = req.body;
 
     // Check if profile already exists
@@ -29,10 +34,10 @@ const createProfile = async (req, res, next) => {
 
     const id = crypto.randomUUID();
     const result = await query(
-      `INSERT INTO professionals (id, user_id, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      `INSERT INTO professionals (id, user_id, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
        RETURNING *`,
-      [id, userId, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude]
+      [id, userId, headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered ?? null]
     );
 
     // Associate categories
@@ -129,6 +134,11 @@ const updateProfile = async (req, res, next) => {
       latitude,
       longitude,
       category_ids,
+      provider_type,
+      company_name,
+      company_registration_number,
+      team_size,
+      services_offered,
     } = req.body;
 
     const result = await query(
@@ -140,10 +150,15 @@ const updateProfile = async (req, res, next) => {
            service_location_radius_km = COALESCE($5, service_location_radius_km),
            latitude = COALESCE($6, latitude),
            longitude = COALESCE($7, longitude),
+           provider_type = COALESCE($8, provider_type),
+           company_name = COALESCE($9, company_name),
+           company_registration_number = COALESCE($10, company_registration_number),
+           team_size = COALESCE($11, team_size),
+           services_offered = COALESCE($12, services_offered),
            updated_at = NOW()
-       WHERE id = $8
+       WHERE id = $13
        RETURNING *`,
-      [headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, id]
+      [headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, provider_type, company_name, company_registration_number, team_size, services_offered ?? null, id]
     );
 
     // Update categories if provided

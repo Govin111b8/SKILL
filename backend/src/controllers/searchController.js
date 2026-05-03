@@ -11,6 +11,7 @@ const search = async (req, res, next) => {
       longitude,
       radius_km,
       availability,
+      provider_type,
       sort_by = 'reputation',
       page = 1,
       limit = 20,
@@ -82,6 +83,13 @@ const search = async (req, res, next) => {
     if (availability) {
       conditions.push(`p.availability_status = $${paramIndex}`);
       params.push(availability);
+      paramIndex++;
+    }
+
+    // Provider type filter (individual or organization)
+    if (provider_type) {
+      conditions.push(`p.provider_type = $${paramIndex}`);
+      params.push(provider_type);
       paramIndex++;
     }
 
