@@ -15,7 +15,7 @@ const proToken = jwt.sign({ id: 'pro-user-1', email: 'p@x.com', role: 'professio
 const custToken = jwt.sign({ id: 'cust-user-1', email: 'c@x.com', role: 'customer' }, 'test-secret');
 
 describe('Dashboard analytics', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => query.mockReset());
 
   it('professional dashboard returns earnings + funnel', async () => {
     // 1. profile lookup

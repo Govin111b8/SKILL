@@ -55,7 +55,7 @@ const ingestEvents = async (req, res, next) => {
       );
     }
 
-    res.json({ success: true, ingested: events.length });
+    res.json({ success: true, ingested: Math.min(events.length, 100) });
   } catch (error) {
     // Don't fail the request — analytics shouldn't block the user
     logger.error('Analytics ingestion error:', error);

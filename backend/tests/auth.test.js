@@ -14,7 +14,7 @@ process.env.JWT_EXPIRES_IN = '7d';
 
 describe('Auth Endpoints', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    query.mockReset();
   });
 
   describe('POST /api/auth/register', () => {
@@ -37,7 +37,7 @@ describe('Auth Endpoints', () => {
       const res = await request(app).post('/api/auth/register').send({
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Password123!',
         phone: '1234567890',
         role: 'customer',
         location: 'New York',
@@ -65,7 +65,7 @@ describe('Auth Endpoints', () => {
       const res = await request(app).post('/api/auth/register').send({
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Password123!',
         phone: '1234567890',
         role: 'customer',
         location: 'New York',

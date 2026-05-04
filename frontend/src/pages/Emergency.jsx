@@ -76,6 +76,16 @@ function Emergency() {
     }
   }
 
+  async function resolveEmergency(id) {
+    try {
+      await post(`/emergency/${id}/resolve`);
+      setMessage('✅ Emergency marked as resolved.');
+      fetchData();
+    } catch (err) {
+      setMessage('Error: ' + err.message);
+    }
+  }
+
   async function triggerSOS() {
     try {
       await post('/emergency/sos', {
@@ -188,6 +198,11 @@ function Emergency() {
                 {isPro && em.status === 'active' && (
                   <button className="btn btn-primary btn-sm" onClick={() => acceptEmergency(em.id)}>
                     <FiCheck /> Accept & Respond
+                  </button>
+                )}
+                {isPro && em.status === 'assigned' && (
+                  <button className="btn btn-success btn-sm" onClick={() => resolveEmergency(em.id)}>
+                    <FiCheck /> Mark Resolved
                   </button>
                 )}
               </div>
