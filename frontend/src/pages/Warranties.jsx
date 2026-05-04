@@ -9,8 +9,9 @@ import './Warranties.css';
 const STATUS_LABELS = {
   active: 'Active',
   claimed: 'Claimed',
+  resolved: 'Resolved',
   expired: 'Expired',
-  void: 'Resolved',
+  void: 'Void',
 };
 
 function WarrantyBadge({ status }) {

@@ -157,8 +157,6 @@ async function triggerSOS(req, res, next) {
   }
 }
 
-module.exports = { createEmergency, acceptEmergency, listEmergencies, triggerSOS, resolveEmergency };
-
 // Resolve emergency (professional marks it done)
 async function resolveEmergency(req, res, next) {
   try {
@@ -193,3 +191,5 @@ async function resolveEmergency(req, res, next) {
     next(err);
   }
 }
+
+module.exports = { createEmergency, acceptEmergency, listEmergencies, triggerSOS, resolveEmergency };

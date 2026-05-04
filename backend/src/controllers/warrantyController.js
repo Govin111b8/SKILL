@@ -131,7 +131,7 @@ async function resolveWarranty(req, res, next) {
     // Only the professional who owns the warranty can resolve it
     const result = await pool.query(
       `UPDATE service_warranties
-       SET status = 'void'
+       SET status = 'resolved'
        WHERE id = $1
          AND professional_id = (SELECT id FROM professionals WHERE user_id = $2)
          AND status = 'claimed'

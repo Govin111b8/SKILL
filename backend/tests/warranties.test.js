@@ -118,7 +118,7 @@ describe('Warranty Controller', () => {
     });
 
     it('resolves warranty and notifies customer', async () => {
-      pool.query.mockResolvedValueOnce({ rows: [{ id: 'w1', customer_id: 'cust-1', status: 'void' }] });
+      pool.query.mockResolvedValueOnce({ rows: [{ id: 'w1', customer_id: 'cust-1', status: 'resolved' }] });
       const req = mockReq({ user: { id: 'pro-user-1', role: 'professional' }, params: { id: 'w1' } });
       const res = mockRes();
       await resolveWarranty(req, res, jest.fn());
