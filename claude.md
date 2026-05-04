@@ -19,39 +19,44 @@
 ## Phase 1: Core Feature Completion (Priority: HIGH)
 
 ### 1.1 Warranties Module — Complete the Flow
-- [ ] Verify `warrantyController.js` has full CRUD + claim workflow
-- [ ] Add warranty status transitions (active → claimed → resolved → expired)
-- [ ] Connect frontend `Warranties.jsx` to real API (not mock data)
-- [ ] Add backend test: `warranties.test.js`
+- [x] Verify `warrantyController.js` has full CRUD + claim workflow
+- [x] Add warranty status transitions (active → claimed → resolved → expired)
+- [x] Professional warranty view (`GET /warranties/professional`)
+- [x] Professional resolve endpoint (`POST /warranties/:id/resolve`)
+- [x] Connect frontend `Warranties.jsx` to real API with role-based view
+- [x] Add backend test: `warranties.test.js`
 
 ### 1.2 Referrals Module — Wire Reward Logic
-- [ ] Implement referral code generation in backend
-- [ ] Track referral signups and completions
-- [ ] Implement reward crediting (credits/wallet balance)
-- [ ] Connect frontend `Referrals.jsx` to live API
-- [ ] Add test coverage
+- [x] Referral code generation in backend (`POST /referrals/generate`)
+- [x] Track referral signups and completions (`POST /referrals/apply`)
+- [x] Reward crediting via `completeReferral()` called on booking completion
+- [x] Connect frontend `Referrals.jsx` to live API
+- [x] Add test coverage: `referrals.test.js`
 
 ### 1.3 Emergency Module — Real Dispatch
-- [ ] Define emergency types (SOS, urgent service needed)
-- [ ] Implement push notification to nearby professionals
-- [ ] Add WebSocket broadcast for emergency alerts
-- [ ] Connect frontend `Emergency.jsx` to real flow
-- [ ] Add test coverage
+- [x] Emergency types (urgent service request + SOS worker safety)
+- [x] Push notification to nearby professionals (DB + WebSocket broadcast)
+- [x] WebSocket real-time broadcast for emergency alerts
+- [x] Connect frontend `Emergency.jsx` to real flow
+- [x] Add resolve endpoint (`POST /emergency/:id/resolve`)
+- [x] Add test coverage: `emergency.test.js`
 
 ### 1.4 Analytics Module — Event Pipeline
-- [ ] Define analytics events schema (views, clicks, bookings, revenue)
-- [ ] Implement event ingestion endpoint
-- [ ] Build aggregation queries for dashboard
-- [ ] Connect frontend `Analytics.jsx` to real data
-- [ ] Add test coverage
+- [x] Analytics events schema (`analytics_events`, `analytics_sessions` tables)
+- [x] Event ingestion endpoint (`POST /analytics/events`)
+- [x] Aggregation queries for professional dashboard (`GET /analytics`)
+- [x] Connect frontend `Analytics.jsx` to real data
+- [x] Add test coverage: `analytics.test.js`
 
 ### 1.5 Agent System — Full Commission Logic
-- [ ] Define agent roles and commission tiers
-- [ ] Implement agent-professional linking
-- [ ] Build wallet balance tracking
-- [ ] Implement leaderboard ranking algorithm
-- [ ] Connect all 4 agent frontend pages to live API
-- [ ] Add test coverage
+- [x] Agent roles and commission tiers (`reward_config` table)
+- [x] Agent-professional linking via `agent_onboarded_users`
+- [x] Wallet balance tracking (`agent_wallet_transactions`)
+- [x] Leaderboard ranking algorithm
+- [x] Fix `validate` middleware bug in agent routes
+- [x] Add "Become Agent" registration flow in frontend
+- [x] Connect all 4 agent frontend pages to live API
+- [x] Add test coverage: `agents.test.js`
 
 ---
 

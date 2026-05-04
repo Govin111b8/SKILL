@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers, FiDollarSign, FiTrendingUp, FiAward, FiUserPlus, FiCopy, FiCheck } from 'react-icons/fi';
+import { FiUsers, FiDollarSign, FiTrendingUp, FiAward, FiUserPlus, FiCopy, FiCheck, FiMapPin } from 'react-icons/fi';
 import { get, post } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './AgentDashboard.css';
@@ -10,6 +10,11 @@ function AgentDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [notAgent, setNotAgent] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [registerForm, setRegisterForm] = useState({ zone: '' });
+  const [registering, setRegistering] = useState(false);
+  const [registerMsg, setRegisterMsg] = useState('');
 
   useEffect(() => {
     fetchDashboard();
@@ -20,9 +25,33 @@ function AgentDashboard() {
       const res = await get('/agents/dashboard');
       setData(res.data || res);
     } catch (err) {
-      setError(err.data?.error || err.message || 'Failed to load dashboard');
+      if (err.status === 404 || (err.data && err.data.error === 'Agent profile not found')) {
+        setNotAgent(true);
+        // Load zones for registration
+        try {
+          const zRes = await get('/agents/zones');
+          setZones((zRes.data || zRes).zones || []);
+        } catch (_) {}
+      } else {
+        setError(err.data?.error || err.message || 'Failed to load dashboard');
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    setRegistering(true);
+    setRegisterMsg('');
+    try {
+      await post('/agents/register', registerForm);
+      setNotAgent(false);
+      await fetchDashboard();
+    } catch (err) {
+      setRegisterMsg('Error: ' + (err.data?.error || err.message));
+    } finally {
+      setRegistering(false);
     }
   }
 
@@ -35,6 +64,69 @@ function AgentDashboard() {
   }
 
   if (loading) return <LoadingSpinner />;
+
+  // Show registration screen for non-agents
+  if (notAgent) {
+    return (
+      <div className="agent-dashboard">
+        <div className="agent-header">
+          <h1>Become an Agent</h1>
+          <p style={{ color: 'var(--gray-500)', marginTop: '0.5rem' }}>
+            Join our agent network to earn rewards by onboarding service providers and customers.
+          </p>
+        </div>
+
+        <div style={{ maxWidth: 480, margin: '2rem auto' }}>
+          <div className="agent-stats-grid" style={{ marginBottom: '2rem' }}>
+            <div className="stat-card">
+              <FiDollarSign className="stat-icon" />
+              <div className="stat-value">₹100</div>
+              <div className="stat-label">Per Provider Onboarded</div>
+            </div>
+            <div className="stat-card">
+              <FiUserPlus className="stat-icon" />
+              <div className="stat-value">₹50</div>
+              <div className="stat-label">Per Customer Onboarded</div>
+            </div>
+            <div className="stat-card">
+              <FiTrendingUp className="stat-icon" />
+              <div className="stat-value">₹200</div>
+              <div className="stat-label">Provider First Job Bonus</div>
+            </div>
+            <div className="stat-card">
+              <FiAward className="stat-icon" />
+              <div className="stat-value">Unlimited</div>
+              <div className="stat-label">Earning Potential</div>
+            </div>
+          </div>
+
+          {registerMsg && <div className={`alert ${registerMsg.includes('Error') ? 'alert--error' : 'alert--success'}`}>{registerMsg}</div>}
+
+          <form onSubmit={handleRegister} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Register as Agent</h3>
+            <div className="form-group">
+              <label><FiMapPin size={14} /> Select Your Zone</label>
+              <select
+                className="form-input"
+                value={registerForm.zone}
+                onChange={e => setRegisterForm({ zone: e.target.value })}
+              >
+                <option value="">All India (no specific zone)</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.name}>{z.name}, {z.state}</option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--gray-500)' }}>Select the city/zone where you'll be most active.</small>
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={registering}>
+              {registering ? 'Registering...' : 'Register as Agent'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (error) return <div className="agent-error">{error}</div>;
   if (!data) return null;
 

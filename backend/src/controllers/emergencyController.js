@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const hub = require('../realtime/hub');
 
 // Create emergency request
 async function createEmergency(req, res, next) {
@@ -30,13 +31,23 @@ async function createEmergency(req, res, next) {
       );
     }
 
-    // Notify nearby professionals
+    // Notify nearby professionals (DB notification + WebSocket broadcast for online pros)
     for (const pro of nearbyPros.rows) {
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, related_id)
          VALUES ($1, 'system', '🚨 Emergency Request Nearby', $2, $3)`,
         [pro.user_id, `Urgent: ${(description || '').substring(0, 100).replace(/[<>]/g, '')}`, result.rows[0].id]
       );
+      // Real-time push to connected professionals
+      hub.sendTo(pro.user_id, {
+        type: 'emergency',
+        action: 'new',
+        data: {
+          ...result.rows[0],
+          customer_name: (await pool.query('SELECT name FROM users WHERE id = $1', [customerId])).rows[0]?.name,
+          distance_km: Number(pro.distance_km).toFixed(1),
+        },
+      });
     }
 
     res.status(201).json({
@@ -146,4 +157,39 @@ async function triggerSOS(req, res, next) {
   }
 }
 
-module.exports = { createEmergency, acceptEmergency, listEmergencies, triggerSOS };
+module.exports = { createEmergency, acceptEmergency, listEmergencies, triggerSOS, resolveEmergency };
+
+// Resolve emergency (professional marks it done)
+async function resolveEmergency(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const proRes = await pool.query('SELECT id FROM professionals WHERE user_id = $1', [userId]);
+    if (proRes.rows.length === 0) return res.status(403).json({ error: 'Only professionals can resolve emergencies' });
+
+    const result = await pool.query(
+      `UPDATE emergency_requests SET status = 'resolved', resolved_at = NOW()
+       WHERE id = $1 AND assigned_professional_id = $2 AND status = 'assigned'
+       RETURNING *`,
+      [id, proRes.rows[0].id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Assigned emergency not found' });
+    }
+
+    // Notify customer
+    await pool.query(
+      `INSERT INTO notifications (user_id, type, title, body, related_id)
+       VALUES ($1, 'system', '✅ Emergency Resolved', 'Your emergency request has been resolved.', $2)`,
+      [result.rows[0].customer_id, id]
+    );
+
+    hub.sendTo(result.rows[0].customer_id, { type: 'emergency', action: 'resolved', data: result.rows[0] });
+
+    res.json({ emergency: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+}

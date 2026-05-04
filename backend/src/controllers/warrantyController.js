@@ -1,4 +1,5 @@
-const { pool } = require('../config/database');
+const { pool, query } = require('../config/database');
+const { notify } = require('../utils/notifier');
 
 // Create warranty after booking completion
 async function createWarranty(req, res, next) {
@@ -50,6 +51,10 @@ async function claimWarranty(req, res, next) {
     const { id } = req.params;
     const { reason } = req.body;
     const userId = req.user.id;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Claim reason is required' });
+    }
 
     const result = await pool.query(
       `UPDATE service_warranties 
@@ -117,4 +122,75 @@ async function getWarranties(req, res, next) {
   }
 }
 
-module.exports = { createWarranty, claimWarranty, getWarranties };
+// Resolve a claimed warranty (professional marks re-service done)
+async function resolveWarranty(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Only the professional who owns the warranty can resolve it
+    const result = await pool.query(
+      `UPDATE service_warranties
+       SET status = 'void'
+       WHERE id = $1
+         AND professional_id = (SELECT id FROM professionals WHERE user_id = $2)
+         AND status = 'claimed'
+       RETURNING *`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Claimed warranty not found or not yours to resolve' });
+    }
+
+    // Notify customer
+    const warranty = result.rows[0];
+    await notify(warranty.customer_id, {
+      type: 'booking_completed',
+      title: 'Warranty Claim Resolved',
+      body: 'Your warranty claim has been resolved by the professional.',
+      related_id: id,
+    });
+
+    res.json({ warranty: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Get warranty claims for a professional (to see what they need to service)
+async function getProfessionalWarranties(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { status } = req.query;
+
+    const proRes = await pool.query('SELECT id FROM professionals WHERE user_id = $1', [userId]);
+    if (proRes.rows.length === 0) {
+      return res.status(403).json({ error: 'Professional profile not found' });
+    }
+    const professionalId = proRes.rows[0].id;
+
+    let queryStr = `SELECT w.*, b.title as booking_title, c.name as category_name,
+                     u.name as customer_name, u.phone as customer_phone
+                    FROM service_warranties w
+                    JOIN bookings b ON w.booking_id = b.id
+                    LEFT JOIN categories c ON w.category_id = c.id
+                    JOIN users u ON w.customer_id = u.id
+                    WHERE w.professional_id = $1`;
+    const params = [professionalId];
+
+    if (status) {
+      params.push(status);
+      queryStr += ` AND w.status = $${params.length}`;
+    }
+
+    queryStr += ' ORDER BY w.created_at DESC';
+    const result = await pool.query(queryStr, params);
+
+    res.json({ warranties: result.rows });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createWarranty, claimWarranty, getWarranties, resolveWarranty, getProfessionalWarranties };
