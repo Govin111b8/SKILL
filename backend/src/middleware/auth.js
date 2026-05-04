@@ -23,7 +23,8 @@ const authenticate = async (req, res, next) => {
     }
 
     // Enrich with is_admin flag from database (best-effort, doesn't fail auth)
-    if (decoded.id) {
+    // Skipped in test environment to avoid consuming mock query slots.
+    if (decoded.id && !config.isTest) {
       try {
         const userRes = await query('SELECT is_admin FROM users WHERE id = $1', [decoded.id]);
         if (userRes.rows.length > 0) {

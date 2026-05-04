@@ -15,7 +15,7 @@ const custToken = jwt.sign({ id: 'cust-1', email: 'c@x.com', role: 'customer' },
 // ─── Category endpoints ──────────────────────────────────────────────────────
 
 describe('GET /api/categories', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => query.mockReset());
 
   it('returns nested category tree with pro_count', async () => {
     query.mockResolvedValueOnce({
@@ -38,7 +38,7 @@ describe('GET /api/categories', () => {
 });
 
 describe('GET /api/categories/:id', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => query.mockReset());
 
   it('returns category with subcategories and parent', async () => {
     query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Home Services', parent_id: null, description: 'd', icon: null, pro_count: 15 }] });
@@ -62,7 +62,7 @@ describe('GET /api/categories/:id', () => {
 });
 
 describe('GET /api/categories/:id/professionals', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => query.mockReset());
 
   it('returns professionals sorted by rating with pagination', async () => {
     query.mockResolvedValueOnce({ rows: [
@@ -100,7 +100,7 @@ describe('GET /api/categories/:id/professionals', () => {
 // ─── Pending reviews endpoint ─────────────────────────────────────────────────
 
 describe('GET /api/reviews/pending', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => query.mockReset());
 
   it('returns completed bookings without reviews for the customer', async () => {
     query.mockResolvedValueOnce({ rows: [

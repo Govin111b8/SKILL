@@ -43,7 +43,7 @@ const mockProfessional = {
 
 describe('Storefront Endpoints', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    query.mockReset();
   });
 
   describe('GET /api/storefront/:id', () => {

@@ -16,7 +16,7 @@ const generateTestToken = (user) => {
 
 describe('Reviews Endpoints', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    query.mockReset();
   });
 
   describe('POST /api/reviews', () => {
