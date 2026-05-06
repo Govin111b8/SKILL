@@ -115,13 +115,18 @@ exports.submit = async (req, res, next) => {
           faceMatchPassed = matchResult.passed;
         }
 
-        if (faceMatchPassed === false && process.env.NODE_ENV === 'production') {
-          logger.warn({ userId: req.user.id, faceMatchScore }, 'Face match failed — KYC rejected');
-          return res.status(422).json({
-            success: false,
-            message: `Face match confidence too low (${faceMatchScore}% < ${faceMatch.CONFIDENCE_THRESHOLD}%). Please retake a clearer selfie.`,
-            faceMatchScore,
-          });
+        if (faceMatchPassed === false) {
+          if (process.env.NODE_ENV === 'production') {
+            logger.warn({ userId: req.user.id, faceMatchScore }, 'Face match failed — KYC rejected');
+            return res.status(422).json({
+              success: false,
+              message: `Face match confidence too low (${faceMatchScore}% < ${faceMatch.CONFIDENCE_THRESHOLD}%). Please retake a clearer selfie.`,
+              faceMatchScore,
+            });
+          } else {
+            // In development: log the failure but continue (allows testing without real images)
+            logger.warn({ userId: req.user.id, faceMatchScore }, 'Face match failed in dev — allowing KYC to proceed (would be rejected in production)');
+          }
         }
       } catch (faceErr) {
         logger.error({ err: faceErr }, 'Face match service error — continuing without match in non-production');

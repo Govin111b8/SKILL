@@ -166,7 +166,17 @@ CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_search_history_created ON search_history(created_at);
 
 -- ── search_index materialised view ────────────────────────
--- Refreshed nightly (or on demand after profile update)
+-- Refresh strategy:
+--   1. Nightly automatic refresh via cron job (recalcReputationScores in workers/cron.js)
+--      runs: REFRESH MATERIALIZED VIEW CONCURRENTLY search_index;
+--   2. On-demand refresh after significant profile changes (can be triggered
+--      by calling: SELECT refresh_search_index(); — see helper function below)
+--   3. Use CONCURRENTLY so reads are not blocked during refresh.
+--
+-- IMPORTANT: CONCURRENTLY requires a UNIQUE index (created below).
+-- The view is NOT used directly in live search queries (those query
+-- professionals + users tables directly for real-time accuracy).
+-- It is available for analytics and admin bulk operations.
 CREATE MATERIALIZED VIEW IF NOT EXISTS search_index AS
   SELECT
     p.id                                                          AS professional_id,

@@ -146,6 +146,20 @@ function cacheMiddleware(cacheType = 'search', ttl = 60) {
 }
 
 /**
+ * Check whether a Redis cache key matches the given pattern.
+ * Extracted for readability and testability.
+ * @param {string} key
+ * @param {string|RegExp|undefined} pattern
+ * @returns {boolean}
+ */
+function matchesPattern(key, pattern) {
+  if (!pattern) return true;
+  if (typeof pattern === 'string') return key.includes(pattern);
+  if (pattern instanceof RegExp) return pattern.test(key);
+  return true;
+}
+
+/**
  * Invalidate cache entries matching a pattern.
  * Purges both Redis (pattern scan) and in-memory.
  * Call after mutations (booking created, review posted, etc.)
@@ -172,9 +186,7 @@ async function invalidateCache(cacheType, pattern) {
       await new Promise((resolve, reject) => {
         stream.on('data', (keys) => {
           for (const k of keys) {
-            if (typeof pattern === 'string' ? k.includes(pattern) : pattern instanceof RegExp ? pattern.test(k) : true) {
-              keysToDelete.push(k);
-            }
+            if (matchesPattern(k, pattern)) keysToDelete.push(k);
           }
         });
         stream.on('end', resolve);

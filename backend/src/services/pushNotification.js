@@ -84,9 +84,9 @@ async function sendPush(userId, title, body, data = {}, imageUrl) {
       [userId]
     );
     tokens = rows.rows;
-  } catch (_) {
+  } catch (err) {
     // device_tokens table may not exist yet in older environments — fall back to no-op
-    logger.warn({ userId, title }, 'device_tokens table unavailable — push notification skipped');
+    logger.debug({ err, userId, title }, 'device_tokens table unavailable — push notification skipped');
     return;
   }
 

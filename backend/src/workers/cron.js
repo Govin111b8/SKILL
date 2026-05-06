@@ -84,14 +84,17 @@ async function checkSubscriptionExpiry() {
     ];
 
     for (const { days, label } of thresholds) {
-      const result = await query(`
-        SELECT p.id, u.email, u.name, u.phone, p.subscription_plan, p.subscription_expires_at
-        FROM professionals p
-        JOIN users u ON u.id = p.user_id
-        WHERE p.subscription_plan != 'basic'
-          AND p.subscription_expires_at::date = (NOW() + INTERVAL '${days} days')::date
-          AND u.is_active = TRUE
-      `);
+      // Use parameterized query to avoid SQL injection — days comes from a
+      // controlled array but we still use proper parameterization as best practice
+      const result = await query(
+        `SELECT p.id, u.email, u.name, u.phone, p.subscription_plan, p.subscription_expires_at
+         FROM professionals p
+         JOIN users u ON u.id = p.user_id
+         WHERE p.subscription_plan != 'basic'
+           AND p.subscription_expires_at::date = (NOW() + ($1 * INTERVAL '1 day'))::date
+           AND u.is_active = TRUE`,
+        [days]
+      );
 
       for (const row of result.rows) {
         const subject = `SkillConnect: Your ${row.subscription_plan} plan expires in ${label}`;
