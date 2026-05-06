@@ -9,15 +9,20 @@
 
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const redis = require('../config/redis');
 
 const SMS_PROVIDER = process.env.SMS_PROVIDER || 'none';
 
-// OTP store (use Redis in production for multi-instance)
+// In-memory OTP fallback (used when Redis is unavailable)
 const otpStore = new Map();
-const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
-const OTP_LENGTH = 6;
+const OTP_EXPIRY_SECONDS = 10 * 60; // 10 minutes
+const OTP_EXPIRY_MS = OTP_EXPIRY_SECONDS * 1000;
 const MAX_ATTEMPTS = 3;
-const RESEND_COOLDOWN_MS = 60 * 1000; // 1 minute
+const RESEND_COOLDOWN_SECONDS = 60; // 1 minute
+const RESEND_COOLDOWN_MS = RESEND_COOLDOWN_SECONDS * 1000;
+
+/** Redis key prefix for OTP records */
+const OTP_PREFIX = 'otp:';
 
 /**
  * Generate a numeric OTP
@@ -103,76 +108,125 @@ async function sendSMS(phone, message) {
 }
 
 /**
- * Send OTP to phone number
+ * Send OTP to phone number.
+ * Stores OTP in Redis when available; falls back to in-memory Map.
+ *
  * @param {string} phone - Phone number with country code (e.g., +91XXXXXXXXXX)
  * @param {string} purpose - 'phone_verification' | 'login' | 'password_reset'
  */
 async function sendOTP(phone, purpose = 'phone_verification') {
-  const key = `${phone}:${purpose}`;
+  const redisKey = `${OTP_PREFIX}${phone}:${purpose}`;
+  const memKey = `${phone}:${purpose}`;
 
-  // Check resend cooldown
-  const existing = otpStore.get(key);
+  if (redis.isAvailable()) {
+    // ---- Redis path ----
+    const existing = await redis.get(redisKey);
+    if (existing) {
+      const elapsed = Date.now() - existing.createdAt;
+      if (elapsed < RESEND_COOLDOWN_MS) {
+        const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000);
+        return { success: false, error: `Please wait ${waitSeconds}s before requesting a new OTP` };
+      }
+    }
+
+    const otp = generateOTP();
+    await redis.set(redisKey, { otp, createdAt: Date.now(), attempts: 0 }, OTP_EXPIRY_SECONDS);
+
+    const message = `Your SkillConnect verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
+    await sendSMS(phone, message);
+
+    logger.info({ phone, purpose }, 'OTP sent (Redis)');
+    return { success: true, expiresIn: OTP_EXPIRY_SECONDS };
+  }
+
+  // ---- In-memory fallback ----
+  const existing = otpStore.get(memKey);
   if (existing && Date.now() - existing.createdAt < RESEND_COOLDOWN_MS) {
     const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
     return { success: false, error: `Please wait ${waitSeconds}s before requesting a new OTP` };
   }
 
   const otp = generateOTP();
-  otpStore.set(key, {
-    otp,
-    createdAt: Date.now(),
-    attempts: 0,
-    verified: false,
-  });
-
-  // Auto-cleanup after expiry
-  setTimeout(() => otpStore.delete(key), OTP_EXPIRY_MS);
+  otpStore.set(memKey, { otp, createdAt: Date.now(), attempts: 0, verified: false });
+  setTimeout(() => otpStore.delete(memKey), OTP_EXPIRY_MS);
 
   const message = `Your SkillConnect verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
   await sendSMS(phone, message);
 
-  logger.info({ phone, purpose }, 'OTP sent');
-  return { success: true, expiresIn: OTP_EXPIRY_MS / 1000 };
+  logger.info({ phone, purpose }, 'OTP sent (in-memory)');
+  return { success: true, expiresIn: OTP_EXPIRY_SECONDS };
 }
 
 /**
- * Verify OTP
+ * Verify OTP.
+ * Reads from Redis when available; falls back to in-memory Map.
+ *
  * @param {string} phone
  * @param {string} otp
  * @param {string} purpose
  */
-function verifyOTP(phone, otp, purpose = 'phone_verification') {
-  const key = `${phone}:${purpose}`;
-  const record = otpStore.get(key);
+async function verifyOTP(phone, otp, purpose = 'phone_verification') {
+  const redisKey = `${OTP_PREFIX}${phone}:${purpose}`;
+  const memKey = `${phone}:${purpose}`;
+
+  if (redis.isAvailable()) {
+    // ---- Redis path ----
+    const record = await redis.get(redisKey);
+
+    if (!record) {
+      return { success: false, error: 'OTP expired or not found. Please request a new one.' };
+    }
+    if (record.verified) {
+      return { success: false, error: 'OTP already used.' };
+    }
+    if (record.attempts >= MAX_ATTEMPTS) {
+      await redis.del(redisKey);
+      return { success: false, error: 'Too many attempts. Please request a new OTP.' };
+    }
+
+    record.attempts++;
+
+    if (record.otp !== otp) {
+      await redis.set(redisKey, record, OTP_EXPIRY_SECONDS);
+      return { success: false, error: `Invalid OTP. ${MAX_ATTEMPTS - record.attempts} attempts remaining.` };
+    }
+
+    // Mark as used and let it expire naturally (prevents replay)
+    record.verified = true;
+    await redis.set(redisKey, record, 300); // 5-minute grace window
+    logger.info({ phone, purpose }, 'OTP verified (Redis)');
+    return { success: true };
+  }
+
+  // ---- In-memory fallback ----
+  const record = otpStore.get(memKey);
 
   if (!record) {
     return { success: false, error: 'OTP expired or not found. Please request a new one.' };
   }
-
   if (record.verified) {
     return { success: false, error: 'OTP already used.' };
   }
-
   if (record.attempts >= MAX_ATTEMPTS) {
-    otpStore.delete(key);
+    otpStore.delete(memKey);
     return { success: false, error: 'Too many attempts. Please request a new OTP.' };
   }
 
   record.attempts++;
 
   if (Date.now() - record.createdAt > OTP_EXPIRY_MS) {
-    otpStore.delete(key);
+    otpStore.delete(memKey);
     return { success: false, error: 'OTP has expired. Please request a new one.' };
   }
 
   if (record.otp !== otp) {
-    otpStore.set(key, record);
+    otpStore.set(memKey, record);
     return { success: false, error: `Invalid OTP. ${MAX_ATTEMPTS - record.attempts} attempts remaining.` };
   }
 
   record.verified = true;
-  otpStore.set(key, record);
-  logger.info({ phone, purpose }, 'OTP verified');
+  otpStore.set(memKey, record);
+  logger.info({ phone, purpose }, 'OTP verified (in-memory)');
   return { success: true };
 }
 

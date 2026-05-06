@@ -84,12 +84,12 @@ describe('Search Endpoints', () => {
         ],
       });
 
-      const res = await request(app).get('/api/search').query({ category_id: 'cat-1' });
+      const res = await request(app).get('/api/search').query({ category_id: '1' });
 
       expect(res.statusCode).toBe(200);
       expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('category_id'),
-        expect.arrayContaining(['cat-1'])
+        expect.stringContaining('pc.category_id'),
+        expect.arrayContaining([1])
       );
     });
 

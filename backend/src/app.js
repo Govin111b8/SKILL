@@ -9,6 +9,7 @@ const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
 const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
+const { requireFeature, getAllFlags } = require('./middleware/featureFlags');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -114,22 +115,23 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/kyc', kycRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/messages', messageRoutes);
+// Extended features — gated by feature flags (see PLATFORM_CHANGE_RECORD.md)
+app.use('/api/bookings', requireFeature('BOOKINGS'), bookingRoutes);
+app.use('/api/messages', requireFeature('CHAT'), messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/schedule', scheduleRoutes);
-app.use('/api/disputes', disputeRoutes);
-app.use('/api/warranties', warrantyRoutes);
-app.use('/api/emergency', emergencyRoutes);
+app.use('/api/disputes', requireFeature('DISPUTES'), disputeRoutes);
+app.use('/api/warranties', requireFeature('WARRANTIES'), warrantyRoutes);
+app.use('/api/emergency', requireFeature('EMERGENCIES'), emergencyRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/storefront', storefrontRoutes);
-app.use('/api/agents', agentRoutes);
+app.use('/api/agents', requireFeature('AGENTS'), agentRoutes);
 app.use('/api/match', matchingRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
@@ -145,7 +147,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge:
 // Health check — includes DB connectivity verification
 app.get('/api/health', async (req, res) => {
   const { pool } = require('./config/database');
-  const checks = { server: 'ok', database: 'unknown' };
+  const redisClient = require('./config/redis');
+  const { getCacheStats } = require('./middleware/cache');
+  const checks = { server: 'ok', database: 'unknown', redis: redisClient.isAvailable() ? 'ok' : 'not configured' };
   try {
     const result = await pool.query('SELECT 1');
     checks.database = result.rows.length ? 'ok' : 'error';
@@ -158,8 +162,11 @@ app.get('/api/health', async (req, res) => {
     success: healthy,
     message: healthy ? 'All systems operational' : 'Degraded — database unreachable',
     checks,
+    features: getAllFlags(),
+    cache: getCacheStats(),
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
   });
 });
 

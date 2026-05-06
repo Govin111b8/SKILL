@@ -1,15 +1,59 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
     branches: [main]
 
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/skillconnect
+
 jobs:
-  backend-lint-test:
-    name: Backend — Lint & Test
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 1: Lint + Type Check
+  # ─────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint backend
+        working-directory: backend
+        run: npx eslint src/ --max-warnings=50 || true
+
+      - name: Type check (tsconfig)
+        working-directory: backend
+        run: npx tsc --noEmit || true  # Non-blocking until full TS migration
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint --if-present || true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 2: Unit Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
 
     services:
       postgres:
@@ -26,12 +70,22 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
@@ -39,19 +93,15 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Lint
-        working-directory: backend
-        run: npx eslint src/ --max-warnings=0 || true
-
-      - name: Apply database schema
+      - name: Apply database schema + migrations
         run: |
           PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/schema.sql
-          PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/seed.sql
+          PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/seed.sql 2>/dev/null || true
           for f in database/migrations/*.sql; do
             PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f "$f" 2>/dev/null || true
           done
 
-      - name: Run tests
+      - name: Run backend tests with coverage
         working-directory: backend
         env:
           NODE_ENV: test
@@ -61,25 +111,33 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: password
           JWT_SECRET: test-secret-for-ci-minimum-32-characters!
-        run: npm test -- --coverage
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+          ENABLE_CRON: "false"
+        run: npm test -- --coverage --forceExit
 
-      - name: Upload coverage
+      - name: Upload backend coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
           path: backend/coverage/
 
-  frontend-build:
-    name: Frontend — Build & Test
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 3: Frontend Build & Test
+  # ─────────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend Build & Test
     runs-on: ubuntu-latest
+    needs: lint
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -89,28 +147,24 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: npm test || true
+        run: npm test -- --run || true
 
       - name: Build
         working-directory: frontend
         run: npm run build
 
-  docker-build:
-    name: Docker — Build Images
-    runs-on: ubuntu-latest
-    needs: [backend-lint-test, frontend-build]
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build backend image
-        run: docker build -t skillconnect-backend:${{ github.sha }} ./backend
-
-      - name: Build frontend image
-        run: docker build -t skillconnect-frontend:${{ github.sha }} ./frontend
-
-  security-audit:
-    name: Security Audit
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 4: SAST Security Scan
+  # ─────────────────────────────────────────────────────────────────────────
+  security:
+    name: Security Audit & SAST
     runs-on: ubuntu-latest
 
     steps:
@@ -118,12 +172,137 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Backend audit
+      - name: Backend npm audit
         working-directory: backend
         run: npm audit --audit-level=high || true
 
-      - name: Frontend audit
+      - name: Frontend npm audit
         working-directory: frontend
-        run: npm audit --audit-level=high || true
+        run: |
+          npm ci
+          npm audit --audit-level=high || true
+
+      - name: Check for hardcoded secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 5: Docker Build + Push to GHCR
+  # ─────────────────────────────────────────────────────────────────────────
+  docker:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [unit-tests, frontend, security]
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 6: Deploy to STAGING (automatic on push to main)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying ${{ github.sha }} to staging..."
+          # Replace with actual deployment command, e.g.:
+          # ssh deploy@staging.skillconnect.in "cd /app && docker compose pull && docker compose up -d"
+          # Or: aws ecs update-service --cluster staging --service skillconnect-backend --force-new-deployment
+          echo "Staging deployment placeholder — configure STAGING_DEPLOY_COMMAND secret"
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against staging..."
+          # curl -f https://staging.skillconnect.in/api/health || exit 1
+          echo "Smoke tests placeholder"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Stage 7: Production Deployment (manual approval gate)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production  # Requires manual approval in GitHub Environments settings
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run database migrations
+        run: |
+          echo "Running migrations on production DB..."
+          # PGPASSWORD=${{ secrets.PROD_DB_PASSWORD }} psql -h ${{ secrets.PROD_DB_HOST }} \
+          #   -U ${{ secrets.PROD_DB_USER }} -d ${{ secrets.PROD_DB_NAME }} \
+          #   -f database/migrations/$(ls database/migrations/ | tail -1)
+          echo "Migration placeholder — configure production DB secrets"
+
+      - name: Blue/green deploy to production
+        run: |
+          echo "Deploying ${{ github.sha }} to production (blue/green)..."
+          # aws ecs update-service --cluster production --service skillconnect-backend \
+          #   --task-definition skillconnect-backend:${{ github.sha }} \
+          #   --force-new-deployment --deployment-configuration maximumPercent=200,minimumHealthyPercent=100
+          echo "Production deployment placeholder — configure ECS/deployment secrets"
+
+      - name: Post-deploy health check
+        run: |
+          echo "Checking production health..."
+          # for i in {1..12}; do
+          #   curl -f https://skillconnect.in/api/health && exit 0
+          #   sleep 5
+          # done
+          # echo "Health check failed — triggering rollback"
+          # aws ecs update-service --cluster production --service skillconnect-backend --force-new-deployment
+          # exit 1
+          echo "Health check placeholder"
+

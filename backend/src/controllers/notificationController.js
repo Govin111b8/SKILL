@@ -68,11 +68,18 @@ exports.registerDevice = async (req, res, next) => {
   try {
     const { token, platform } = req.body;
     if (!token || !platform) return res.status(400).json({ success: false, message: 'token & platform required' });
-    await query(
-      `INSERT INTO device_tokens (user_id, token, platform) VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, token) DO UPDATE SET is_active = TRUE, last_used_at = NOW()`,
-      [req.user.id, token, platform]
-    );
+    const { registerDeviceToken } = require('../services/pushNotification');
+    await registerDeviceToken(req.user.id, token, platform);
+    res.json({ success: true });
+  } catch (e) { next(e); }
+};
+
+exports.deregisterDevice = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'token required' });
+    const { deregisterDeviceToken } = require('../services/pushNotification');
+    await deregisterDeviceToken(req.user.id, token);
     res.json({ success: true });
   } catch (e) { next(e); }
 };

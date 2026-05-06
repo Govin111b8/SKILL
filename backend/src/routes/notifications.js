@@ -9,5 +9,6 @@ router.put('/read-all', c.markAllRead);
 router.get('/favorites', c.listFavorites);
 router.post('/favorites/:professionalId', c.toggleFavorite);
 router.post('/devices', c.registerDevice);
+router.delete('/devices', c.deregisterDevice);
 
 module.exports = router;

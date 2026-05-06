@@ -1,11 +1,19 @@
 /**
- * In-memory LRU cache middleware for frequently accessed data.
- * Used for search results, categories, and provider listings.
- * 
+ * Cache middleware — Redis-first, in-memory LRU fallback.
+ *
+ * When Redis is configured (REDIS_URL / REDIS_HOST), all cache reads and
+ * writes go through Redis so that multiple API server instances share the
+ * same cache state (horizontal scaling).
+ *
+ * When Redis is NOT configured the existing in-memory LRU is used, which
+ * works correctly for single-instance deployments.
+ *
  * For production scaling:
- * - Replace with Redis when handling >10K concurrent users
- * - Current implementation handles up to ~5K concurrent users
+ * - Set REDIS_URL=redis://<host>:6379 in your environment
+ * - All instances will share the cache automatically
  */
+
+const redis = require('../config/redis');
 
 class LRUCache {
   constructor(maxSize = 500, defaultTTL = 300) {
@@ -95,25 +103,39 @@ function cacheMiddleware(cacheType = 'search', ttl = 60) {
     provider: providerCache,
   }[cacheType] || searchCache;
 
-  return (req, res, next) => {
+  return async (req, res, next) => {
     // Only cache GET requests
     if (req.method !== 'GET') return next();
 
-    // Build cache key from URL + query params
-    const key = `${req.originalUrl}`;
-    const cached = cacheInstance.get(key);
+    const key = `cache:${cacheType}:${req.originalUrl}`;
 
-    if (cached) {
-      res.set('X-Cache', 'HIT');
-      return res.json(cached);
+    // --- Redis read ---
+    if (redis.isAvailable()) {
+      try {
+        const cached = await redis.get(key);
+        if (cached) {
+          res.set('X-Cache', 'HIT');
+          return res.json(cached);
+        }
+      } catch (_) { /* fall through to in-memory */ }
+    } else {
+      // --- In-memory read ---
+      const cached = cacheInstance.get(req.originalUrl);
+      if (cached) {
+        res.set('X-Cache', 'HIT');
+        return res.json(cached);
+      }
     }
 
     // Monkey-patch res.json to intercept the response
     const originalJson = res.json.bind(res);
-    res.json = (body) => {
-      // Only cache successful responses
+    res.json = async (body) => {
       if (res.statusCode >= 200 && res.statusCode < 300 && body && body.success !== false) {
-        cacheInstance.set(key, body, ttl);
+        if (redis.isAvailable()) {
+          try { await redis.set(key, body, ttl); } catch (_) { /* ignore */ }
+        } else {
+          cacheInstance.set(req.originalUrl, body, ttl);
+        }
       }
       res.set('X-Cache', 'MISS');
       return originalJson(body);
@@ -125,9 +147,11 @@ function cacheMiddleware(cacheType = 'search', ttl = 60) {
 
 /**
  * Invalidate cache entries matching a pattern.
+ * Purges both Redis (pattern scan) and in-memory.
  * Call after mutations (booking created, review posted, etc.)
  */
-function invalidateCache(cacheType, pattern) {
+async function invalidateCache(cacheType, pattern) {
+  // In-memory invalidation
   const cacheInstance = {
     search: searchCache,
     category: categoryCache,
@@ -137,6 +161,31 @@ function invalidateCache(cacheType, pattern) {
   if (cacheInstance) {
     cacheInstance.invalidate(pattern);
   }
+
+  // Redis invalidation — scan for matching keys and delete them
+  if (redis.isAvailable() && redis.client) {
+    try {
+      const prefix = `cache:${cacheType}:`;
+      const stream = redis.client.scanStream({ match: `${prefix}*`, count: 100 });
+      const keysToDelete = [];
+
+      await new Promise((resolve, reject) => {
+        stream.on('data', (keys) => {
+          for (const k of keys) {
+            if (typeof pattern === 'string' ? k.includes(pattern) : pattern instanceof RegExp ? pattern.test(k) : true) {
+              keysToDelete.push(k);
+            }
+          }
+        });
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      if (keysToDelete.length > 0) {
+        await redis.del(...keysToDelete);
+      }
+    } catch (_) { /* Redis scan errors are non-critical */ }
+  }
 }
 
 /**
@@ -144,6 +193,7 @@ function invalidateCache(cacheType, pattern) {
  */
 function getCacheStats() {
   return {
+    redis: redis.isAvailable() ? 'connected' : 'not configured',
     search: searchCache.stats(),
     category: categoryCache.stats(),
     provider: providerCache.stats(),

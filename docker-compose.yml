@@ -21,6 +21,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -40,10 +53,30 @@ services:
       JWT_REFRESH_EXPIRES_IN: 7d
       CORS_ORIGINS: http://localhost:3000,http://localhost:5173
       LOG_LEVEL: info
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Cron jobs
+      ENABLE_CRON: "true"
+      # Storage
+      STORAGE_PROVIDER: local
+      # SMS Provider (set to 'msg91' or 'twilio' with credentials in production)
+      SMS_PROVIDER: none
+      # Face match (set to 'hyperverge' or 'rekognition' in production)
+      FACE_MATCH_PROVIDER: mock
+      FACE_MATCH_MOCK_SCORE: "92"
+      # KYC auto-verification (disable in production, use manual admin review)
+      KYC_AUTO_VERIFY: "false"
+      # Encryption key for PII (generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+      # ENCRYPTION_KEY: <64-char-hex-string>
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - uploads:/app/uploads
 
   frontend:
     build:
@@ -56,3 +89,5 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
+  uploads:
