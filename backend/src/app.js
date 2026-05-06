@@ -10,6 +10,8 @@ const errorHandler = require('./middleware/errorHandler');
 const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
 const { requireFeature, getAllFlags } = require('./middleware/featureFlags');
+const { register: metricsRegistry, metricsMiddleware } = require('./config/metrics');
+const { sentryErrorHandler } = require('./config/sentry');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -50,6 +52,9 @@ app.set('trust proxy', 1);
 
 // Request correlation ID — must come before logging
 app.use(requestId);
+
+// Prometheus HTTP metrics — record duration/count per route
+app.use(metricsMiddleware);
 
 // Middleware
 app.use(helmet({
@@ -141,6 +146,25 @@ app.use('/api/seo', seoRoutes);
 app.use('/api/growth', growthRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Prometheus metrics — accessible only from internal network in production
+// (expose on a separate port or protect with IP allowlist via nginx)
+app.get('/metrics', async (req, res) => {
+  // Restrict to localhost in production to avoid leaking internal metrics
+  if (config.isProduction) {
+    const ip = req.ip || req.connection.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal) {
+      return res.status(403).json({ success: false, message: 'Metrics endpoint restricted' });
+    }
+  }
+  try {
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.end(await metricsRegistry.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
+});
+
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));
 
@@ -207,6 +231,9 @@ app.get('/', (req, res) => {
 
 // Serve other public static files (excluding index.html at root)
 app.use(express.static(publicPath));
+
+// Sentry error handler — must be BEFORE the app error handler
+app.use(sentryErrorHandler());
 
 // Error handler
 app.use(errorHandler);

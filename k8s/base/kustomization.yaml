@@ -1,0 +1,22 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# Kustomize — Base
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret-template.yaml
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+  - statefulsets.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - monitoring/prometheus.yaml
+  - monitoring/grafana.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: skillconnect
+  app.kubernetes.io/managed-by: kustomize

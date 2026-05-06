@@ -1,0 +1,265 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# Prometheus — Deployment + ConfigMap
+# For production prefer the kube-prometheus-stack Helm chart.
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: skillconnect
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'skillconnect-prod'
+
+    scrape_configs:
+      # ── SkillConnect backend metrics ──────────────────────────────────────
+      - job_name: 'skillconnect-backend'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [skillconnect]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: replace
+            target_label: app
+
+      # ── Kubernetes control plane ──────────────────────────────────────────
+      - job_name: 'kubernetes-nodes'
+        scheme: https
+        kubernetes_sd_configs:
+          - role: node
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # ── PostgreSQL (via postgres_exporter) ────────────────────────────────
+      - job_name: 'postgres'
+        static_configs:
+          - targets: ['postgres-exporter:9187']
+            labels:
+              db: 'skillconnect'
+
+      # ── Redis (via redis_exporter) ────────────────────────────────────────
+      - job_name: 'redis'
+        static_configs:
+          - targets: ['redis-exporter:9121']
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+
+    rule_files:
+      - /etc/prometheus/alerts/*.yml
+
+  alerts.yml: |
+    groups:
+      - name: skillconnect.rules
+        rules:
+          - alert: HighErrorRate
+            expr: |
+              sum(rate(skillconnect_http_requests_total{status_code=~"5.."}[5m]))
+              / sum(rate(skillconnect_http_requests_total[5m])) > 0.05
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "High HTTP 5xx error rate (> 5%)"
+              description: "Error rate is {{ printf \"%.2f\" $value | humanizePercentage }}"
+
+          - alert: SlowRequests
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(skillconnect_http_request_duration_seconds_bucket[5m])) by (le, route)
+              ) > 2
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "P95 latency > 2s on route {{ $labels.route }}"
+
+          - alert: BackendDown
+            expr: up{job="skillconnect-backend"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Backend pod is down"
+
+          - alert: DatabaseDown
+            expr: pg_up == 0
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "PostgreSQL is unreachable"
+
+          - alert: HighMemoryUsage
+            expr: |
+              (skillconnect_nodejs_heap_size_used_bytes / skillconnect_nodejs_heap_size_total_bytes) > 0.85
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Node.js heap usage > 85%"
+
+          - alert: RedisDown
+            expr: redis_up == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Redis is unreachable"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: skillconnect
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      securityContext:
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.51.2
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=30d"
+            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+            - "--web.console.templates=/usr/share/prometheus/consoles"
+            - "--web.enable-lifecycle"
+          ports:
+            - name: http
+              containerPort: 9090
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: alerts
+              mountPath: /etc/prometheus/alerts
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+            items:
+              - key: prometheus.yml
+                path: prometheus.yml
+        - name: alerts
+          configMap:
+            name: prometheus-config
+            items:
+              - key: alerts.yml
+                path: alerts.yml
+        - name: data
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: skillconnect
+  labels:
+    app: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: skillconnect
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: gp3
+
+---
+# RBAC: Prometheus needs read access to pods for service discovery
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: skillconnect
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/metrics, services, endpoints, pods]
+    verbs: [get, list, watch]
+  - apiGroups: [extensions, networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+  - nonResourceURLs: [/metrics, /metrics/cadvisor]
+    verbs: [get]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: skillconnect

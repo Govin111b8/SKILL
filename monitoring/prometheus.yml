@@ -1,0 +1,21 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Prometheus config for local Docker Compose
+# ──────────────────────────────────────────────────────────────────────────────
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts/alerts.yml
+
+scrape_configs:
+  - job_name: 'skillconnect-backend'
+    static_configs:
+      - targets: ['backend:5000']
+        labels:
+          app: backend
+    metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
