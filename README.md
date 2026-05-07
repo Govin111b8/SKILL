@@ -56,9 +56,19 @@
 | 📦 Components | 📊 Metrics | 🧪 Quality |
 |:---:|:---:|:---:|
 | 3 platforms (Web + Mobile + API) | 267+ source files | 50%+ test coverage |
-| 25 backend controllers | 75+ API endpoints | ESLint + Flutter Lints |
-| 30+ frontend pages | 20+ database tables | 10 backend test suites |
+| 29 backend controllers | 75+ API endpoints | ESLint + Flutter Lints |
+| 30+ frontend pages | 20+ database tables | 11 backend test suites |
 | 22+ mobile screens | 14,460 LOC (Dart) | Conventional Commits |
+
+**📋 Implementation Status (vs PRD v1.0 + Technical Supplement v1.0)**
+
+| Document | Score | Status |
+|:---:|:---:|:---:|
+| PRD v1.0 (Features) | **7.1 / 10** | ⚠️ Sprint plans in `plans/` |
+| Technical Supplement (Architecture) | **5.0 / 10** | ⚠️ Sprint plans in `plans/` |
+| **Combined** | **6.1 / 10** | 🚀 Sprints 1–7 planned |
+
+> 📂 See [`plans/00_MASTER_ANALYSIS.md`](./plans/00_MASTER_ANALYSIS.md) for the full deep-dive rating and [`plans/`](./plans/) for per-section sprint plans.
 
 ---
 
@@ -124,6 +134,37 @@
 - [FAQ](#-frequently-asked-questions)
 - [Acknowledgments & Inspiration](#-acknowledgments--inspiration)
 - [License](#-license)
+
+**Implementation Analysis**
+- [Master Analysis — plans/00_MASTER_ANALYSIS.md](./plans/00_MASTER_ANALYSIS.md)
+- [PRD §6.1 Registration — plans/PRD_SEC01_Registration.md](./plans/PRD_SEC01_Registration.md)
+- [PRD §6.2 Profile — plans/PRD_SEC02_Profile.md](./plans/PRD_SEC02_Profile.md)
+- [PRD §6.3 Categories — plans/PRD_SEC03_Categories.md](./plans/PRD_SEC03_Categories.md)
+- [PRD §6.4 Search — plans/PRD_SEC04_Search.md](./plans/PRD_SEC04_Search.md)
+- [PRD §6.5 Portfolio — plans/PRD_SEC05_Portfolio.md](./plans/PRD_SEC05_Portfolio.md)
+- [PRD §6.6 Reputation — plans/PRD_SEC06_Reputation.md](./plans/PRD_SEC06_Reputation.md)
+- [PRD §6.7 Contact — plans/PRD_SEC07_Contact.md](./plans/PRD_SEC07_Contact.md)
+- [PRD §8 Database — plans/PRD_SEC08_Database.md](./plans/PRD_SEC08_Database.md)
+- [PRD §9 API Design — plans/PRD_SEC09_API.md](./plans/PRD_SEC09_API.md)
+- [PRD §10 Architecture — plans/PRD_SEC10_Architecture.md](./plans/PRD_SEC10_Architecture.md)
+- [PRD §11 Security — plans/PRD_SEC11_Security.md](./plans/PRD_SEC11_Security.md)
+- [PRD §12 Notifications — plans/PRD_SEC12_Notifications.md](./plans/PRD_SEC12_Notifications.md)
+- [PRD §13 Moderation — plans/PRD_SEC13_Moderation.md](./plans/PRD_SEC13_Moderation.md)
+- [PRD §14 Monetisation — plans/PRD_SEC14_Monetisation.md](./plans/PRD_SEC14_Monetisation.md)
+- [PRD §15 Go-to-Market — plans/PRD_SEC15_GoToMarket.md](./plans/PRD_SEC15_GoToMarket.md)
+- [PRD §16 UI/UX — plans/PRD_SEC16_UIUX.md](./plans/PRD_SEC16_UIUX.md)
+- [PRD §19 Compliance — plans/PRD_SEC19_Compliance.md](./plans/PRD_SEC19_Compliance.md)
+- [PRD §20 Roadmap — plans/PRD_SEC20_Roadmap.md](./plans/PRD_SEC20_Roadmap.md)
+- [Tech Supplement §A DB Gaps — plans/TECH_A_DatabaseGaps.md](./plans/TECH_A_DatabaseGaps.md)
+- [Tech Supplement §B Architecture — plans/TECH_B_SystemArchitecture.md](./plans/TECH_B_SystemArchitecture.md)
+- [Tech Supplement §C Microservices — plans/TECH_C_Microservices.md](./plans/TECH_C_Microservices.md)
+- [Tech Supplement §D DevOps — plans/TECH_D_DevOps.md](./plans/TECH_D_DevOps.md)
+- [Tech Supplement §E Design System — plans/TECH_E_UIDesignSystem.md](./plans/TECH_E_UIDesignSystem.md)
+- [Tech Supplement §F Components — plans/TECH_F_ComponentLibrary.md](./plans/TECH_F_ComponentLibrary.md)
+- [Tech Supplement §G Security — plans/TECH_G_Security.md](./plans/TECH_G_Security.md)
+- [Tech Supplement §H Performance — plans/TECH_H_Performance.md](./plans/TECH_H_Performance.md)
+- [Tech Supplement §I Observability — plans/TECH_I_Observability.md](./plans/TECH_I_Observability.md)
+- [Tech Supplement §J DR — plans/TECH_J_DisasterRecovery.md](./plans/TECH_J_DisasterRecovery.md)
 
 </details>
 
@@ -3159,52 +3200,123 @@ git push origin feature/your-feature-name
 
 - [x] User authentication (JWT + refresh tokens)
 - [x] Professional profiles with portfolio
-- [x] Category-based search with geo-filtering
+- [x] Category-based search with geo-filtering (6-factor PRD ranking algorithm)
 - [x] Booking FSM with role-gated transitions
 - [x] Real-time chat (WebSocket)
-- [x] Live GPS tracking (Swiggy-style)
 - [x] Razorpay payment integration
-- [x] KYC verification pipeline
+- [x] KYC verification pipeline (triple-layer: OTP + Govt ID + Selfie)
 - [x] Dispute resolution system
 - [x] Warranty claims
 - [x] Emergency service dispatch
 - [x] Referral program
 - [x] Multilingual (EN/HI/TE)
-- [x] Voice search
 - [x] Offline-first mobile
-- [x] Push notifications
-- [x] Admin dashboard
-- [x] Analytics engine
-- [x] Fraud prevention
-- [x] Docker deployment
+- [x] Push notifications (FCM service)
+- [x] Email (SendGrid) + SMS (MSG91/Twilio) services
+- [x] Admin dashboard (KYC queue, dispute management, user management)
+- [x] Analytics engine (event ingestion + professional dashboard)
+- [x] Fraud prevention (idempotency, action rate limiting, suspicious detection)
+- [x] Docker Compose local setup + Kubernetes base manifests
+- [x] 7-stage GitHub Actions CI/CD (lint → test → build → audit → docker → scan → deploy)
+- [x] Prometheus + Grafana monitoring stack
+- [x] Sentry error tracking
+- [x] AWS S3/R2 cloud storage (configurable)
+- [x] Redis caching with in-memory fallback
+- [x] PgBouncer connection pooling
+- [x] GST invoice generation service
+- [x] Agent commission system
 
-### ✅ Completed (v1.1 — AI Integration)
+### 🔜 Sprint 1 — Core Feature Completion
 
-- [x] AI-powered Smart Search (NLP intent parsing)
-- [x] Intelligent provider matching with ML scoring
-- [x] Review sentiment analysis
-- [x] Auto-categorization of service requests
-- [x] AI Chatbot (SkillBot) for customer support
-- [x] Smart pricing suggestions based on market data
-- [x] Enhanced fraud detection with AI scoring
+> See [`plans/PRD_SEC06_Reputation.md`](./plans/PRD_SEC06_Reputation.md), [`plans/PRD_SEC12_Notifications.md`](./plans/PRD_SEC12_Notifications.md), [`plans/PRD_SEC05_Portfolio.md`](./plans/PRD_SEC05_Portfolio.md)
 
-### 🔜 Planned (v2.0)
+- [ ] Trust Index 0–100 nightly recalculation (7-factor PRD §13.4 formula)
+- [ ] Wire notification triggers to all events (review, contact, KYC, complaint, suspension)
+- [ ] Review edit window (24h), velocity detection, profanity filter
+- [ ] Portfolio upload limits enforced per subscription tier
+- [ ] Image auto-compression to WebP/1080px (Sharp)
+- [ ] Video thumbnail generation (ffmpeg)
+- [ ] Sticky Contact CTA on professional profile
+- [ ] Profile completeness meter + onboarding nudge banner
+- [ ] Recently-viewed professionals on home screen
+- [ ] City location selector on home screen
+- [ ] Customer duplicate contact limit (3 per 30 days)
 
-- [ ] Video consultations
-- [ ] Subscription plans for professionals
-- [ ] Multi-city expansion with geo-fencing
-- [ ] Integration with Google Maps SDK
-- [ ] Payment split (platform fee automation)
-- [ ] Deep learning fraud detection (TensorFlow)
-- [ ] iOS App Store deployment
-- [ ] Automated testing CI/CD pipeline
-- [ ] Redis caching layer
-- [ ] Elasticsearch for full-text search
-- [ ] Service-level SLA tracking
-- [ ] Computer vision for portfolio quality scoring
-- [ ] Voice-to-booking (end-to-end voice commands)
-- [ ] Predictive demand forecasting
-- [ ] Auto-scheduling optimization
+### 🔜 Sprint 2 — Database & API Gaps
+
+> See [`plans/PRD_SEC09_API.md`](./plans/PRD_SEC09_API.md), [`plans/PRD_SEC08_Database.md`](./plans/PRD_SEC08_Database.md)
+
+- [ ] 18 missing API endpoints (suggestions, similar, block-customer, trending, waitlist, invoices, DPDPA export, account deletion)
+- [ ] Migration 013: 5 missing tables (blocked_users, featured_slots, category_requests, professional_languages, soft_deletes_log, ab_experiments, waitlist)
+- [ ] Annual subscription billing (33% discount)
+- [ ] Subscription grace period (3-day with reminders)
+- [ ] Category request system (professional submits → admin approves)
+- [ ] Trending categories endpoint
+- [ ] Featured slots admin management (category page + home screen)
+
+### 🔜 Sprint 3 — Security Hardening
+
+> See [`plans/PRD_SEC11_Security.md`](./plans/PRD_SEC11_Security.md), [`plans/TECH_G_Security.md`](./plans/TECH_G_Security.md)
+
+- [ ] Account lockout after 5 failed login attempts
+- [ ] JWT refresh token reuse detection (family-based revocation)
+- [ ] ClamAV antivirus on file uploads
+- [ ] Semgrep SAST in CI pipeline
+- [ ] Cosign Docker image signing
+- [ ] PII masking in Pino logger
+- [ ] Liveness detection integration (HyperVerge)
+- [ ] Device fingerprint tracking
+- [ ] THREAT_MODEL.md creation
+
+### 🔜 Sprint 4 — Performance & Observability
+
+> See [`plans/TECH_H_Performance.md`](./plans/TECH_H_Performance.md), [`plans/TECH_I_Observability.md`](./plans/TECH_I_Observability.md)
+
+- [ ] k6 load testing scripts + CI smoke test
+- [ ] Hot profile Redis cache (top 1000 per city)
+- [ ] Cursor-based pagination (replace OFFSET)
+- [ ] Missing Prometheus alert rules (KYC SLA, complaint SLA, search latency)
+- [ ] Slack + PagerDuty alerting (Alertmanager)
+- [ ] Business KPI gauges in Prometheus metrics
+- [ ] Kustomize staging + production overlays
+- [ ] pg_dump CronJob (every 6h to S3)
+
+### 🔜 Sprint 5 — Architecture Evolution
+
+> See [`plans/TECH_B_SystemArchitecture.md`](./plans/TECH_B_SystemArchitecture.md), [`plans/TECH_C_Microservices.md`](./plans/TECH_C_Microservices.md)
+
+- [ ] BullMQ job queue (replace in-memory; Redis-backed; persistent)
+- [ ] WebSocket multi-instance support (Redis pub/sub)
+- [ ] Read replica routing in database.js
+- [ ] Cloudflare CDN + WAF setup
+- [ ] SEO: React Helmet + og: meta tags on profile/category pages
+- [ ] JSON-LD structured data on professional profiles
+- [ ] GET /sitemap.xml endpoint
+- [ ] CSS design token system (tokens.css)
+
+### 🔜 Sprint 6 — Compliance & Growth
+
+> See [`plans/PRD_SEC19_Compliance.md`](./plans/PRD_SEC19_Compliance.md), [`plans/PRD_SEC15_GoToMarket.md`](./plans/PRD_SEC15_GoToMarket.md)
+
+- [ ] 6 legal content pages (ToS, Privacy Policy, Professional Terms, Cookie, Content Moderation, Refund Policy)
+- [ ] DPDPA data export endpoint
+- [ ] Account deletion (30-day soft delete) + 90-day purge cron
+- [ ] Consent management system
+- [ ] KYC document retention policy (12-month auto-purge)
+- [ ] Waitlist system + city activation flow
+- [ ] SkillPoints customer referral rewards
+- [ ] Admin: Category requests, Appeals, Featured Slots, Waitlist management screens
+
+### 🔜 Sprint 7 — Disaster Recovery
+
+> See [`plans/TECH_J_DisasterRecovery.md`](./plans/TECH_J_DisasterRecovery.md)
+
+- [ ] Automated pg_dump backups every 6h
+- [ ] Redis RDB persistence + hourly S3 backup
+- [ ] S3 cross-region replication (ap-south-1 → ap-southeast-1)
+- [ ] RDS Multi-AZ (production AWS)
+- [ ] INCIDENT_RESPONSE.md
+- [ ] DR drill: RTO < 30 minutes verified
 
 ---
 
