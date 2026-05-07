@@ -31,12 +31,21 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminKYC from './pages/admin/AdminKYC';
 import AdminDisputes from './pages/admin/AdminDisputes';
+import AdminCategoryRequests from './pages/admin/AdminCategoryRequests';
+import AdminFeaturedSlots from './pages/admin/AdminFeaturedSlots';
+import AdminAppeals from './pages/admin/AdminAppeals';
 import Storefront from './pages/Storefront';
 import StorefrontSetup from './pages/StorefrontSetup';
 import AgentDashboard from './pages/AgentDashboard';
 import AgentOnboard from './pages/AgentOnboard';
 import AgentWallet from './pages/AgentWallet';
 import AgentLeaderboard from './pages/AgentLeaderboard';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
+import CookiePolicy from './pages/CookiePolicy';
+import ProfessionalTerms from './pages/ProfessionalTerms';
+import ContentModerationPolicy from './pages/ContentModerationPolicy';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
@@ -236,6 +245,37 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/category-requests"
+            element={
+              <ProtectedRoute>
+                <AdminCategoryRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/featured-slots"
+            element={
+              <ProtectedRoute>
+                <AdminFeaturedSlots />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/appeals"
+            element={
+              <ProtectedRoute>
+                <AdminAppeals />
+              </ProtectedRoute>
+            }
+          />
+          {/* Legal Pages */}
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/professional-terms" element={<ProfessionalTerms />} />
+          <Route path="/content-moderation" element={<ContentModerationPolicy />} />
           {/* Agent Routes */}
           <Route
             path="/agent/dashboard"

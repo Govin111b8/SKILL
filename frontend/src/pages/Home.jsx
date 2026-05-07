@@ -1,10 +1,14 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool,
+  FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool, FiMapPin, FiClock,
 } from 'react-icons/fi';
 import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
 import TrustSection from '../components/TrustSection';
+import SEOMeta from '../components/SEOMeta';
+import { get } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import './Home.css';
 
 const trendingSearches = [
@@ -63,11 +67,49 @@ function StarRow({ count }) {
   );
 }
 
+const SUPPORTED_CITIES = [
+  'Bangalore', 'Hyderabad', 'Mumbai', 'Delhi', 'Chennai', 'Pune',
+];
+
 function Home() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [selectedCity, setSelectedCity] = useState(() => localStorage.getItem('sc_city') || 'Bangalore');
+
+  // Load recently viewed from API if logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      get('/growth/users/recently-viewed')
+        .then(res => setRecentlyViewed(res.data || []))
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
+
+  function handleCityChange(city) {
+    setSelectedCity(city);
+    localStorage.setItem('sc_city', city);
+  }
+
+  const homeStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'SkillConnect',
+    url: 'https://skillconnect.in',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://skillconnect.in/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  };
 
   return (
     <div className="home">
+      <SEOMeta
+        title="Find Skilled Professionals Near You"
+        description="SkillConnect — India's trusted hyperlocal marketplace. Book verified plumbers, electricians, tutors, photographers and 50+ more services near you."
+        structuredData={homeStructuredData}
+      />
       {/* HERO */}
       <section className="hero">
         <div className="hero-blobs">
@@ -82,6 +124,26 @@ function Home() {
             Connect with verified, top-rated local experts — from plumbers and electricians to tutors and photographers.
           </p>
           <div className="hero-search-wrap animate-fade-up" style={{ animationDelay: '0.3s' }}>
+            {/* City selector */}
+            <div className="city-selector" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <FiMapPin size={14} style={{ color: 'var(--primary-light)' }} />
+              <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>Searching in</span>
+              <select
+                value={selectedCity}
+                onChange={e => handleCityChange(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  fontSize: '0.85rem',
+                  padding: '3px 8px',
+                  cursor: 'pointer',
+                }}
+              >
+                {SUPPORTED_CITIES.map(c => <option key={c} value={c} style={{ color: '#000' }}>{c}</option>)}
+              </select>
+            </div>
             <SearchBar variant="hero" />
           </div>
           <div className="hero-trending animate-fade-up" style={{ animationDelay: '0.4s' }}>
@@ -210,6 +272,43 @@ function Home() {
 
       {/* TRUST & SAFETY */}
       <TrustSection />
+
+      {/* RECENTLY VIEWED (authenticated customers) */}
+      {isAuthenticated && recentlyViewed.length > 0 && (
+        <section className="section" style={{ padding: '40px 0 20px' }}>
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title"><FiClock size={18} style={{ marginRight: 6 }} />Recently Viewed</h2>
+            </div>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }}>
+              {recentlyViewed.slice(0, 5).map(pro => (
+                <Link
+                  key={pro.id}
+                  to={`/professionals/${pro.id}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    background: 'var(--gray-50)', borderRadius: '12px',
+                    padding: '10px 16px', textDecoration: 'none', color: 'inherit',
+                    border: '1px solid var(--gray-200)', minWidth: '200px',
+                  }}
+                >
+                  <img
+                    src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=36`}
+                    alt={pro.name}
+                    style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>{pro.name}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', margin: 0 }}>
+                      {pro.primary_category} • {pro.avg_rating ? `${pro.avg_rating}★` : 'New'}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="cta-section">

@@ -28,9 +28,11 @@ describe('Reviews Endpoints', () => {
       });
 
       // Contact check - found completed contact
-      query.mockResolvedValueOnce({ rows: [{ id: 'contact-1' }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 'contact-1', created_at: new Date(Date.now() - 2 * 3600000).toISOString() }] });
       // Check existing review
       query.mockResolvedValueOnce({ rows: [] });
+      // Velocity check - no burst (< 5 reviews in 24h)
+      query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
       // Insert review
       query.mockResolvedValueOnce({
         rows: [
@@ -168,7 +170,7 @@ describe('Reviews Endpoints', () => {
 
   describe('GET /api/reviews/:professionalId', () => {
     it('should return paginated reviews for a professional', async () => {
-      query.mockResolvedValueOnce({ rows: [{ count: '2' }] });
+      // New getReviews: list first, then count
       query.mockResolvedValueOnce({
         rows: [
           {
@@ -187,6 +189,7 @@ describe('Reviews Endpoints', () => {
           },
         ],
       });
+      query.mockResolvedValueOnce({ rows: [{ count: '2' }] });
 
       const res = await request(app).get('/api/reviews/prof-1').query({ page: 1, limit: 10 });
 
@@ -205,10 +208,12 @@ describe('Reviews Endpoints', () => {
         role: 'customer',
       });
 
-      // Booking check - found completed booking matching pro
-      query.mockResolvedValueOnce({ rows: [{ id: 'booking-1', professional_id: 'prof-1', status: 'completed' }] });
+      // Booking check - found completed booking matching pro (with created_at for timing check)
+      query.mockResolvedValueOnce({ rows: [{ id: 'booking-1', professional_id: 'prof-1', status: 'completed', created_at: new Date(Date.now() - 2 * 3600000).toISOString() }] });
       // Duplicate review check - none
       query.mockResolvedValueOnce({ rows: [] });
+      // Velocity check - no burst
+      query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
       // Insert review
       query.mockResolvedValueOnce({
         rows: [
