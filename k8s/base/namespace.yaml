@@ -1,0 +1,10 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# SkillConnect — Kubernetes Namespace
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skillconnect
+  labels:
+    app.kubernetes.io/part-of: skillconnect

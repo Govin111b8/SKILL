@@ -9,6 +9,9 @@ const logger = require('./config/logger');
 const errorHandler = require('./middleware/errorHandler');
 const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
+const { requireFeature, getAllFlags } = require('./middleware/featureFlags');
+const { register: metricsRegistry, metricsMiddleware } = require('./config/metrics');
+const { sentryErrorHandler } = require('./config/sentry');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -49,6 +52,9 @@ app.set('trust proxy', 1);
 
 // Request correlation ID — must come before logging
 app.use(requestId);
+
+// Prometheus HTTP metrics — record duration/count per route
+app.use(metricsMiddleware);
 
 // Middleware
 app.use(helmet({
@@ -114,22 +120,23 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/kyc', kycRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/messages', messageRoutes);
+// Extended features — gated by feature flags (see PLATFORM_CHANGE_RECORD.md)
+app.use('/api/bookings', requireFeature('BOOKINGS'), bookingRoutes);
+app.use('/api/messages', requireFeature('CHAT'), messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/schedule', scheduleRoutes);
-app.use('/api/disputes', disputeRoutes);
-app.use('/api/warranties', warrantyRoutes);
-app.use('/api/emergency', emergencyRoutes);
+app.use('/api/disputes', requireFeature('DISPUTES'), disputeRoutes);
+app.use('/api/warranties', requireFeature('WARRANTIES'), warrantyRoutes);
+app.use('/api/emergency', requireFeature('EMERGENCIES'), emergencyRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/storefront', storefrontRoutes);
-app.use('/api/agents', agentRoutes);
+app.use('/api/agents', requireFeature('AGENTS'), agentRoutes);
 app.use('/api/match', matchingRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
@@ -139,13 +146,34 @@ app.use('/api/seo', seoRoutes);
 app.use('/api/growth', growthRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Prometheus metrics — accessible only from internal network in production
+// (expose on a separate port or protect with IP allowlist via nginx)
+app.get('/metrics', async (req, res) => {
+  // Restrict to localhost in production to avoid leaking internal metrics
+  if (config.isProduction) {
+    const ip = req.ip || req.connection.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal) {
+      return res.status(403).json({ success: false, message: 'Metrics endpoint restricted' });
+    }
+  }
+  try {
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.end(await metricsRegistry.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
+});
+
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));
 
 // Health check — includes DB connectivity verification
 app.get('/api/health', async (req, res) => {
   const { pool } = require('./config/database');
-  const checks = { server: 'ok', database: 'unknown' };
+  const redisClient = require('./config/redis');
+  const { getCacheStats } = require('./middleware/cache');
+  const checks = { server: 'ok', database: 'unknown', redis: redisClient.isAvailable() ? 'ok' : 'not configured' };
   try {
     const result = await pool.query('SELECT 1');
     checks.database = result.rows.length ? 'ok' : 'error';
@@ -158,8 +186,11 @@ app.get('/api/health', async (req, res) => {
     success: healthy,
     message: healthy ? 'All systems operational' : 'Degraded — database unreachable',
     checks,
+    features: getAllFlags(),
+    cache: getCacheStats(),
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
   });
 });
 
@@ -200,6 +231,9 @@ app.get('/', (req, res) => {
 
 // Serve other public static files (excluding index.html at root)
 app.use(express.static(publicPath));
+
+// Sentry error handler — must be BEFORE the app error handler
+app.use(sentryErrorHandler());
 
 // Error handler
 app.use(errorHandler);

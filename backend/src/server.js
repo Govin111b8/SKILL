@@ -14,19 +14,27 @@ try {
 
 const app = require('./app');
 const hub = require('./realtime/hub');
+const { startCronJobs } = require('./workers/cron');
+const redis = require('./config/redis');
 
 const server = http.createServer(app);
 hub.attach(server);
 
 server.listen(config.port, () => {
   logger.info({ port: config.port, env: config.env }, `Server running on port ${config.port} (HTTP + WebSocket /ws)`);
+
+  // Start background cron jobs after server is listening
+  if (process.env.ENABLE_CRON !== 'false') {
+    startCronJobs();
+  }
 });
 
 // Graceful shutdown
-function shutdown(signal) {
+async function shutdown(signal) {
   logger.info({ signal }, 'Shutdown signal received, draining connections...');
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed.');
+    await redis.quit();
     process.exit(0);
   });
   // Force exit after 10s if connections don't drain

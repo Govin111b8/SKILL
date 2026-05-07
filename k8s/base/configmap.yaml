@@ -1,0 +1,32 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# SkillConnect Backend — ConfigMap (non-secret env vars)
+# Secrets (JWT_SECRET, DB_PASSWORD, etc.) must be stored in Kubernetes Secrets
+# or fetched from AWS Secrets Manager / HashiCorp Vault at pod startup.
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skillconnect-config
+  namespace: skillconnect
+data:
+  NODE_ENV: "production"
+  PORT: "5000"
+  DB_PORT: "5432"
+  DB_NAME: "skillconnect"
+  DB_USER: "skillconnect_app"
+  # PgBouncer sidecar listens on 5432; backend connects to it
+  DB_HOST: "127.0.0.1"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  LOG_LEVEL: "info"
+  STORAGE_PROVIDER: "s3"
+  SMS_PROVIDER: "msg91"
+  FACE_MATCH_PROVIDER: "hyperverge"
+  KYC_AUTO_VERIFY: "false"
+  ENABLE_CRON: "true"
+  JWT_EXPIRES_IN: "15m"
+  JWT_REFRESH_EXPIRES_IN: "7d"
+  CORS_ORIGINS: "https://skillconnect.in,https://pro.skillconnect.in"
+  APP_URL: "https://skillconnect.in"
+  SENTRY_TRACES_SAMPLE_RATE: "0.05"

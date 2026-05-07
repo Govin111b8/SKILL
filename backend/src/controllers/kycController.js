@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const v = require('../utils/kycValidators');
+const encryption = require('../utils/encryption');
+const faceMatch = require('../services/faceMatch');
+const logger = require('../config/logger');
 
 const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 
@@ -72,6 +75,9 @@ exports.submit = async (req, res, next) => {
     const normalized = check.normalized;
     const hash = sha256(`${doc_type}:${normalized}`);
 
+    // AES-256-GCM encrypt the document number before persisting
+    const encryptedDocNumber = encryption.encrypt(normalized);
+
     // Reject if same doc number is already verified for a DIFFERENT user
     const dup = await query(
       `SELECT user_id FROM verifications WHERE doc_number_hash = $1 AND status = 'verified' AND user_id <> $2 LIMIT 1`,
@@ -79,6 +85,55 @@ exports.submit = async (req, res, next) => {
     );
     if (dup.rows.length) {
       return res.status(409).json({ success: false, message: 'This document is already verified to another account' });
+    }
+
+    // ── Face match (when both selfie and document image URLs are provided) ──
+    let faceMatchScore = null;
+    let faceMatchPassed = null;
+
+    const govIdDocTypes = ['aadhaar', 'pan', 'passport', 'voter_id', 'driving_license'];
+    if (selfie_url && document_url && govIdDocTypes.includes(doc_type)) {
+      try {
+        // In production, fetch the images from their URLs and pass buffers.
+        // In dev/mock mode, faceMatch.compareFaces handles mock internally.
+        if (process.env.FACE_MATCH_PROVIDER && process.env.FACE_MATCH_PROVIDER !== 'mock') {
+          const [selfieResp, docResp] = await Promise.all([
+            fetch(selfie_url),
+            fetch(document_url),
+          ]);
+          const [selfieBuffer, docBuffer] = await Promise.all([
+            selfieResp.arrayBuffer().then(Buffer.from),
+            docResp.arrayBuffer().then(Buffer.from),
+          ]);
+          const matchResult = await faceMatch.compareFaces(selfieBuffer, docBuffer);
+          faceMatchScore = matchResult.score;
+          faceMatchPassed = matchResult.passed;
+        } else {
+          // Mock / no real images available in dev
+          const matchResult = await faceMatch.compareFaces(Buffer.alloc(0), Buffer.alloc(0));
+          faceMatchScore = matchResult.score;
+          faceMatchPassed = matchResult.passed;
+        }
+
+        if (faceMatchPassed === false) {
+          if (process.env.NODE_ENV === 'production') {
+            logger.warn({ userId: req.user.id, faceMatchScore }, 'Face match failed — KYC rejected');
+            return res.status(422).json({
+              success: false,
+              message: `Face match confidence too low (${faceMatchScore}% < ${faceMatch.CONFIDENCE_THRESHOLD}%). Please retake a clearer selfie.`,
+              faceMatchScore,
+            });
+          } else {
+            // In development: log the failure but continue (allows testing without real images)
+            logger.warn({ userId: req.user.id, faceMatchScore }, 'Face match failed in dev — allowing KYC to proceed (would be rejected in production)');
+          }
+        }
+      } catch (faceErr) {
+        logger.error({ err: faceErr }, 'Face match service error — continuing without match in non-production');
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(503).json({ success: false, message: 'Identity verification service temporarily unavailable. Please try again.' });
+        }
+      }
     }
 
     // Auto-verify in DEV mode (no live gateway). Status = 'pending' in production.
@@ -89,8 +144,9 @@ exports.submit = async (req, res, next) => {
     const ins = await query(
       `INSERT INTO verifications
         (user_id, doc_type, doc_number, doc_number_hash, holder_name, issuing_authority,
-         issue_date, expiry_date, document_url, selfie_url, status, verification_method, verified_at)
-       VALUES ($1, $2::kyc_doc_type, $3, $4, $5, $6, $7::date, $8::date, $9, $10, $11::kyc_status, $12, $13::timestamptz)
+         issue_date, expiry_date, document_url, selfie_url, status, verification_method, verified_at,
+         face_match_score)
+       VALUES ($1, $2::kyc_doc_type, $3, $4, $5, $6, $7::date, $8::date, $9, $10, $11::kyc_status, $12, $13::timestamptz, $14)
        ON CONFLICT (user_id, doc_type) DO UPDATE SET
          doc_number = EXCLUDED.doc_number,
          doc_number_hash = EXCLUDED.doc_number_hash,
@@ -104,11 +160,12 @@ exports.submit = async (req, res, next) => {
          verification_method = EXCLUDED.verification_method,
          verified_at = EXCLUDED.verified_at,
          rejection_reason = NULL,
+         face_match_score = EXCLUDED.face_match_score,
          updated_at = NOW()
        RETURNING id, doc_type, status, verified_at`,
-      [req.user.id, doc_type, normalized, hash, holder_name || null, issuing_authority || null,
+      [req.user.id, doc_type, encryptedDocNumber, hash, holder_name || null, issuing_authority || null,
        issue_date || null, expiry_date || null, document_url || null, selfie_url || null,
-       status, method, autoVerify ? new Date() : null]
+       status, method, autoVerify ? new Date() : null, faceMatchScore]
     );
 
     await query(

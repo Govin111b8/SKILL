@@ -1,0 +1,40 @@
+groups:
+  - name: skillconnect.rules
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(skillconnect_http_requests_total{status_code=~"5.."}[5m]))
+          / sum(rate(skillconnect_http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx error rate > 5%"
+
+      - alert: SlowP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(skillconnect_http_request_duration_seconds_bucket[5m])) by (le, route)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency > 2s"
+
+      - alert: BackendDown
+        expr: up{job="skillconnect-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SkillConnect backend is down"
+
+      - alert: HighHeapUsage
+        expr: |
+          (skillconnect_nodejs_heap_size_used_bytes / skillconnect_nodejs_heap_size_total_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js heap > 85%"

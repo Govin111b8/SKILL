@@ -6,40 +6,66 @@ const { config } = require('../config');
 const logger = require('../config/logger');
 const emailService = require('../services/email');
 const smsService = require('../services/sms');
+const redis = require('../config/redis');
 
-// In-memory login attempt tracking (use Redis in production for multi-instance)
-const loginAttempts = new Map();
+// Bcrypt cost factor — always 12 (production-grade, ~300ms per hash)
+const BCRYPT_ROUNDS = 12;
 
-function getAttemptKey(email) {
-  return email.toLowerCase().trim();
-}
+// Login attempt tracking — Redis-first with in-memory fallback
+const loginAttempts = new Map(); // fallback only
+const LOGIN_ATTEMPT_PREFIX = 'login_attempt:';
+const LOCKOUT_TTL = config.security.lockoutDurationMinutes * 60;
 
-function recordFailedAttempt(email) {
-  const key = getAttemptKey(email);
+async function recordFailedAttempt(email) {
+  const key = `${LOGIN_ATTEMPT_PREFIX}${email.toLowerCase().trim()}`;
   const now = Date.now();
-  const record = loginAttempts.get(key) || { count: 0, firstAttempt: now, lockedUntil: 0 };
-  record.count++;
-  record.lastAttempt = now;
-  if (record.count >= config.security.maxLoginAttempts) {
-    record.lockedUntil = now + config.security.lockoutDurationMinutes * 60 * 1000;
+
+  if (redis.isAvailable()) {
+    const record = (await redis.get(key)) || { count: 0, firstAttempt: now, lockedUntil: 0 };
+    record.count++;
+    record.lastAttempt = now;
+    if (record.count >= config.security.maxLoginAttempts) {
+      record.lockedUntil = now + config.security.lockoutDurationMinutes * 60 * 1000;
+    }
+    await redis.set(key, record, LOCKOUT_TTL + 60);
+  } else {
+    const rawKey = email.toLowerCase().trim();
+    const record = loginAttempts.get(rawKey) || { count: 0, firstAttempt: now, lockedUntil: 0 };
+    record.count++;
+    record.lastAttempt = now;
+    if (record.count >= config.security.maxLoginAttempts) {
+      record.lockedUntil = now + config.security.lockoutDurationMinutes * 60 * 1000;
+    }
+    loginAttempts.set(rawKey, record);
   }
-  loginAttempts.set(key, record);
 }
 
-function isAccountLocked(email) {
-  const key = getAttemptKey(email);
-  const record = loginAttempts.get(key);
+async function isAccountLocked(email) {
+  const key = `${LOGIN_ATTEMPT_PREFIX}${email.toLowerCase().trim()}`;
+
+  if (redis.isAvailable()) {
+    const record = await redis.get(key);
+    if (!record) return false;
+    if (record.lockedUntil > Date.now()) return true;
+    if (record.lockedUntil > 0) await redis.del(key);
+    return false;
+  }
+
+  const rawKey = email.toLowerCase().trim();
+  const record = loginAttempts.get(rawKey);
   if (!record) return false;
   if (record.lockedUntil > Date.now()) return true;
-  // Reset if lockout expired
-  if (record.lockedUntil > 0 && record.lockedUntil <= Date.now()) {
-    loginAttempts.delete(key);
-  }
+  if (record.lockedUntil > 0) loginAttempts.delete(rawKey);
   return false;
 }
 
-function clearAttempts(email) {
-  loginAttempts.delete(getAttemptKey(email));
+async function clearAttempts(email) {
+  const key = `${LOGIN_ATTEMPT_PREFIX}${email.toLowerCase().trim()}`;
+  if (redis.isAvailable()) {
+    await redis.del(key);
+  } else {
+    loginAttempts.delete(email.toLowerCase().trim());
+  }
 }
 
 const generateAccessToken = (user) => {
@@ -75,8 +101,8 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(config.isProduction ? 12 : 10);
+    // Hash password — always cost 12 (production-grade)
+    const salt = await bcrypt.genSalt(BCRYPT_ROUNDS);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const id = crypto.randomUUID();
@@ -117,7 +143,7 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     // Account lockout check
-    if (isAccountLocked(email)) {
+    if (await isAccountLocked(email)) {
       logger.warn({ email }, 'Login attempt on locked account');
       return res.status(429).json({
         success: false,
@@ -131,7 +157,7 @@ const login = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      recordFailedAttempt(email);
+      await recordFailedAttempt(email);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.',
@@ -154,7 +180,7 @@ const login = async (req, res, next) => {
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      recordFailedAttempt(email);
+      await recordFailedAttempt(email);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.',
@@ -162,7 +188,7 @@ const login = async (req, res, next) => {
     }
 
     // Successful login — clear lockout
-    clearAttempts(email);
+    await clearAttempts(email);
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -352,7 +378,7 @@ const resetPassword = async (req, res, next) => {
     }
 
     const resetRecord = result.rows[0];
-    const salt = await bcrypt.genSalt(config.isProduction ? 12 : 10);
+    const salt = await bcrypt.genSalt(BCRYPT_ROUNDS);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);

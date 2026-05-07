@@ -1,0 +1,186 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# PostgreSQL StatefulSet — for cluster deployments
+# In production prefer AWS RDS, Cloud SQL, or Azure Database for PostgreSQL.
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: skillconnect
+  labels:
+    app: postgres
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: skillconnect-secrets
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: skillconnect-secrets
+                  key: DB_PASSWORD
+            - name: POSTGRES_DB
+              value: skillconnect
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "skillconnect"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "skillconnect"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: gp3   # AWS gp3; adjust for your cloud
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: skillconnect
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  clusterIP: None   # Headless — used by StatefulSet
+
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# Redis — Deployment (single-instance; use Redis Cluster / Sentinel for HA)
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: skillconnect
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --maxmemory
+            - "256mb"
+            - --maxmemory-policy
+            - allkeys-lru
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: skillconnect-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - name: redis
+              containerPort: 6379
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: redisdata
+              mountPath: /data
+      volumes:
+        - name: redisdata
+          persistentVolumeClaim:
+            claimName: redis-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: skillconnect
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: skillconnect
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: gp3

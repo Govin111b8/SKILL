@@ -13,17 +13,17 @@ const BASE_URL = process.env.APP_URL || 'https://skillconnect.in';
  */
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    // Get all active professionals
+    // Get all active professionals (use correct column names from schema)
     const prosResult = await pool.query(
       `SELECT p.id, p.updated_at FROM professionals p
        JOIN users u ON p.user_id = u.id
-       WHERE p.is_verified = TRUE AND u.is_active = TRUE
+       WHERE u.government_id_verified = TRUE AND u.is_active = TRUE
        ORDER BY p.updated_at DESC LIMIT 5000`
     );
 
-    // Get all categories
+    // Get all categories (slug may not exist — fall back to id)
     const catsResult = await pool.query(
-      `SELECT slug, updated_at FROM categories WHERE is_active = TRUE ORDER BY name`
+      `SELECT id, name, updated_at FROM categories WHERE is_active = TRUE ORDER BY name`
     );
 
     const staticPages = [
@@ -51,7 +51,7 @@ router.get('/sitemap.xml', async (req, res) => {
     // Category pages
     for (const cat of catsResult.rows) {
       xml += `  <url>
-    <loc>${BASE_URL}/categories/${cat.slug}</loc>
+    <loc>${BASE_URL}/categories/${cat.id}</loc>
     <lastmod>${new Date(cat.updated_at || Date.now()).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

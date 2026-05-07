@@ -1,0 +1,73 @@
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# SkillConnect Frontend — Deployment
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: skillconnect
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: skillconnect
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101          # nginx runs as non-root
+      containers:
+        - name: frontend
+          image: ghcr.io/govin111b8/skillconnect/frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: skillconnect
+  labels:
+    app: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP

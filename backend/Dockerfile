@@ -2,13 +2,22 @@
 # SkillConnect Backend — Multi-stage Production Dockerfile
 # ──────────────────────────────────────────────────────────────
 
-# Stage 1: Install dependencies
+# Stage 1: Install all dependencies (including dev) for build/check
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+# Copy source + TypeScript config for optional type-check step
+COPY tsconfig.json ./
+COPY src ./src
+
+# Stage 2: Install production-only dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-# Stage 2: Production image
+# Stage 3: Production image
 FROM node:20-alpine AS production
 WORKDIR /app
 
@@ -18,7 +27,7 @@ RUN addgroup -g 1001 -S appgroup && \
 
 # Copy production dependencies
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json ./
+COPY package.json tsconfig.json ./
 COPY src ./src
 
 # Create uploads directory
