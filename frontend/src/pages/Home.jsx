@@ -67,8 +67,9 @@ function StarRow({ count }) {
   );
 }
 
-const SUPPORTED_CITIES = [
+const DEFAULT_CITIES = [
   'Bangalore', 'Hyderabad', 'Mumbai', 'Delhi', 'Chennai', 'Pune',
+  'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow',
 ];
 
 function Home() {
@@ -76,6 +77,7 @@ function Home() {
   const { isAuthenticated } = useAuth();
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [selectedCity, setSelectedCity] = useState(() => localStorage.getItem('sc_city') || 'Bangalore');
+  const [supportedCities, setSupportedCities] = useState(DEFAULT_CITIES);
 
   // Load recently viewed from API if logged in
   useEffect(() => {
@@ -85,6 +87,16 @@ function Home() {
         .catch(() => {});
     }
   }, [isAuthenticated]);
+
+  // Fetch supported cities (single source of truth from DB)
+  useEffect(() => {
+    get('/growth/supported-cities')
+      .then(res => {
+        const cities = (res.data || []).filter(c => c.is_active !== false).map(c => c.name);
+        if (cities.length > 0) setSupportedCities(cities);
+      })
+      .catch(() => {}); // silently fall back to DEFAULT_CITIES
+  }, []);
 
   function handleCityChange(city) {
     setSelectedCity(city);
@@ -141,7 +153,7 @@ function Home() {
                   cursor: 'pointer',
                 }}
               >
-                {SUPPORTED_CITIES.map(c => <option key={c} value={c} style={{ color: '#000' }}>{c}</option>)}
+                {supportedCities.map(c => <option key={c} value={c} style={{ color: '#000' }}>{c}</option>)}
               </select>
             </div>
             <SearchBar variant="hero" />

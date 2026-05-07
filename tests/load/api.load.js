@@ -144,6 +144,6 @@ export function loadTest() {
 export function stressTest() {
   const res = request('GET', '/search?q=plumber&city=Bangalore');
   check(res, { '200 or 429': r => r.status === 200 || r.status === 429 });
-  errorRate.add(r => r.status >= 500);
+  errorRate.add(res.status >= 500);
   sleep(0.5);
 }
