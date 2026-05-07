@@ -28,8 +28,23 @@ const logger = pino({
     }),
   },
   redact: {
-    paths: ['req.headers.authorization', 'req.body.password', 'req.body.password_hash'],
-    censor: '[REDACTED]',
+    // Mask sensitive fields at any nesting level — GDPR / DPDPA compliance
+    paths: [
+      'req.headers.authorization',
+      'req.body.password',
+      'req.body.password_hash',
+      'req.body.phone',
+      'req.body.email',
+      'req.body.govt_id_number',
+      'req.body.doc_number',
+      '*.phone',
+      '*.email',
+      '*.govt_id_encrypted',
+      '*.doc_number',
+      '*.password',
+      '*.password_hash',
+    ],
+    censor: '[MASKED]',
   },
 });
 

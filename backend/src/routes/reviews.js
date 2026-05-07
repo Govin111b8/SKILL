@@ -2,7 +2,7 @@ const { Router } = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
-const { createReview, getReviews, getPendingReviews } = require('../controllers/reviewController');
+const { createReview, editReview, markHelpful, getReviews, getPendingReviews } = require('../controllers/reviewController');
 
 const router = Router();
 
@@ -21,16 +21,26 @@ router.post(
   createReview
 );
 
+// Edit review text within 24h window
+router.put(
+  '/:id',
+  authenticate,
+  validate([body('comment').trim().notEmpty().withMessage('Comment is required')]),
+  editReview
+);
+
+// Mark review as helpful
+router.post('/:id/helpful', authenticate, markHelpful);
+
 router.get('/pending', authenticate, getPendingReviews);
 router.get('/:professionalId', getReviews);
 router.get('/:professionalId/distribution', async (req, res, next) => {
   try {
     const { query: dbQuery } = require('../config/database');
     const r = await dbQuery(
-      `SELECT rating, COUNT(*)::int as count FROM reviews WHERE professional_id = $1 GROUP BY rating ORDER BY rating DESC`,
+      `SELECT rating, COUNT(*)::int as count FROM reviews WHERE professional_id = $1 AND moderation_status = 'approved' GROUP BY rating ORDER BY rating DESC`,
       [req.params.professionalId]
     );
-    // Fill in missing ratings with 0
     const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     for (const row of r.rows) dist[row.rating] = row.count;
     res.json({ success: true, data: dist });
@@ -38,3 +48,4 @@ router.get('/:professionalId/distribution', async (req, res, next) => {
 });
 
 module.exports = router;
+

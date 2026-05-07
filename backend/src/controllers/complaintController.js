@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
+const { notify } = require('../utils/notifier');
+const emailService = require('../services/email');
 
 const fileComplaint = async (req, res, next) => {
   try {
@@ -7,7 +9,7 @@ const fileComplaint = async (req, res, next) => {
     const { reported_user_id, complaint_type, description } = req.body;
 
     // Verify reported user exists
-    const user = await query('SELECT id FROM users WHERE id = $1', [reported_user_id]);
+    const user = await query('SELECT id, email, name FROM users WHERE id = $1', [reported_user_id]);
     if (user.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -23,7 +25,6 @@ const fileComplaint = async (req, res, next) => {
     );
 
     // Check complaint count — escalate status based on count
-    // 1-2: pending (under review), 3+: flagged for admin review (not auto-banned)
     const complaintCount = await query(
       'SELECT COUNT(*) FROM complaints WHERE reported_user_id = $1',
       [reported_user_id]
@@ -37,6 +38,25 @@ const fileComplaint = async (req, res, next) => {
       );
     }
 
+    // Notify the reported user via in-app + email
+    try {
+      await notify(reported_user_id, {
+        type: 'complaint_received',
+        title: 'A complaint has been filed about your account',
+        body: 'SkillConnect has received a complaint. Our team will review it and notify you of the outcome.',
+        related_id: id,
+      });
+
+      const reportedUser = user.rows[0];
+      if (reportedUser.email) {
+        emailService.send({
+          to: reportedUser.email,
+          subject: 'SkillConnect: A complaint has been filed against your account',
+          text: `Hi ${reportedUser.name},\n\nA complaint has been filed against your SkillConnect account. Our trust & safety team will review it within 48 hours.\n\nIf you believe this complaint is unfair, you may submit an appeal after receiving our decision.\n\nThe SkillConnect Trust & Safety Team`,
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
     const result = await query('SELECT * FROM complaints WHERE id = $1', [id]);
 
     res.status(201).json({
@@ -48,6 +68,7 @@ const fileComplaint = async (req, res, next) => {
     next(error);
   }
 };
+
 
 const getComplaints = async (req, res, next) => {
   try {

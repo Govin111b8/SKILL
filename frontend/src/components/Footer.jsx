@@ -109,9 +109,12 @@ function Footer() {
         <div className="container">
           <p>&copy; {new Date().getFullYear()} SkillConnect. All rights reserved.</p>
           <div className="footer-legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Cookie Policy</a>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/cookie-policy">Cookie Policy</Link>
+            <Link to="/refund-policy">Refund Policy</Link>
+            <Link to="/professional-terms">Pro Terms</Link>
+            <Link to="/content-moderation">Moderation</Link>
           </div>
         </div>
       </div>

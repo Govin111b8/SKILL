@@ -242,7 +242,48 @@ exports.adminReview = async (req, res, next) => {
       `INSERT INTO verification_audit (verification_id, actor_id, action, note) VALUES ($1, $2, $3, $4)`,
       [req.params.id, req.user.id, status === 'verified' ? 'approved' : 'rejected', rejection_reason || null]
     );
+
+    // Notify the user about KYC outcome (in-app + email)
+    try {
+      const { notify } = require('../utils/notifier');
+      const emailService = require('../services/email');
+      const userId = r.rows[0].user_id;
+      const userRow = await query('SELECT name, email FROM users WHERE id = $1', [userId]);
+      const user = userRow.rows[0];
+
+      if (status === 'verified') {
+        // Update users table
+        await query('UPDATE users SET government_id_verified = TRUE WHERE id = $1', [userId]);
+        await notify(userId, {
+          type: 'verification_approved',
+          title: 'KYC Verified ✅',
+          body: 'Your identity has been verified! Your profile now shows the verified badge.',
+        });
+        if (user?.email) {
+          emailService.send({
+            to: user.email,
+            subject: 'SkillConnect: Your identity has been verified ✅',
+            text: `Hi ${user.name},\n\nCongratulations! Your identity documents have been verified. Your profile now shows a verified badge, helping you build trust with customers.\n\nThe SkillConnect Team`,
+          }).catch(() => {});
+        }
+      } else {
+        await notify(userId, {
+          type: 'verification_rejected',
+          title: 'KYC Verification Rejected',
+          body: rejection_reason ? `Reason: ${rejection_reason}. Please re-submit your documents.` : 'Your verification was not approved. Please re-submit clearer documents.',
+        });
+        if (user?.email) {
+          emailService.send({
+            to: user.email,
+            subject: 'SkillConnect: KYC verification requires attention',
+            text: `Hi ${user.name},\n\nUnfortunately, your identity documents could not be verified.\n\n${rejection_reason ? `Reason: ${rejection_reason}\n\n` : ''}Please log in and re-submit your documents with better image quality.\n\nThe SkillConnect Team`,
+          }).catch(() => {});
+        }
+      }
+    } catch (_) {}
+
     const aggregates = await refreshAggregates(r.rows[0].user_id);
     res.json({ success: true, message: 'Review saved', aggregates });
   } catch (e) { next(e); }
 };
+

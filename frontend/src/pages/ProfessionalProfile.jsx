@@ -11,6 +11,7 @@ import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ShareButton from '../components/ShareButton';
+import SEOMeta from '../components/SEOMeta';
 import './ProfessionalProfile.css';
 
 function ProfessionalProfile() {
@@ -98,8 +99,34 @@ function ProfessionalProfile() {
 
   const initials = name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+  // Build structured data (JSON-LD) for the professional profile
+  const profileStructuredData = professional ? {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    description: professional.bio,
+    image: photo,
+    url: `https://skillconnect.in/professionals/${id}`,
+    jobTitle: professional.headline,
+    aggregateRating: professional.reviews_count > 0 ? {
+      '@type': 'AggregateRating',
+      ratingValue: professional.rating?.toFixed(1),
+      reviewCount: professional.reviews_count,
+      bestRating: '5',
+    } : undefined,
+  } : null;
+
   return (
     <div className="profile-page">
+      {professional && (
+        <SEOMeta
+          title={`${name} — ${professional.headline || 'Professional'}`}
+          description={`${name} is a verified professional on SkillConnect. ${professional.bio?.slice(0, 120) || ''}`}
+          image={photo}
+          type="profile"
+          structuredData={profileStructuredData}
+        />
+      )}
       {/* ── Hero ── */}
       <div className="profile-hero">
         <div className="profile-hero-bg" />

@@ -1,13 +1,20 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
 
+// PRD §6.5 — Portfolio upload limits per subscription tier
+const TIER_LIMITS = {
+  basic: { images: 5, videos: 0 },
+  premium: { images: 20, videos: 5 },
+  featured: { images: 20, videos: 5 },
+};
+
 const addPortfolioItem = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Get professional ID
+    // Get professional ID + subscription plan
     const profResult = await query(
-      'SELECT id FROM professionals WHERE user_id = $1',
+      'SELECT id, subscription_plan FROM professionals WHERE user_id = $1',
       [userId]
     );
     if (profResult.rows.length === 0) {
@@ -18,7 +25,42 @@ const addPortfolioItem = async (req, res, next) => {
     }
 
     const professionalId = profResult.rows[0].id;
+    const plan = profResult.rows[0].subscription_plan || 'basic';
+    const limits = TIER_LIMITS[plan] || TIER_LIMITS.basic;
     const { title, description, media_type, media_url } = req.body;
+
+    // Count existing items by media type
+    const countResult = await query(
+      `SELECT
+         COUNT(*) FILTER (WHERE media_type = 'image') AS image_count,
+         COUNT(*) FILTER (WHERE media_type = 'video') AS video_count
+       FROM portfolio_items WHERE professional_id = $1`,
+      [professionalId]
+    );
+    const imageCount = parseInt(countResult.rows[0]?.image_count || 0);
+    const videoCount = parseInt(countResult.rows[0]?.video_count || 0);
+
+    if (media_type === 'image' && imageCount >= limits.images) {
+      return res.status(422).json({
+        success: false,
+        message: `Your ${plan} plan allows up to ${limits.images} images. Upgrade to add more.`,
+        limit: limits.images,
+        current: imageCount,
+        upgrade_required: plan === 'basic',
+      });
+    }
+    if (media_type === 'video' && videoCount >= limits.videos) {
+      return res.status(422).json({
+        success: false,
+        message: limits.videos === 0
+          ? 'Video portfolio items require a Premium or Featured subscription.'
+          : `Your ${plan} plan allows up to ${limits.videos} videos. Upgrade to add more.`,
+        limit: limits.videos,
+        current: videoCount,
+        upgrade_required: true,
+      });
+    }
+
     const id = crypto.randomUUID();
 
     const result = await query(
@@ -37,6 +79,7 @@ const addPortfolioItem = async (req, res, next) => {
     next(error);
   }
 };
+
 
 const getPortfolioItems = async (req, res, next) => {
   try {

@@ -25,47 +25,116 @@ const smsService = require('../services/sms');
 async function recalcReputationScores() {
   logger.info('CRON: reputation_score_recalc — start');
   try {
+    // PRD §13.4 — Trust Index 0-100 formula
+    // Factor weights: avg_rating 30%, recent_rating 20%, completed_jobs 15%,
+    //                 repeat_customer_rate 15%, response_rate 10%,
+    //                 profile_completeness 5%, verification_bonus +5,
+    //                 complaint_penalty -15 per verified complaint
     const result = await query(`
-      WITH recent_activity AS (
-        SELECT DISTINCT professional_id FROM reviews WHERE created_at >= NOW() - INTERVAL '24 hours'
-        UNION
-        SELECT p.id FROM professionals p
-          JOIN users u ON p.user_id = u.id
-          JOIN complaints c ON c.reported_user_id = u.id
-         WHERE c.updated_at >= NOW() - INTERVAL '24 hours'
+      WITH
+      -- Recent ratings (last 10 reviews)
+      recent_ratings AS (
+        SELECT professional_id,
+               ROUND(AVG(rating)::numeric, 2) AS recent_avg
+        FROM (
+          SELECT professional_id, rating,
+                 ROW_NUMBER() OVER (PARTITION BY professional_id ORDER BY created_at DESC) AS rn
+          FROM reviews
+          WHERE moderation_status = 'approved'
+        ) ranked
+        WHERE rn <= 10
+        GROUP BY professional_id
       ),
-      scores AS (
-        SELECT
-          p.id,
-          COALESCE(AVG(r.rating), 0)::numeric                                  AS avg_rating,
-          p.completed_jobs,
-          p.response_time_hours,
-          COUNT(DISTINCT c.id) FILTER (WHERE c.status NOT IN ('resolved'))     AS open_complaints,
-          COUNT(DISTINCT r.id) FILTER (WHERE r.created_at >= NOW() - INTERVAL '30 days') AS recent_reviews
+      -- Overall ratings
+      overall_ratings AS (
+        SELECT professional_id,
+               ROUND(AVG(rating)::numeric, 2) AS avg_r,
+               COUNT(*) AS review_count
+        FROM reviews
+        WHERE moderation_status = 'approved'
+        GROUP BY professional_id
+      ),
+      -- Repeat customer rate (customers who contacted same pro >= 2 times in last 90 days)
+      repeat_customers AS (
+        SELECT professional_id,
+               CASE WHEN COUNT(DISTINCT customer_id) = 0 THEN 0
+                    ELSE ROUND(
+                      (COUNT(DISTINCT customer_id) FILTER (
+                        WHERE customer_id IN (
+                          SELECT customer_id FROM contacts c2
+                          WHERE c2.professional_id = contacts.professional_id
+                            AND c2.created_at >= NOW() - INTERVAL '90 days'
+                          GROUP BY customer_id HAVING COUNT(*) >= 2
+                        )
+                      ))::numeric / NULLIF(COUNT(DISTINCT customer_id), 0) * 100, 2)
+               END AS repeat_rate
+        FROM contacts
+        WHERE created_at >= NOW() - INTERVAL '90 days'
+        GROUP BY professional_id
+      ),
+      -- Verified complaints in last 12 months
+      complaint_counts AS (
+        SELECT c_inner.reported_user_id,
+               COUNT(*) AS verified_complaints
+        FROM complaints c_inner
+        WHERE c_inner.status IN ('warning_issued', 'suspended', 'banned')
+          AND c_inner.created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY c_inner.reported_user_id
+      ),
+      -- Profile completeness (0-100)
+      completeness AS (
+        SELECT p.id,
+          (CASE WHEN p.headline IS NOT NULL AND p.headline <> '' THEN 10 ELSE 0 END +
+           CASE WHEN p.bio IS NOT NULL AND p.bio <> '' THEN 10 ELSE 0 END +
+           CASE WHEN p.latitude IS NOT NULL THEN 10 ELSE 0 END +
+           CASE WHEN p.cover_image_url IS NOT NULL THEN 5 ELSE 0 END +
+           CASE WHEN u.avatar_url IS NOT NULL THEN 5 ELSE 0 END +
+           CASE WHEN u.government_id_verified THEN 20 ELSE 0 END +
+           CASE WHEN (SELECT COUNT(*) FROM portfolio_items pi WHERE pi.professional_id = p.id) >= 3 THEN 20 ELSE 10 END +
+           CASE WHEN (SELECT COUNT(*) FROM certifications cert WHERE cert.professional_id = p.id) > 0 THEN 10 ELSE 0 END +
+           CASE WHEN (SELECT COUNT(*) FROM professional_categories pc WHERE pc.professional_id = p.id) > 0 THEN 10 ELSE 0 END
+          ) AS completeness_pct
         FROM professionals p
-        JOIN recent_activity ra ON p.id = ra.professional_id
-        LEFT JOIN reviews r ON r.professional_id = p.id
-        LEFT JOIN users pu ON pu.id = p.user_id
-        LEFT JOIN complaints c ON c.reported_user_id = pu.id
-        GROUP BY p.id, p.completed_jobs, p.response_time_hours
+        JOIN users u ON u.id = p.user_id
       )
       UPDATE professionals SET
-        avg_rating       = ROUND(scores.avg_rating, 2),
-        reputation_score = ROUND(LEAST(5.0,
-          (scores.avg_rating / 5.0) * 5.0 * 0.40
-          + LEAST(scores.completed_jobs::numeric / 200.0, 1.0) * 5.0 * 0.20
-          + CASE WHEN scores.response_time_hours IS NULL THEN 0
-                 ELSE GREATEST(0, 1 - scores.response_time_hours / 48.0) * 5.0 * 0.15 END
-          + CASE WHEN scores.open_complaints = 0 THEN 5.0 * 0.10
-                 ELSE GREATEST(0, 0.10 - scores.open_complaints::numeric * 0.03) * 5.0 END
-          + CASE WHEN scores.recent_reviews > 0 THEN 5.0 * 0.05 ELSE 0 END
-        ), 2),
-        updated_at = NOW()
-      FROM scores
-      WHERE professionals.id = scores.id
+        avg_rating           = COALESCE(or_.avg_r, 0),
+        recent_rating        = COALESCE(rr.recent_avg, COALESCE(or_.avg_r, 0)),
+        repeat_customer_rate = COALESCE(rc.repeat_rate, 0),
+        trust_index          = LEAST(100, GREATEST(0, ROUND(
+          -- 30%: Average rating (0-5 → 0-30)
+          (COALESCE(or_.avg_r, 0) / 5.0 * 30)
+          -- 20%: Recent rating (0-5 → 0-20)
+          + (COALESCE(rr.recent_avg, COALESCE(or_.avg_r, 0)) / 5.0 * 20)
+          -- 15%: Completed jobs (logarithmic: 1=5, 10=15, 50=25, 100+=30)
+          + LEAST(15, CASE WHEN professionals.completed_jobs <= 0 THEN 0
+                           ELSE LOG(10, professionals.completed_jobs + 1) / LOG(10, 101) * 15
+                      END)
+          -- 15%: Repeat customer rate (0-100% → 0-15)
+          + (COALESCE(rc.repeat_rate, 0) / 100.0 * 15)
+          -- 10%: Response rate (0-100% → 0-10)
+          + (COALESCE(professionals.response_rate, 0) / 100.0 * 10)
+          -- 5%: Profile completeness (0-100 → 0-5)
+          + (COALESCE(comp.completeness_pct, 0) / 100.0 * 5)
+          -- +5: Verification bonus
+          + CASE WHEN u.government_id_verified THEN 5 ELSE 0 END
+          -- -15 per verified complaint in last 12 months
+          - (COALESCE(cc.verified_complaints, 0) * 15)
+        , 2))),
+        -- Keep 0-5 avg_rating for backward compatibility
+        reputation_score     = ROUND(LEAST(5.0, COALESCE(or_.avg_r, 0))::numeric, 2),
+        updated_at           = NOW()
+      FROM professionals p_inner
+      JOIN users u ON u.id = p_inner.user_id
+      LEFT JOIN overall_ratings or_  ON or_.professional_id = p_inner.id
+      LEFT JOIN recent_ratings rr    ON rr.professional_id = p_inner.id
+      LEFT JOIN repeat_customers rc  ON rc.professional_id = p_inner.id
+      LEFT JOIN complaint_counts cc  ON cc.reported_user_id = u.id
+      LEFT JOIN completeness comp    ON comp.id = p_inner.id
+      WHERE professionals.id = p_inner.id
       RETURNING professionals.id
     `);
-    logger.info({ updated: result.rowCount }, 'CRON: reputation_score_recalc — done');
+    logger.info({ updated: result.rowCount }, 'CRON: reputation_score_recalc (Trust Index 0-100) — done');
   } catch (err) {
     logger.error({ err }, 'CRON: reputation_score_recalc failed');
   }
@@ -261,7 +330,7 @@ async function cleanStaleDeviceTokens() {
 function startCronJobs() {
   logger.info('Starting background cron jobs...');
 
-  // Reputation recalc — nightly 02:00 IST = 20:30 UTC
+  // Trust Index / Reputation recalc — nightly 02:00 IST = 20:30 UTC
   cron.schedule('30 20 * * *', recalcReputationScores, { timezone: 'UTC' });
 
   // Subscription expiry checker — daily 09:00 IST = 03:30 UTC
@@ -279,7 +348,66 @@ function startCronJobs() {
   // Stale device token cleaner — weekly Monday 04:00 IST = Sunday 22:30 UTC
   cron.schedule('30 22 * * 0', cleanStaleDeviceTokens, { timezone: 'UTC' });
 
-  logger.info('All 6 cron jobs scheduled');
+  // Response rate updater — daily 03:00 IST = 21:30 UTC
+  cron.schedule('30 21 * * *', updateResponseRates, { timezone: 'UTC' });
+
+  // KYC document retention — weekly to purge old docs
+  cron.schedule('0 0 * * 0', purgeExpiredKycDocuments, { timezone: 'UTC' });
+
+  logger.info('All 8 cron jobs scheduled');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. Response Rate Updater — daily 03:00 IST (21:30 UTC prev day)
+// Calculates % of contact requests where professional sent a message within 24h
+// ─────────────────────────────────────────────────────────────────────────────
+async function updateResponseRates() {
+  try {
+    // For each professional, calculate response rate over last 30 days
+    await query(`
+      UPDATE professionals SET
+        response_rate = COALESCE((
+          SELECT ROUND(
+            (COUNT(*) FILTER (WHERE c.status = 'accepted'))::numeric
+            / NULLIF(COUNT(*), 0) * 100, 2
+          )
+          FROM contacts c
+          WHERE c.professional_id = professionals.id
+            AND c.created_at >= NOW() - INTERVAL '30 days'
+        ), 0),
+        updated_at = NOW()
+    `);
+    logger.info('CRON: response_rate_updater — done');
+  } catch (err) {
+    logger.error({ err }, 'CRON: response_rate_updater failed');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. KYC Document Retention — weekly Sunday midnight UTC
+// Purges government ID documents from storage after 12 months post-verification
+// (Logs deletion; actual S3 deletion requires storage service call)
+// ─────────────────────────────────────────────────────────────────────────────
+async function purgeExpiredKycDocuments() {
+  try {
+    // Mark documents for purge (actual S3 deletion done by storage service)
+    const result = await query(`
+      UPDATE verifications SET
+        document_url = NULL,
+        selfie_url = NULL
+      WHERE status = 'verified'
+        AND verified_at < NOW() - INTERVAL '12 months'
+        AND document_url IS NOT NULL
+      RETURNING id, user_id
+    `);
+    if (result.rowCount > 0) {
+      logger.info({ purged: result.rowCount }, 'CRON: kyc_doc_retention — purged expired KYC docs');
+    }
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: kyc_doc_retention failed');
+    }
+  }
 }
 
 module.exports = {
@@ -290,4 +418,6 @@ module.exports = {
   checkInactiveProfiles,
   detectReviewVelocity,
   cleanStaleDeviceTokens,
+  updateResponseRates,
+  purgeExpiredKycDocuments,
 };

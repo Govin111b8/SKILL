@@ -192,6 +192,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Semgrep SAST scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/nodejs
+            p/javascript
+            p/secrets
+            p/owasp-top-ten
+        continue-on-error: true
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
   # ─────────────────────────────────────────────────────────────────────────
   # Stage 4b: Container Image Vulnerability Scan (Trivy)
   # Runs after Docker build so it can scan the published images.

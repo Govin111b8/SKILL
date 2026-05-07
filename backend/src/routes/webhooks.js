@@ -58,9 +58,11 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
           // ── Subscription activation (when notes.subscription_plan is set) ──
           const subscriptionPlan = notes.subscription_plan || paymentRecord.metadata?.subscription_plan;
           const professionalId = notes.professional_id || paymentRecord.metadata?.professional_id;
+          // billing_cycle: 'monthly' | 'annual' — annual gets 33% discount, 12 months duration
+          const billingCycle = notes.billing_cycle || paymentRecord.metadata?.billing_cycle || 'monthly';
 
           if (subscriptionPlan && professionalId) {
-            const durationMonths = subscriptionPlan === 'featured' ? 1 : 1; // extend for annual plans
+            const durationMonths = billingCycle === 'annual' ? 12 : 1;
             const endDate = new Date();
             endDate.setMonth(endDate.getMonth() + durationMonths);
             const graceEnd = new Date(endDate);

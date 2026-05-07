@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiLock, FiTrash2, FiSave, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiUser, FiLock, FiTrash2, FiSave, FiArrowLeft, FiCheck, FiBell, FiGlobe } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { put, del } from '../api/client';
 import './Settings.css';
@@ -11,6 +11,17 @@ function Settings() {
   const [tab, setTab] = useState('profile');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+
+  const [notifPrefs, setNotifPrefs] = useState({
+    security: true,
+    verification: true,
+    complaint: true,
+    subscription: true,
+    profile_activity: true,
+    quote_requests: true,
+    marketing: false,
+  });
+  const [savingNotif, setSavingNotif] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
@@ -99,6 +110,9 @@ function Settings() {
             </button>
             <button className={`settings-nav-btn ${tab === 'password' ? 'active' : ''}`} onClick={() => setTab('password')}>
               <FiLock /> Password
+            </button>
+            <button className={`settings-nav-btn ${tab === 'notifications' ? 'active' : ''}`} onClick={() => setTab('notifications')}>
+              <FiBell /> Notifications
             </button>
             <button className={`settings-nav-btn settings-nav-btn--danger ${tab === 'account' ? 'active' : ''}`} onClick={() => setTab('account')}>
               <FiTrash2 /> Account
@@ -198,6 +212,50 @@ function Settings() {
                     <FiTrash2 /> Delete My Account
                   </button>
                 </div>
+              </div>
+            )}
+
+            {tab === 'notifications' && (
+              <div className="settings-form">
+                <h2>Notification Preferences</h2>
+                <p style={{ color: 'var(--gray-500)', marginBottom: 24 }}>Choose which notifications you receive via email and in-app.</p>
+                {Object.entries({
+                  security: 'Security alerts (login, password change)',
+                  verification: 'KYC verification updates',
+                  complaint: 'Complaint & dispute notifications',
+                  subscription: 'Subscription renewal reminders',
+                  profile_activity: 'Profile views and contact requests',
+                  quote_requests: 'New quote requests (professionals)',
+                  marketing: 'Promotions, tips, and newsletters',
+                }).map(([key, label]) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!notifPrefs[key]}
+                      onChange={e => setNotifPrefs(prev => ({ ...prev, [key]: e.target.checked }))}
+                      style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    />
+                    <span style={{ color: key === 'marketing' ? 'var(--gray-500)' : 'var(--gray-800)' }}>{label}</span>
+                    {key === 'security' && <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginLeft: 'auto' }}>Required</span>}
+                  </label>
+                ))}
+                <button
+                  className="btn btn-primary"
+                  disabled={savingNotif}
+                  onClick={async () => {
+                    setSavingNotif(true);
+                    try {
+                      await put('/users/profile', { notification_preferences: notifPrefs });
+                      showMessage('Notification preferences saved!');
+                    } catch (e) {
+                      showMessage('Failed to save preferences', 'error');
+                    } finally {
+                      setSavingNotif(false);
+                    }
+                  }}
+                >
+                  <FiSave /> {savingNotif ? 'Saving…' : 'Save Preferences'}
+                </button>
               </div>
             )}
           </div>

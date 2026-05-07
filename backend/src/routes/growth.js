@@ -1,111 +1,68 @@
 /**
- * Growth Routes — Newsletter subscriptions, waitlist, lead capture
+ * Growth Routes — Waitlist, trending categories, search suggestions,
+ *                 similar professionals, block customer, language,
+ *                 DPDPA data export, account deletion, recently viewed
  */
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/database');
-const logger = require('../config/logger');
 const { body, validationResult } = require('express-validator');
+const { authenticate, authorize } = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const growth = require('../controllers/growthController');
+const logger = require('../config/logger');
 
-/**
- * POST /api/growth/subscribe
- * Newsletter/waitlist subscription
- */
-router.post('/subscribe',
-  body('email').isEmail().normalizeEmail(),
-  body('source').optional().isString().trim(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: 'Please provide a valid email address' });
-    }
+// ── Public ────────────────────────────────────────────────────────────────
+router.get('/supported-cities', growth.getSupportedCities);
+router.get('/categories/trending', growth.getTrendingCategories);
+router.get('/search/suggestions', growth.getSearchSuggestions);
+router.get('/professionals/:id/similar', growth.getSimilarProfessionals);
 
-    const { email, source } = req.body;
-
-    try {
-      // Upsert — don't error if already subscribed
-      await pool.query(
-        `INSERT INTO newsletter_subscribers (email, source, subscribed_at)
-         VALUES ($1, $2, NOW())
-         ON CONFLICT (email) DO UPDATE SET source = COALESCE($2, newsletter_subscribers.source)`,
-        [email, source || 'website_footer']
-      );
-
-      logger.info({ email, source }, 'New newsletter subscription');
-      res.json({ success: true, message: 'Successfully subscribed! Watch your inbox.' });
-    } catch (err) {
-      logger.error({ err, email }, 'Newsletter subscribe failed');
-      res.status(500).json({ error: 'Something went wrong. Please try again.' });
-    }
-  }
-);
-
-/**
- * POST /api/growth/waitlist
- * Professional waitlist for new cities/categories
- */
 router.post('/waitlist',
-  body('email').isEmail().normalizeEmail(),
-  body('name').optional().isString().trim(),
-  body('phone').optional().isMobilePhone(),
-  body('city').optional().isString().trim(),
-  body('category').optional().isString().trim(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: 'Please provide a valid email address' });
-    }
-
-    const { email, name, phone, city, category } = req.body;
-
-    try {
-      await pool.query(
-        `INSERT INTO waitlist (email, name, phone, city, category, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())
-         ON CONFLICT (email) DO UPDATE SET 
-           name = COALESCE($2, waitlist.name),
-           city = COALESCE($4, waitlist.city)`,
-        [email, name, phone, city, category]
-      );
-
-      logger.info({ email, city, category }, 'New waitlist entry');
-      res.json({ success: true, message: "You're on the list! We'll notify you when we launch in your area." });
-    } catch (err) {
-      logger.error({ err, email }, 'Waitlist signup failed');
-      res.status(500).json({ error: 'Something went wrong. Please try again.' });
-    }
-  }
+  validate([
+    body('city').trim().notEmpty().withMessage('city is required'),
+    body('email').optional({ nullable: true }).isEmail().withMessage('Valid email required'),
+    body('phone').optional({ nullable: true }).isMobilePhone().withMessage('Valid phone required'),
+  ]),
+  growth.joinWaitlist
 );
 
-/**
- * POST /api/growth/track-event
- * Simple analytics event tracking for growth metrics
- */
-router.post('/track-event',
-  body('event').isString().trim().notEmpty(),
-  body('properties').optional().isObject(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: 'Invalid event data' });
-    }
+// Legacy newsletter subscribe (keep backward compat)
+router.post('/subscribe', async (req, res) => {
+  const { email, source } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  // Reuse waitlist
+  req.body = { email, city: 'Unknown', source };
+  return growth.joinWaitlist(req, res, (err) => {
+    if (err) return res.status(500).json({ error: 'Failed' });
+  });
+});
 
-    const { event, properties } = req.body;
-    const userId = req.user?.id || null;
+// ── Authenticated ─────────────────────────────────────────────────────────
 
-    try {
-      await pool.query(
-        `INSERT INTO growth_events (user_id, event_name, properties, created_at)
-         VALUES ($1, $2, $3, NOW())`,
-        [userId, event, JSON.stringify(properties || {})]
-      );
-      res.json({ success: true });
-    } catch (err) {
-      // Non-critical — don't fail the response
-      logger.warn({ err, event }, 'Growth event tracking failed');
-      res.json({ success: true });
-    }
-  }
+// Profile completeness (professionals only)
+router.get('/professionals/profile-completeness', authenticate, authorize('professional'), growth.getProfileCompleteness);
+
+// Block a customer (professionals only)
+router.post('/professionals/block-customer/:userId', authenticate, authorize('professional'), growth.blockCustomer);
+
+// Language preference (any user)
+router.put('/users/language', authenticate,
+  validate([body('language').trim().notEmpty()]),
+  growth.updateLanguage
+);
+
+// Recently viewed professionals (customers)
+router.get('/users/recently-viewed', authenticate, growth.getRecentlyViewed);
+
+// DPDPA data export
+router.get('/professionals/export-data', authenticate, growth.exportData);
+router.get('/users/export-data', authenticate, growth.exportData);
+
+// Account deletion (soft delete, 30 days)
+router.delete('/users/account', authenticate,
+  validate([body('reason').optional().isString()]),
+  growth.deleteAccount
 );
 
 module.exports = router;
+

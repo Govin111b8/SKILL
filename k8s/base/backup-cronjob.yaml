@@ -1,0 +1,161 @@
+---
+# SkillConnect — PostgreSQL Automated Backup CronJob
+# Runs pg_dump every 6 hours and uploads to S3
+# Retains last 30 days of backups (S3 lifecycle policy handles older ones)
+#
+# Prerequisites:
+#   - Secret: skillconnect-secrets (DATABASE_URL, S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+#   - Namespace: skillconnect
+#
+# Apply: kubectl apply -f k8s/base/backup-cronjob.yaml
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: skillconnect
+  labels:
+    app: skillconnect
+    component: backup
+spec:
+  schedule: "0 */6 * * *"        # Every 6 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600  # 1 hour max per job
+      template:
+        metadata:
+          labels:
+            app: skillconnect
+            component: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:16-alpine
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: DATABASE_URL
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: DB_PASSWORD
+                - name: S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: S3_BUCKET
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "ap-south-1"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/tmp/skillconnect_${TIMESTAMP}.dump"
+                  echo "Starting pg_dump at ${TIMESTAMP}..."
+                  pg_dump "$DATABASE_URL" --format=custom --compress=9 -f "$BACKUP_FILE"
+                  echo "Backup created: $(du -h $BACKUP_FILE | cut -f1)"
+                  # Upload to S3
+                  apk add --quiet aws-cli 2>/dev/null || pip install awscli --quiet 2>/dev/null || true
+                  aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/postgres-backups/skillconnect_${TIMESTAMP}.dump" \
+                    --storage-class STANDARD_IA
+                  echo "Upload complete: s3://${S3_BUCKET}/postgres-backups/skillconnect_${TIMESTAMP}.dump"
+                  rm -f "$BACKUP_FILE"
+                  echo "Backup job finished successfully."
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+---
+# Redis Persistent Backup CronJob (RDB snapshot to S3, hourly)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-backup
+  namespace: skillconnect
+  labels:
+    app: skillconnect
+    component: redis-backup
+spec:
+  schedule: "30 * * * *"         # Every hour at :30
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: skillconnect
+            component: redis-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: redis-backup
+              image: redis:7-alpine
+              env:
+                - name: REDIS_HOST
+                  value: "redis-service"
+                - name: S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: S3_BUCKET
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillconnect-secrets
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "ap-south-1"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  echo "Triggering Redis BGSAVE..."
+                  redis-cli -h "$REDIS_HOST" BGSAVE
+                  sleep 10
+                  # Copy RDB file out of Redis
+                  BACKUP_FILE="/tmp/redis_${TIMESTAMP}.rdb"
+                  redis-cli -h "$REDIS_HOST" --rdb "$BACKUP_FILE"
+                  echo "Redis RDB size: $(du -h $BACKUP_FILE | cut -f1)"
+                  pip install awscli --quiet 2>/dev/null || true
+                  aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/redis-backups/redis_${TIMESTAMP}.rdb"
+                  rm -f "$BACKUP_FILE"
+                  echo "Redis backup complete."
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
