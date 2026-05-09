@@ -46,6 +46,9 @@ import RefundPolicy from './pages/RefundPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import ProfessionalTerms from './pages/ProfessionalTerms';
 import ContentModerationPolicy from './pages/ContentModerationPolicy';
+import Collections from './pages/Collections';
+import CommunityFeed from './pages/CommunityFeed';
+import ReelsFeed from './pages/ReelsFeed';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
@@ -276,6 +279,17 @@ function App() {
           <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/professional-terms" element={<ProfessionalTerms />} />
           <Route path="/content-moderation" element={<ContentModerationPolicy />} />
+          {/* Social & Discovery */}
+          <Route
+            path="/collections"
+            element={
+              <ProtectedRoute>
+                <Collections />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/community" element={<CommunityFeed />} />
+          <Route path="/reels" element={<ReelsFeed />} />
           {/* Agent Routes */}
           <Route
             path="/agent/dashboard"

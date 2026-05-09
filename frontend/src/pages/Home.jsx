@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool, FiMapPin, FiClock,
+  FiTrendingUp, FiZap, FiPlay,
 } from 'react-icons/fi';
 import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
@@ -78,6 +79,10 @@ function Home() {
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [selectedCity, setSelectedCity] = useState(() => localStorage.getItem('sc_city') || 'Bangalore');
   const [supportedCities, setSupportedCities] = useState(DEFAULT_CITIES);
+  const [storyFeed, setStoryFeed] = useState([]);
+  const [trending, setTrending] = useState([]);
+  const [newPros, setNewPros] = useState([]);
+  const [responsive, setResponsive] = useState([]);
 
   // Load recently viewed from API if logged in
   useEffect(() => {
@@ -96,6 +101,14 @@ function Home() {
         if (cities.length > 0) setSupportedCities(cities);
       })
       .catch(() => {}); // silently fall back to DEFAULT_CITIES
+  }, []);
+
+  // Load discovery data
+  useEffect(() => {
+    get('/stories/feed?limit=10').then(res => setStoryFeed(res.data || [])).catch(() => {});
+    get('/discover/trending?limit=8').then(res => setTrending(res.data || [])).catch(() => {});
+    get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch(() => {});
+    get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch(() => {});
   }, []);
 
   function handleCityChange(city) {
@@ -201,6 +214,129 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* STORY BUBBLES */}
+      {storyFeed.length > 0 && (
+        <section className="section" style={{ padding: '20px 0' }}>
+          <div className="container">
+            <div className="story-bubbles-row">
+              {storyFeed.map(group => (
+                <Link
+                  key={group.professional_id}
+                  to={`/professionals/${group.professional_id}/storefront`}
+                  className="story-bubble"
+                >
+                  <div className="story-avatar-ring">
+                    <img
+                      src={group.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.professional_name)}&background=6366f1&color=fff&size=56`}
+                      alt={group.professional_name}
+                    />
+                  </div>
+                  <span className="story-name">{group.professional_name?.split(' ')[0]}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* TRENDING PROFESSIONALS */}
+      {trending.length > 0 && (
+        <section className="section discovery-section">
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-eyebrow"><FiTrendingUp size={14} /> Trending</span>
+                <h2 className="section-title">Top Professionals This Week</h2>
+              </div>
+            </div>
+            <div className="discovery-scroll">
+              {trending.map(pro => (
+                <Link key={pro.id} to={`/professionals/${pro.id}/storefront`} className="discovery-card">
+                  <div className="discovery-avatar">
+                    <img
+                      src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=64`}
+                      alt={pro.name}
+                    />
+                  </div>
+                  <strong>{pro.name}</strong>
+                  <span className="discovery-headline">{pro.headline || pro.location || ''}</span>
+                  <div className="discovery-meta">
+                    {pro.average_rating > 0 && <span><FiStar size={12} fill="#f59e0b" /> {pro.average_rating.toFixed(1)}</span>}
+                    {pro.completed_jobs > 0 && <span>{pro.completed_jobs} jobs</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* NEWLY VERIFIED */}
+      {newPros.length > 0 && (
+        <section className="section discovery-section">
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-eyebrow"><FiShield size={14} /> New on SkillConnect</span>
+                <h2 className="section-title">Recently Verified Professionals</h2>
+              </div>
+            </div>
+            <div className="discovery-scroll">
+              {newPros.map(pro => (
+                <Link key={pro.id} to={`/professionals/${pro.id}/storefront`} className="discovery-card">
+                  <div className="discovery-avatar">
+                    <img
+                      src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=10b981&color=fff&size=64`}
+                      alt={pro.name}
+                    />
+                  </div>
+                  <strong>{pro.name}</strong>
+                  <span className="discovery-headline">{pro.headline || pro.location || ''}</span>
+                  <div className="discovery-meta">
+                    <span><FiShield size={12} /> Verified</span>
+                    {pro.average_rating > 0 && <span><FiStar size={12} fill="#f59e0b" /> {pro.average_rating.toFixed(1)}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FASTEST RESPONDERS */}
+      {responsive.length > 0 && (
+        <section className="section discovery-section">
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-eyebrow"><FiZap size={14} /> Lightning Fast</span>
+                <h2 className="section-title">Fastest Responders</h2>
+              </div>
+            </div>
+            <div className="discovery-scroll">
+              {responsive.map(pro => (
+                <Link key={pro.id} to={`/professionals/${pro.id}/storefront`} className="discovery-card">
+                  <div className="discovery-avatar">
+                    <img
+                      src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=f97316&color=fff&size=64`}
+                      alt={pro.name}
+                    />
+                  </div>
+                  <strong>{pro.name}</strong>
+                  <span className="discovery-headline">{pro.headline || pro.location || ''}</span>
+                  <div className="discovery-meta">
+                    <span><FiZap size={12} /> {pro.response_time_hours < 1
+                      ? `${Math.round(pro.response_time_hours * 60)}min`
+                      : `${Math.round(pro.response_time_hours)}hr`
+                    } response</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ALL SERVICES */}
       <section className="section categories-section">

@@ -4,13 +4,15 @@ import {
   FiMapPin, FiClock, FiDollarSign, FiPhone, FiMail, FiMessageSquare,
   FiStar, FiCheck, FiShare2, FiHeart, FiArrowLeft, FiGlobe, FiInstagram,
   FiCalendar, FiAward, FiZap, FiShield, FiUsers, FiPlay, FiChevronRight,
-  FiInfo,
+  FiInfo, FiBookmark,
 } from 'react-icons/fi';
 import { get, post, del } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import TrustTimeline from '../components/TrustTimeline';
+import SaveToCollectionModal from '../components/SaveToCollectionModal';
 import './Storefront.css';
 
 // Human-friendly availability labels
@@ -39,6 +41,7 @@ function Storefront() {
   const [following, setFollowing] = useState(false);
   const [trustData, setTrustData] = useState(null);
   const [showTrustModal, setShowTrustModal] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   useEffect(() => { fetchStorefront(); }, [id]);
 
@@ -191,6 +194,11 @@ function Storefront() {
         <div className="storefront-hero-actions">
           <button onClick={handleShare} title="Share"><FiShare2 /></button>
           <button onClick={toggleFavorite} title="Save" className={saved ? 'active' : ''}><FiHeart /></button>
+          {isAuthenticated && (
+            <button onClick={() => setShowSaveModal(true)} title="Save to Collection" className="save-collection-btn">
+              <FiBookmark />
+            </button>
+          )}
         </div>
 
         {/* Availability indicator */}
@@ -470,6 +478,7 @@ function Storefront() {
                 <p>{data.return_policy}</p>
               </div>
             )}
+            <TrustTimeline professionalId={id} />
           </div>
         )}
 
@@ -539,6 +548,14 @@ function Storefront() {
             <button className="trust-modal-close" onClick={() => setShowTrustModal(false)}>Close</button>
           </div>
         </div>
+      )}
+
+      {showSaveModal && (
+        <SaveToCollectionModal
+          itemType="professional"
+          itemId={id}
+          onClose={() => setShowSaveModal(false)}
+        />
       )}
     </div>
   );

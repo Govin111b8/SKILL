@@ -48,6 +48,9 @@ const socialRoutes = require('./routes/social');
 const storyRoutes = require('./routes/stories');
 const trustRoutes = require('./routes/trust');
 const discoverRoutes = require('./routes/discover');
+const collectionsRoutes = require('./routes/collections');
+const communityRoutes = require('./routes/community');
+const reelsRoutes = require('./routes/reels');
 
 const app = express();
 
@@ -146,6 +149,9 @@ app.use('/api/social', socialRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/trust', trustRoutes);
 app.use('/api/discover', discoverRoutes);
+app.use('/api/collections', collectionsRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/reels', reelsRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });
