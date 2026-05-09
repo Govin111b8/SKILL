@@ -139,8 +139,8 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
   - `completed` → "Job Completed 🎉"
   - `cancelled` → "Cancelled ❌"
 - [x] **Visual booking timeline** — step-by-step progress tracker with emoji icons
-- [ ] **Conversational booking flow** — guided multi-step wizard instead of a single form
-- [ ] Frontend: Update `CreateBooking.jsx` with step-by-step wizard (What → When → Where → Confirm)
+- [x] **Conversational booking flow** — guided multi-step wizard instead of a single form
+- [x] Frontend: Update `CreateBooking.jsx` with step-by-step wizard (What → When → Where → Confirm)
 - [x] Frontend: Update `BookingDetail.jsx` with humanized labels + status descriptions
 
 ---
@@ -163,17 +163,17 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 5.2 Save Collections (Pinterest-style)
 
-- [ ] **Save to collection** — bookmark professionals and services into named collections
-- [ ] **Default collections** — "Favorites", "For Later", plus custom user-created collections
+- [x] **Save to collection** — bookmark professionals and services into named collections
+- [x] **Default collections** — "Favorites", "For Later", plus custom user-created collections
 - [ ] **Collection sharing** — share a collection via link
-- [ ] Backend: `POST /collections` (create), `POST /collections/:id/items` (add item), `GET /collections` (list)
-- [ ] DB migration: `collections` table (id, user_id, name, is_public, created_at) + `collection_items` table (collection_id, item_type, item_id)
-- [ ] Frontend: `Collections.jsx` page + `SaveToCollectionModal.jsx`
+- [x] Backend: `POST /collections` (create), `POST /collections/:id/items` (add item), `GET /collections` (list)
+- [x] DB migration: `collections` table (id, user_id, name, is_public, created_at) + `collection_items` table (collection_id, item_type, item_id)
+- [x] Frontend: `Collections.jsx` page + `SaveToCollectionModal.jsx`
 
 ### 5.3 Professional Stories (Temporary Updates)
 
 - [x] **24-hour stories** — professionals post ephemeral updates (available today, current project, offers)
-- [ ] **Story viewer** — horizontal scrollable story bubbles on home page and category pages
+- [x] **Story viewer** — horizontal scrollable story bubbles on home page and category pages
 - [x] **Story creation** — photo/video + text overlay + CTA link
 - [x] Backend: `POST /stories` (create), `GET /stories/feed` (nearby active stories), auto-expire via query
 - [x] DB migration: `stories` table (id, professional_id, media_url, text_overlay, cta_url, cta_label, view_count, expires_at, created_at)
@@ -181,12 +181,12 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 5.4 Community Posts & Tips
 
-- [ ] **Professional tips** — long-form content from professionals ("How to maintain your AC", "Wedding makeup tips")
-- [ ] **Like + save + share** on community posts
-- [ ] **Category-tagged** — posts appear in relevant category feeds
-- [ ] Backend: `POST /community/posts`, `GET /community/posts?category=`, `POST /community/posts/:id/like`
+- [x] **Professional tips** — long-form content from professionals ("How to maintain your AC", "Wedding makeup tips")
+- [x] **Like + save + share** on community posts
+- [x] **Category-tagged** — posts appear in relevant category feeds
+- [x] Backend: `POST /community/posts`, `GET /community/posts?category=`, `POST /community/posts/:id/like`
 - [x] DB migration: `community_posts` table (id, author_id, title, content, category, media_urls JSONB, likes_count, created_at)
-- [ ] Frontend: `CommunityFeed.jsx` page + `PostCard.jsx` component
+- [x] Frontend: `CommunityFeed.jsx` page + `PostCard.jsx` component
 - [ ] Bonus: Great for SEO — each post becomes an indexed page
 
 ### 5.5 WhatsApp Integration (India-First)
@@ -207,12 +207,12 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 6.1 Reels / Short Video Feed
 
-- [ ] **Reels feed page** — vertical swipeable short video feed (transformations, tutorials, before/after, work process)
-- [ ] **Reels from storefront** — professionals upload reels via storefront media
-- [ ] **Like + save + share + book** — engagement actions on each reel
+- [x] **Reels feed page** — vertical swipeable short video feed (transformations, tutorials, before/after, work process)
+- [x] **Reels from storefront** — professionals upload reels via storefront media
+- [x] **Like + save + share + book** — engagement actions on each reel
 - [ ] **Category-filtered reels** — beauty reels, home service reels, etc.
-- [ ] Backend: `GET /reels/feed?category=&page=` — paginated reel feed with engagement counts
-- [ ] Frontend: `ReelsFeed.jsx` — full-screen swipeable video player with overlay actions
+- [x] Backend: `GET /reels/feed?category=&page=` — paginated reel feed with engagement counts
+- [x] Frontend: `ReelsFeed.jsx` — full-screen swipeable video player with overlay actions
 - [ ] Mobile: `ReelsScreen` — native vertical video feed with gesture navigation
 
 ### 6.2 Trending & Discovery Sections
@@ -223,7 +223,7 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 - [x] **Highly responsive** — professionals with fastest response times
 - [ ] **Most booked** — overall top professionals by booking volume
 - [x] Backend: `GET /discover/trending`, `GET /discover/new`, `GET /discover/responsive`
-- [ ] Frontend: Horizontal scroll carousels on `Home.jsx` and `Categories.jsx`
+- [x] Frontend: Horizontal scroll carousels on `Home.jsx` and `Categories.jsx`
 
 ### 6.3 AI-Powered Discovery Feed (Future)
 
@@ -252,7 +252,7 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 - [x] **Visual trust timeline** showing: join date, milestones, jobs completed, repeat customers, response streaks
 - [x] **Milestone badges** — auto-awarded at thresholds (10 jobs, 50 jobs, 100 jobs, first repeat customer, etc.)
-- [ ] Frontend: `TrustTimeline.jsx` component on storefront
+- [x] Frontend: `TrustTimeline.jsx` component on storefront
 - [x] Backend: `GET /trust/:professionalId/timeline` — ordered milestone events
 
 ### 7.2 Trust Badge System (Tiered)
@@ -263,7 +263,7 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
   - ⭐ Customer Favorite — 4.8+ avg rating (20+ reviews)
   - 🏆 Top Rated — top 10% in category
   - 💎 Elite Professional — 100+ jobs, 4.9+ rating, 50%+ repeat rate
-- [ ] **Auto-calculation** — badges recalculated weekly via cron job
+- [x] **Auto-calculation** — badges recalculated weekly via cron job
 - [x] Backend: `GET /trust/:professionalId/badges` — current badges with progress
 - [x] DB migration: `professional_badges` table (professional_id, badge_type, earned_at, metadata JSONB)
 - [x] Frontend: Badge display on `Storefront.jsx` with earned badge indicators
