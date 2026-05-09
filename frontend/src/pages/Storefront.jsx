@@ -131,6 +131,7 @@ function Storefront() {
             className="storefront-hero-video"
             src={data.intro_video_url}
             autoPlay muted loop playsInline
+            aria-label={`Introduction video for ${data.name}`}
           />
         )}
 
@@ -219,6 +220,7 @@ function Storefront() {
             <button
               className={`follow-btn ${following ? 'following' : ''}`}
               onClick={toggleFollow}
+              aria-label={following ? `Unfollow ${data.name}` : `Follow ${data.name}`}
             >
               {following ? '✓ Following' : '+ Follow'}
             </button>

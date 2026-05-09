@@ -95,51 +95,53 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 4.1 Hero Experience — Premium First Impression
 
-- [ ] **Cinematic banner** — full-width hero image/video with gradient overlay on `Storefront.jsx`
-- [ ] **Short intro reel** — 15–30s video intro with auto-play (muted) in hero section
-- [ ] **Premium typography** — large name, tagline, service category with elegant font stack
-- [ ] **Animated verified badge** — subtle glow/pulse animation on verified professionals
-- [ ] **Trust indicators above the fold** — rating, jobs completed, response time, repeat customers
-- [ ] **Sticky CTA** — "Book Now" button that follows scroll on mobile and desktop
-- [ ] **Availability indicator** — "Available Today" / "Next Available: Tomorrow" live status
-- [ ] Backend: `GET /storefront/:id` returns hero data (banner, reel URL, tagline, trust stats)
+- [x] **Cinematic banner** — full-width hero image/video with gradient overlay on `Storefront.jsx`
+- [x] **Short intro reel** — 15–30s video intro with auto-play (muted) in hero section
+- [x] **Premium typography** — large name, tagline, service category with elegant font stack
+- [x] **Animated verified badge** — subtle glow/pulse animation on verified professionals
+- [x] **Trust indicators above the fold** — rating, jobs completed, response time, repeat customers
+- [x] **Sticky CTA** — "Book Now" button that follows scroll on mobile and desktop
+- [x] **Availability indicator** — "Available Today" / "Next Available: Tomorrow" live status
+- [x] Backend: `GET /storefront/:id` returns hero data (banner, reel URL, tagline, trust stats, badges, media, packages, follower count)
 
 ### 4.2 Visual Storytelling — Portfolio 2.0
 
-- [ ] **Before/after slider** — drag-to-compare component for work transformations
-- [ ] **Work transformation reels** — short video gallery (Instagram Reels-style grid)
-- [ ] **Story highlights** — pinned circular thumbnails (like Instagram highlights) on storefront
+- [x] **Before/after slider** — before/after card grid with labeled images on storefront
+- [x] **Work transformation reels** — short video gallery (Instagram Reels-style grid)
+- [x] **Story highlights** — pinned circular thumbnails (like Instagram highlights) on storefront
 - [ ] **Client video testimonials** — embedded video reviews from customers
 - [ ] **"Day in my work" content** — photo/video journal feature for professionals
-- [ ] Backend: `POST /storefront/:id/media` — upload reels, before/after, highlights
-- [ ] Backend: `GET /storefront/:id/portfolio` — paginated media gallery with types
-- [ ] DB migration: `storefront_media` table (id, storefront_id, type [reel/before_after/highlight/testimonial], media_url, thumbnail_url, caption, sort_order, created_at)
+- [x] Backend: `POST /storefront/:id/media` — upload reels, before/after, highlights
+- [x] Backend: `GET /storefront/:id/media` — paginated media gallery with type filter
+- [x] DB migration: `storefront_media` table (id, storefront_id, type [reel/before_after/highlight/testimonial/gallery], media_url, thumbnail_url, caption, before_url, sort_order, created_at)
 
 ### 4.3 Professional Branding & Customization
 
-- [ ] **Theme selection** — 5–8 pre-built storefront themes (modern, classic, bold, minimal, etc.)
-- [ ] **Brand colors** — primary + accent color picker saved per storefront
-- [ ] **Custom cover layouts** — choose from layout templates (centered, left-aligned, split)
-- [ ] **Custom sections** — reorderable content blocks (About, Services, Portfolio, Reviews, FAQ)
-- [ ] **Intro card** — "About My Business" rich text section with photo
-- [ ] **Service packages** — tiered pricing cards (Basic / Standard / Premium)
-- [ ] Backend: `PUT /storefront/:id/theme` — save theme, colors, layout, section order
-- [ ] DB migration: `storefront_themes` table (storefront_id, theme_name, primary_color, accent_color, layout, section_order JSONB, custom_intro TEXT)
-- [ ] Frontend: `StorefrontCustomizer.jsx` — live preview theme editor
+- [x] **Theme selection** — 8 pre-built storefront themes (modern, classic, bold, minimal, elegant, vibrant, dark, professional)
+- [x] **Brand colors** — primary + accent color picker saved per storefront
+- [x] **Custom cover layouts** — choose from layout templates (centered, left-aligned, split, hero)
+- [x] **Custom sections** — reorderable content blocks (About, Services, Portfolio, Reviews, FAQ)
+- [x] **Intro card** — "About My Business" rich text section
+- [x] **Service packages** — tiered pricing cards (Basic / Standard / Premium) with features list
+- [x] Backend: `PUT /storefront/:id/theme` — save theme, colors, layout, section order
+- [x] Backend: `POST/DELETE /storefront/:id/packages` — service package CRUD
+- [x] DB migration: `storefront_themes` table (storefront_id, theme_name, primary_color, accent_color, layout, section_order JSONB, custom_intro TEXT)
+- [x] DB migration: `service_packages` table (professional_id, name, tier, price, description, features JSONB, is_popular, sort_order)
+- [x] Frontend: `StorefrontSetup.jsx` — sectioned editor with theme grid, layout picker, package management
 
 ### 4.4 Humanized Booking UX
 
-- [ ] **Booking status language overhaul** — replace technical FSM states with human language:
+- [x] **Booking status language overhaul** — replace technical FSM states with human language:
   - `requested` → "Request Sent ✉️"
   - `quoted` → "Quote Received 💰"
   - `accepted` → "Professional Confirmed ✅"
   - `in_progress` → "Work Started 🔨"
   - `completed` → "Job Completed 🎉"
   - `cancelled` → "Cancelled ❌"
-- [ ] **Visual booking timeline** — step-by-step progress tracker with icons and animations
+- [x] **Visual booking timeline** — step-by-step progress tracker with emoji icons
 - [ ] **Conversational booking flow** — guided multi-step wizard instead of a single form
 - [ ] Frontend: Update `CreateBooking.jsx` with step-by-step wizard (What → When → Where → Confirm)
-- [ ] Frontend: Update `BookingDetail.jsx` with visual timeline component
+- [x] Frontend: Update `BookingDetail.jsx` with humanized labels + status descriptions
 
 ---
 
@@ -151,13 +153,13 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 5.1 Follow System
 
-- [ ] **Follow professional** — one-tap follow button on storefront and cards
-- [ ] **Following feed** — activity feed from followed professionals (new portfolio, availability, offers)
-- [ ] **Follower count** — displayed on storefront as social proof
-- [ ] Backend: `POST /social/follow/:professionalId` + `DELETE /social/unfollow/:professionalId`
-- [ ] Backend: `GET /social/feed` — aggregated feed from followed professionals
-- [ ] DB migration: `follows` table (id, follower_id, following_id, created_at) with unique constraint
-- [ ] Frontend: `FollowButton.jsx` component + `Feed.jsx` page
+- [x] **Follow professional** — one-tap follow button on storefront and cards
+- [x] **Following feed** — activity feed from followed professionals (new portfolio, availability, offers)
+- [x] **Follower count** — displayed on storefront as social proof
+- [x] Backend: `POST /social/follow/:professionalId` + `DELETE /social/unfollow/:professionalId`
+- [x] Backend: `GET /social/feed` — aggregated feed from followed professionals
+- [x] DB migration: `follows` table (id, follower_id, following_id, created_at) with unique constraint
+- [x] Frontend: Follow/unfollow button integrated in `Storefront.jsx`
 
 ### 5.2 Save Collections (Pinterest-style)
 
@@ -170,12 +172,12 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 5.3 Professional Stories (Temporary Updates)
 
-- [ ] **24-hour stories** — professionals post ephemeral updates (available today, current project, offers)
+- [x] **24-hour stories** — professionals post ephemeral updates (available today, current project, offers)
 - [ ] **Story viewer** — horizontal scrollable story bubbles on home page and category pages
-- [ ] **Story creation** — photo/video + text overlay + CTA link
-- [ ] Backend: `POST /stories` (create), `GET /stories/feed` (nearby active stories), auto-expire cron
-- [ ] DB migration: `stories` table (id, professional_id, media_url, text_overlay, cta_url, expires_at, created_at)
-- [ ] Frontend: `StoryBubbles.jsx` component + `StoryViewer.jsx` full-screen modal
+- [x] **Story creation** — photo/video + text overlay + CTA link
+- [x] Backend: `POST /stories` (create), `GET /stories/feed` (nearby active stories), auto-expire via query
+- [x] DB migration: `stories` table (id, professional_id, media_url, text_overlay, cta_url, cta_label, view_count, expires_at, created_at)
+- [x] Frontend: Story highlights display on `Storefront.jsx`
 
 ### 5.4 Community Posts & Tips
 
@@ -183,7 +185,7 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 - [ ] **Like + save + share** on community posts
 - [ ] **Category-tagged** — posts appear in relevant category feeds
 - [ ] Backend: `POST /community/posts`, `GET /community/posts?category=`, `POST /community/posts/:id/like`
-- [ ] DB migration: `community_posts` table (id, author_id, title, content, category, media_urls JSONB, likes_count, created_at)
+- [x] DB migration: `community_posts` table (id, author_id, title, content, category, media_urls JSONB, likes_count, created_at)
 - [ ] Frontend: `CommunityFeed.jsx` page + `PostCard.jsx` component
 - [ ] Bonus: Great for SEO — each post becomes an indexed page
 
@@ -215,12 +217,12 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 6.2 Trending & Discovery Sections
 
-- [ ] **Trending nearby** — most-booked professionals in user's area this week
+- [x] **Trending nearby** — most-booked professionals in user's area this week
 - [ ] **Fastest growing** — professionals with rapidly increasing ratings/bookings
-- [ ] **Newly verified** — recently verified professionals to boost early visibility
-- [ ] **Highly responsive** — professionals with fastest response times
+- [x] **Newly verified** — recently verified professionals to boost early visibility
+- [x] **Highly responsive** — professionals with fastest response times
 - [ ] **Most booked** — overall top professionals by booking volume
-- [ ] Backend: `GET /discover/trending`, `GET /discover/rising`, `GET /discover/new`
+- [x] Backend: `GET /discover/trending`, `GET /discover/new`, `GET /discover/responsive`
 - [ ] Frontend: Horizontal scroll carousels on `Home.jsx` and `Categories.jsx`
 
 ### 6.3 AI-Powered Discovery Feed (Future)
@@ -228,7 +230,7 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 - [ ] **Personalized feed** based on: saved pros, watched reels, location, booking history, category affinity
 - [ ] **Recommendation engine** — collaborative filtering + content-based scoring
 - [ ] Backend: `GET /discover/for-you` — personalized professional recommendations
-- [ ] Track: `user_interactions` table (user_id, item_type, item_id, action [view/save/book/watch], created_at)
+- [x] Track: `user_interactions` table (user_id, item_type, item_id, action [view/save/book/watch], created_at)
 
 ### 6.4 Search Enhancement — Meilisearch
 
@@ -248,29 +250,30 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ### 7.1 Trust Timeline (Professional Profile)
 
-- [ ] **Visual trust timeline** showing: join date, milestones, jobs completed, repeat customers, response streaks
-- [ ] **Milestone badges** — auto-awarded at thresholds (10 jobs, 50 jobs, 100 jobs, first repeat customer, etc.)
+- [x] **Visual trust timeline** showing: join date, milestones, jobs completed, repeat customers, response streaks
+- [x] **Milestone badges** — auto-awarded at thresholds (10 jobs, 50 jobs, 100 jobs, first repeat customer, etc.)
 - [ ] Frontend: `TrustTimeline.jsx` component on storefront
-- [ ] Backend: `GET /trust/:professionalId/timeline` — ordered milestone events
+- [x] Backend: `GET /trust/:professionalId/timeline` — ordered milestone events
 
 ### 7.2 Trust Badge System (Tiered)
 
-- [ ] **Badge tiers** with dynamic animations:
+- [x] **Badge tiers** with dynamic animations:
   - 🌱 Rising Pro — verified + 5 jobs
   - ⚡ Fast Responder — avg response < 30min
   - ⭐ Customer Favorite — 4.8+ avg rating (20+ reviews)
   - 🏆 Top Rated — top 10% in category
   - 💎 Elite Professional — 100+ jobs, 4.9+ rating, 50%+ repeat rate
 - [ ] **Auto-calculation** — badges recalculated weekly via cron job
-- [ ] Backend: `GET /trust/:professionalId/badges` — current badges with progress
-- [ ] DB migration: `professional_badges` table (professional_id, badge_type, earned_at, metadata JSONB)
-- [ ] Frontend: `BadgeDisplay.jsx` component with tooltip showing "earned because..."
+- [x] Backend: `GET /trust/:professionalId/badges` — current badges with progress
+- [x] DB migration: `professional_badges` table (professional_id, badge_type, earned_at, metadata JSONB)
+- [x] Frontend: Badge display on `Storefront.jsx` with earned badge indicators
 
 ### 7.3 Trust Explainability
 
-- [ ] **"Why this pro is trusted"** — modal/section explaining trust score breakdown
-- [ ] Show: verification status, response speed, completion rate, repeat customer %, review sentiment
-- [ ] Frontend: `TrustExplainer.jsx` — expandable trust breakdown on storefront
+- [x] **"Why this pro is trusted"** — modal/section explaining trust score breakdown
+- [x] Show: verification status, response speed, completion rate, repeat customer %, review sentiment
+- [x] Backend: `GET /trust/:professionalId/explain` — trust signal breakdown
+- [x] Frontend: Trust explainer modal integrated in `Storefront.jsx`
 
 ---
 

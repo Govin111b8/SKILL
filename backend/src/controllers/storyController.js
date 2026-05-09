@@ -1,5 +1,9 @@
 const { query } = require('../config/database');
 
+const MIN_STORY_HOURS = 1;
+const DEFAULT_STORY_HOURS = 24;
+const MAX_STORY_HOURS = 72;
+
 /**
  * POST /api/stories
  * Auth required (professional) — create a 24-hour story.
@@ -9,7 +13,7 @@ const createStory = async (req, res, next) => {
     const userId = req.user.id;
     const { media_url, text_overlay, cta_url, cta_label, hours } = req.body;
 
-    const expiresIn = Math.min(Math.max(parseInt(hours) || 24, 1), 72); // 1–72 hours, default 24
+    const expiresIn = Math.min(Math.max(parseInt(hours) || DEFAULT_STORY_HOURS, MIN_STORY_HOURS), MAX_STORY_HOURS);
 
     const result = await query(
       `INSERT INTO stories (professional_id, media_url, text_overlay, cta_url, cta_label, expires_at)

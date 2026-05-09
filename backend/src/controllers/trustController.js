@@ -61,7 +61,8 @@ const getBadges = async (req, res, next) => {
 
     const stats = statsResult.rows[0];
     stats.average_rating = parseFloat(stats.average_rating);
-    stats.is_top_rated = false; // would need category-level percentile calculation
+    // TODO: Implement category-level percentile calculation for top_rated badge
+    stats.is_top_rated = false;
 
     // Get earned badges from DB
     let earnedBadges = [];

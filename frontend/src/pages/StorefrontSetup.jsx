@@ -116,7 +116,13 @@ function StorefrontSetup() {
       await put(`/storefront/${professionalId}`, form);
 
       // Save theme
-      await put(`/storefront/${professionalId}/theme`, theme).catch(() => {});
+      try {
+        await put(`/storefront/${professionalId}/theme`, theme);
+      } catch (themeErr) {
+        alert('Storefront updated, but theme settings failed to save. Please try again.');
+        setSaving(false);
+        return;
+      }
 
       alert('Storefront updated successfully!');
     } catch (err) {
