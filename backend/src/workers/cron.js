@@ -354,7 +354,10 @@ function startCronJobs() {
   // KYC document retention — weekly to purge old docs
   cron.schedule('0 0 * * 0', purgeExpiredKycDocuments, { timezone: 'UTC' });
 
-  logger.info('All 8 cron jobs scheduled');
+  // Badge recalculation — weekly Sunday 04:00 IST = Saturday 22:30 UTC
+  cron.schedule('30 22 * * 6', recalcBadges, { timezone: 'UTC' });
+
+  logger.info('All 9 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -410,6 +413,79 @@ async function purgeExpiredKycDocuments() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. Badge Recalculation — weekly Sunday 04:00 IST (22:30 UTC Saturday)
+// Auto-awards / revokes professional badges based on current stats
+// ─────────────────────────────────────────────────────────────────────────────
+const BADGE_CRITERIA = {
+  rising_pro: {
+    check: (s) => s.government_id_verified && s.completed_jobs >= 5,
+  },
+  fast_responder: {
+    check: (s) => s.response_time_hours != null && s.response_time_hours < 0.5,
+  },
+  customer_favorite: {
+    check: (s) => s.average_rating >= 4.8 && s.review_count >= 20,
+  },
+  elite_professional: {
+    check: (s) => s.completed_jobs >= 100 && s.average_rating >= 4.9 && s.repeat_customer_rate >= 50,
+  },
+};
+
+async function recalcBadges() {
+  logger.info('CRON: badge_recalculation — start');
+  try {
+    const pros = await query(`
+      SELECT p.id, p.completed_jobs, p.response_time_hours, p.repeat_customer_rate,
+             u.government_id_verified,
+             COALESCE(AVG(r.rating), 0)::numeric as average_rating,
+             COUNT(r.id)::int as review_count
+      FROM professionals p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN reviews r ON r.professional_id = p.id
+      GROUP BY p.id, u.government_id_verified
+    `);
+
+    let awarded = 0;
+    let revoked = 0;
+
+    for (const pro of pros.rows) {
+      const stats = {
+        ...pro,
+        average_rating: parseFloat(pro.average_rating),
+        repeat_customer_rate: parseFloat(pro.repeat_customer_rate || 0),
+      };
+
+      for (const [badgeType, def] of Object.entries(BADGE_CRITERIA)) {
+        const earned = def.check(stats);
+
+        if (earned) {
+          const result = await query(
+            `INSERT INTO professional_badges (professional_id, badge_type, metadata)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (professional_id, badge_type) DO NOTHING
+             RETURNING id`,
+            [pro.id, badgeType, JSON.stringify({ auto_recalc: true })]
+          );
+          if (result.rows.length > 0) awarded++;
+        } else {
+          const result = await query(
+            'DELETE FROM professional_badges WHERE professional_id = $1 AND badge_type = $2 RETURNING id',
+            [pro.id, badgeType]
+          );
+          if (result.rows.length > 0) revoked++;
+        }
+      }
+    }
+
+    logger.info({ professionals: pros.rowCount, awarded, revoked }, 'CRON: badge_recalculation — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: badge_recalculation failed');
+    }
+  }
+}
+
 module.exports = {
   startCronJobs,
   recalcReputationScores,
@@ -420,4 +496,5 @@ module.exports = {
   cleanStaleDeviceTokens,
   updateResponseRates,
   purgeExpiredKycDocuments,
+  recalcBadges,
 };

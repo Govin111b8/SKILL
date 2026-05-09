@@ -1,0 +1,79 @@
+.reels-feed {
+  position: fixed; inset: 0; background: #000; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  outline: none;
+}
+.reel-viewer {
+  position: relative; width: 100%; max-width: 420px; height: 100%;
+  overflow: hidden;
+}
+.reel-video {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.reel-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  pointer-events: none;
+}
+
+.reel-info {
+  position: absolute; bottom: 80px; left: 16px; right: 70px;
+  color: #fff; z-index: 2;
+}
+.reel-author {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: #fff; margin-bottom: 8px;
+}
+.reel-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  overflow: hidden; background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.reel-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.reel-author strong { font-size: 0.95rem; }
+.reel-headline { display: block; font-size: 0.75rem; opacity: 0.8; }
+.reel-rating { display: flex; align-items: center; gap: 2px; font-size: 0.75rem; color: #f59e0b; }
+.reel-caption { font-size: 0.85rem; opacity: 0.9; line-height: 1.4; }
+
+.reel-actions-side {
+  position: absolute; right: 12px; bottom: 100px;
+  display: flex; flex-direction: column; gap: 16px; align-items: center;
+  z-index: 2;
+}
+.reel-action {
+  background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);
+  border: none; color: #fff; width: 44px; height: 44px;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.reel-action:hover { background: rgba(255,255,255,0.25); }
+.reel-book-btn {
+  padding: 8px 14px; border-radius: 20px;
+  background: var(--primary, #6366f1); color: #fff;
+  font-size: 0.8rem; font-weight: 700;
+  text-decoration: none; text-align: center;
+}
+
+.reel-nav {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  z-index: 2;
+}
+.reel-nav button {
+  background: rgba(255,255,255,0.1); border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.reel-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+.reel-counter { font-size: 0.7rem; color: rgba(255,255,255,0.6); }
+
+.reels-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60vh; color: #94a3b8; text-align: center; padding: 20px;
+}
+.reels-empty h3 { margin: 12px 0 4px; color: #475569; }
+
+@media (min-width: 768px) {
+  .reel-viewer { border-radius: 20px; max-height: 90vh; }
+}
