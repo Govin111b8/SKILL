@@ -31,12 +31,12 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow?style=flat-square)](https://conventionalcommits.org)
 [![Code Style: ESLint](https://img.shields.io/badge/Code%20Style-ESLint-4B32C3?style=flat-square&logo=eslint)](https://eslint.org)
 [![Test Coverage: 50%+](https://img.shields.io/badge/Coverage-50%25+-brightgreen?style=flat-square)](#-testing)
-[![API Endpoints: 75+](https://img.shields.io/badge/API_Endpoints-75+-blue?style=flat-square)](#-api-reference)
+[![API Endpoints: 100+](https://img.shields.io/badge/API_Endpoints-100+-blue?style=flat-square)](#-api-reference)
 [![Languages: EN|HI|TE](https://img.shields.io/badge/Languages-EN%20|%20HI%20|%20TE-orange?style=flat-square)](#-internationalization-i18n)
 
 <br/>
 
-> **A production-grade, full-stack marketplace connecting customers with KYC-verified skilled professionals — featuring real-time GPS tracking, integrated Razorpay payments, multilingual voice search, offline-first mobile, dispute resolution, warranty protection, and enterprise-grade security across 50+ service categories.**
+> **A production-grade, full-stack marketplace connecting customers with KYC-verified skilled professionals — featuring branded storefronts with 8 themes, social follow & stories, reels video feed, trust badges, real-time GPS tracking, integrated Razorpay payments, multilingual voice search, offline-first mobile, dispute resolution, warranty protection, and enterprise-grade security across 50+ service categories.**
 
 <br/>
 
@@ -55,20 +55,22 @@
 
 | 📦 Components | 📊 Metrics | 🧪 Quality |
 |:---:|:---:|:---:|
-| 3 platforms (Web + Mobile + API) | 267+ source files | 50%+ test coverage |
-| 29 backend controllers | 75+ API endpoints | ESLint + Flutter Lints |
-| 30+ frontend pages | 20+ database tables | 16 backend test suites (150 tests) |
-| 22+ mobile screens | 14,460 LOC (Dart) | Conventional Commits |
+| 3 platforms (Web + Mobile + API) | 300+ source files | 50%+ test coverage |
+| 37 backend controllers | 100+ API endpoints | ESLint + Flutter Lints |
+| 40+ frontend pages | 30+ database tables | 16 backend test suites (150 tests) |
+| 22+ mobile screens | 38 route files | Conventional Commits |
 
-**📋 Implementation Status (Post Sprint 10/10 — May 2026)**
+**📋 Implementation Status (Post Phase 7 — May 2026)**
 
 | Domain | Score | What's Implemented |
 |:---|:---:|:---|
 | **Core Marketplace** (booking, contacts, reviews) | **10/10** ✅ | Full FSM, timing window, velocity detection, helpful, edit |
-| **Trust & Safety** | **10/10** ✅ | Trust Index 0-100, KYC notifications, complaint workflow, appeals, profanity filter |
+| **Trust & Safety** | **10/10** ✅ | Trust Index 0-100, badge tiers (Rising Pro → Elite), trust timeline, trust explainability |
 | **Subscriptions & Payments** | **9.5/10** ✅ | Monthly + annual billing, escrow, GST invoices, grace period, portfolio tier limits |
 | **Real-time & Notifications** | **9/10** ✅ | WebSocket hub, FCM push, SMS, email — all triggers wired |
-| **Search & Discovery** | **9.5/10** ✅ | Full-text search, suggestions, trending categories, similar professionals, recently-viewed |
+| **Search & Discovery** | **9.5/10** ✅ | Full-text search, trending/new/responsive, reels feed, discover carousels |
+| **Social & Engagement** | **9/10** ✅ | Follow system, stories (24h), community posts, collections, reels feed |
+| **Storefront & Branding** | **9/10** ✅ | 8 themes, brand colors, custom layouts, service packages, media gallery, hero experience |
 | **User Account** | **10/10** ✅ | DPDPA data export, soft delete, notification preferences, city selector, language |
 | **Admin Panel** | **9/10** ✅ | KYC queue, disputes, complaints, appeals, category requests, featured slots, A/B experiments |
 | **Legal & Compliance** | **10/10** ✅ | 6 legal pages (ToS, Privacy/DPDPA, Refund, Cookie, Pro Terms, Moderation), PII masking |
@@ -79,7 +81,7 @@
 | **Documentation** | **10/10** ✅ | ARCHITECTURE.md, RUNBOOKS.md, INCIDENT_RESPONSE.md, THREAT_MODEL.md |
 | **Testing** | **9/10** ✅ | 150 backend tests (16 suites), vitest frontend, k6 load tests |
 
-> **Overall: 9.7 / 10** — Production-grade. Remaining gaps: BullMQ multi-instance queue, OpenTelemetry tracing, K8s staging/prod overlays, PagerDuty alerting.
+> **Overall: 9.5 / 10** — Production-grade with social + storefront layers. Remaining: BullMQ queue, OpenTelemetry tracing, K8s overlays, WhatsApp integration, gamification, AI layer.
 
 ---
 
@@ -199,12 +201,16 @@ In India, finding reliable skilled professionals (plumbers, electricians, beauti
 
 SkillConnect provides a **trust-first, mobile-native platform** with:
 - ✅ KYC-verified professionals (Aadhaar + selfie + government ID)
-- ✅ Transparent pricing with upfront quotes
+- ✅ Transparent pricing with upfront quotes and tiered service packages
 - ✅ Real-time GPS tracking during service delivery
 - ✅ Integrated Razorpay payments with warranty protection
 - ✅ Multilingual support (English, Hindi, Telugu)
 - ✅ Offline-first mobile app for low-connectivity areas
 - ✅ AI-powered fraud prevention and dispute resolution
+- ✅ Branded professional storefronts with 8 customizable themes
+- ✅ Social engagement — follow, stories, reels, community posts, collections
+- ✅ 5-tier trust badge system with timeline and explainability
+- ✅ Discovery engine — trending, newly verified, and highly responsive pros
 
 ---
 
@@ -228,6 +234,12 @@ SkillConnect provides a **trust-first, mobile-native platform** with:
 | 🎁 **Referral Rewards** | Earn SkillPoints by referring friends; automatic reward on booking completion |
 | 🏙️ **City Waitlist** | Get notified when SkillConnect launches in your city |
 | 📤 **DPDPA Data Export** | Download all your data (DPDPA 2023 §11 compliant) |
+| 👤 **Follow Professionals** | Follow favorite pros and get activity feed updates (new portfolio, offers) |
+| 📌 **Save Collections** | Pinterest-style boards — save professionals and services into named collections |
+| 🎬 **Reels Feed** | Discover professionals through short video feed (transformations, tutorials, before/after) |
+| 📖 **Community Tips** | Browse expert advice from professionals (AC maintenance, makeup tips, etc.) |
+| 🔥 **Trending Discovery** | Discover trending, newly verified, and highly responsive professionals nearby |
+| 🛡️ **Trust Explainer** | See why a professional is trusted — verification, response speed, reviews breakdown |
 
 ### 👷 For Professionals
 
@@ -241,7 +253,15 @@ SkillConnect provides a **trust-first, mobile-native platform** with:
 | 🔔 **Smart Notifications** | FCM push + SMS + email for contacts, KYC decisions, subscriptions |
 | 📈 **Trust Index (0-100)** | 7-factor algorithm (rating, recency, jobs, repeat rate, response rate, completeness, verification) |
 | 🆘 **Emergency Toggle** | Opt-in to receive high-priority emergency requests |
-| 🏪 **Storefront** | Branded landing page with custom link |
+| 🏪 **Storefront** | Branded landing page with custom link, 8 themes, brand colors, custom layouts |
+| 🎨 **Storefront Themes** | Choose from Modern, Classic, Bold, Minimal, Elegant, Vibrant, Dark, Professional themes |
+| 📦 **Service Packages** | Tiered pricing cards (Basic / Standard / Premium) with features list |
+| 🖼️ **Portfolio 2.0** | Before/after sliders, video reels, story highlights, media gallery |
+| 📢 **Stories** | Post 24-hour ephemeral updates (availability, current project, offers) |
+| 🏆 **Trust Badges** | Earned automatically — Rising Pro, Fast Responder, Customer Favorite, Top Rated, Elite Professional |
+| 📊 **Trust Timeline** | Visual milestone journey (join → verify → jobs → repeat customers → badges) |
+| 📝 **Community Posts** | Share professional tips and expertise; category-tagged for discovery |
+| 👥 **Follower System** | Build audience — follower count displayed as social proof on storefront |
 | 🌐 **Language Profile** | Multi-language support (10 Indian languages) |
 | 👥 **Block Customer** | Block specific customers from contacting |
 | 📊 **Profile Completeness** | Step-by-step guide to 100% profile completion |
@@ -281,6 +301,15 @@ SkillConnect provides a **trust-first, mobile-native platform** with:
 | Voice Search (Regional) | ✅ Hindi/Telugu | ❌ | ❌ | ❌ | ❌ |
 | Offline-First Mobile | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multilingual (3 languages) | ✅ EN/HI/TE | Partial | ❌ | ❌ | ❌ |
+| Professional Storefront (Branded) | ✅ 8 themes | ❌ | ❌ | ❌ | ❌ |
+| Follow System + Social Feed | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Stories (24h Ephemeral) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Reels / Short Video Feed | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Community Posts & Tips | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Collections (Save Boards) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Trust Badge System (5 Tiers) | ✅ | Partial | ❌ | ❌ | ❌ |
+| Trust Explainability | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Service Packages (Tiered) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Open Source | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Voice Notes in Chat | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Reputation Algorithm | ✅ Weighted | Basic | ❌ | Basic | ❌ |
@@ -292,7 +321,7 @@ SkillConnect provides a **trust-first, mobile-native platform** with:
 
 </div>
 
-> **What makes SkillConnect unique:** Fully open-source, self-hostable, offline-first mobile with regional voice search (Hindi/Telugu), combined with enterprise features like FSM-driven bookings, automated fraud prevention, and warranty protection — all in a single deployable stack.
+> **What makes SkillConnect unique:** Fully open-source, self-hostable platform with a **professional storefront system** (8 themes, branded pages, service packages), **social layer** (follow, stories, reels, community posts, collections), **5-tier trust badges** with explainability, **discovery feed** (trending, newly verified, responsive), offline-first mobile with regional voice search (Hindi/Telugu), FSM-driven bookings, automated fraud prevention, and warranty protection — all in a single deployable stack.
 
 ---
 
@@ -360,7 +389,16 @@ SkillConnect provides a **trust-first, mobile-native platform** with:
 │   ├── warranties         │                                                   │
 │   ├── emergency_requests │                                                   │
 │   ├── analytics_events   │                                                   │
-│   └── 20+ more tables    │                                                   │
+│   ├── storefront_media   │                                                   │
+│   ├── storefront_themes  │                                                   │
+│   ├── service_packages   │                                                   │
+│   ├── follows            │                                                   │
+│   ├── stories            │                                                   │
+│   ├── collections        │                                                   │
+│   ├── community_posts    │                                                   │
+│   ├── professional_badges│                                                   │
+│   ├── user_interactions  │                                                   │
+│   └── 30+ more tables    │                                                   │
 └──────────────────────────┴──────────────────────────────────────────────────┘
 ```
 
@@ -1170,6 +1208,11 @@ The frontend is a **Single Page Application (SPA)** built with React 19 and Vite
 | Login | `/login` | Authentication |
 | Register | `/register` | New account creation |
 | Admin | `/admin/*` | Admin panel (protected) |
+| Storefront | `/storefront/:id` | Professional branded landing page (hero, themes, packages, portfolio) |
+| Storefront Setup | `/storefront/setup` | Storefront editor (theme grid, layout picker, package management) |
+| Reels Feed | `/reels` | Full-screen vertical swipeable video feed with like/save/share/book |
+| Community Feed | `/community` | Category-filtered professional tips with inline likes |
+| Collections | `/collections` | Pinterest-style saved boards with expandable items |
 
 ### Reusable Components
 
@@ -1188,6 +1231,15 @@ The frontend is a **Single Page Application (SPA)** built with React 19 and Vite
 | `ErrorBoundary` | Graceful error recovery |
 | `ProtectedRoute` | Auth-gated routing |
 | `OnlineIndicator` | Real-time online status |
+| `TrustTimeline` | Visual milestone journey for professional trust history |
+| `TrustSection` | Trust score breakdown and badge display |
+| `SaveToCollectionModal` | Bottom-sheet modal for saving items to collections |
+| `ShareButton` | Native sharing for storefronts, posts, and reels |
+| `SEOMeta` | Dynamic meta tags and JSON-LD schema |
+| `InviteEarn` | Referral invite card with share link |
+| `CookieConsent` | GDPR/DPDPA cookie consent banner |
+| `AnnouncementBar` | Platform-wide announcement bar |
+| `AppInstallBanner` | Mobile app install prompt |
 
 ---
 
@@ -1525,6 +1577,23 @@ emergency_requests       -- Urgent service requests
 
 -- Analytics
 analytics_events         -- User behavior tracking
+
+-- Phase 4: Storefront
+storefront_media         -- Reels, before/after, highlights, gallery
+storefront_themes        -- Theme, brand colors, layout, sections
+service_packages         -- Tiered pricing (basic/standard/premium)
+
+-- Phase 5: Social
+follows                  -- User follows (follower → following)
+stories                  -- 24h ephemeral professional updates
+collections              -- Pinterest-style save boards
+collection_items         -- Items saved to collections
+community_posts          -- Professional tips and content
+
+-- Phase 7: Trust
+professional_badges      -- Earned trust badges (5 tiers)
+user_interactions        -- View/save/book/watch tracking
+user_points              -- Gamification points and level
 ```
 
 ### Enum Types
@@ -1550,8 +1619,17 @@ database/migrations/
 ├── 004_seed_geo.sql                 # Geographic seed data
 ├── 005_reputation_trigger.sql       # Auto-compute reputation scores
 ├── 006_phase1_features.sql          # Favorites, analytics, schedule
+├── 006_storefront_fields.sql        # Storefront base fields
 ├── 007_auth_admin_services.sql      # Admin, referrals, emergency
-└── 008_analytics_and_chat_images.sql # Analytics events, media messages
+├── 007_provider_type.sql            # Provider type enum
+├── 008_analytics_and_chat_images.sql # Analytics events, media messages
+├── 009_agent_system.sql             # Agent commissions + wallet
+├── 010_growth_acquisition.sql       # Growth & acquisition features
+├── 011_warranty_enhancements.sql    # Warranty improvements
+├── 012_schema_completion.sql        # Schema gap closure
+├── 013_gaps_completion.sql          # Final gaps (waitlist, appeals, etc.)
+├── 014_phase4_storefront_social_trust.sql  # Storefront media/themes, follows, stories, community, badges, discovery
+└── 015_collections_points.sql       # Collections, collection items, user points
 ```
 
 ### Key Indexes
@@ -1566,6 +1644,9 @@ idx_reviews_professional_id          -- Review aggregation
 idx_contacts_customer_id             -- Customer history
 idx_contacts_professional_id         -- Professional inbox
 idx_categories_parent_id             -- Category hierarchy
+idx_follows_following                -- Follower lookups
+idx_user_interactions_user_created   -- Feed personalization
+idx_stories_expires                  -- Story auto-expiry queries
 ```
 
 ---
@@ -1732,6 +1813,83 @@ idx_categories_parent_id             -- Category hierarchy
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/health` | ❌ | Server + DB connectivity check |
+
+### Storefront (Enhanced)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/storefront/:id` | ❌ | Aggregated storefront (hero, trust stats, badges, media, packages, followers) |
+| `PUT` | `/api/storefront/:id` | ✅ | Update storefront fields (tagline, cover, intro video, WhatsApp, etc.) |
+| `GET` | `/api/storefront/:id/media` | ❌ | List storefront media (reels, before/after, highlights, gallery) |
+| `POST` | `/api/storefront/:id/media` | ✅ | Upload media (reel, before_after, highlight, testimonial, gallery) |
+| `DELETE` | `/api/storefront/:id/media/:mediaId` | ✅ | Delete media item |
+| `PUT` | `/api/storefront/:id/theme` | ✅ | Set theme, brand colors, layout, section order, custom intro |
+| `GET` | `/api/storefront/:id/packages` | ❌ | List service packages |
+| `POST` | `/api/storefront/:id/packages` | ✅ | Create service package (basic/standard/premium tier) |
+| `DELETE` | `/api/storefront/:id/packages/:packageId` | ✅ | Delete service package |
+
+### Social (Follow System)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/social/follow/:professionalId` | ✅ | Follow a professional |
+| `DELETE` | `/api/social/unfollow/:professionalId` | ✅ | Unfollow a professional |
+| `GET` | `/api/social/check/:professionalId` | ✅ | Check if following |
+| `GET` | `/api/social/following` | ✅ | List followed professionals |
+| `GET` | `/api/social/feed` | ✅ | Aggregated feed from followed professionals |
+
+### Stories (24h Ephemeral Updates)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/stories` | ✅ | Create story (pros only, 1–72h duration) |
+| `GET` | `/api/stories/feed` | ❌ | Active story feed (auto-expired) |
+| `GET` | `/api/stories/professional/:id` | ❌ | Stories for a specific professional |
+| `POST` | `/api/stories/:id/view` | ❌ | Increment story view count |
+| `DELETE` | `/api/stories/:id` | ✅ | Delete own story |
+
+### Trust System
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/trust/:professionalId/badges` | ❌ | Current badges with progress (Rising Pro → Elite) |
+| `GET` | `/api/trust/:professionalId/timeline` | ❌ | Milestone journey (join → verify → jobs → badges) |
+| `GET` | `/api/trust/:professionalId/explain` | ❌ | Trust score breakdown (verification, response speed, completion rate) |
+
+### Discovery
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/discover/trending` | ❌ | Trending professionals nearby (most booked this week) |
+| `GET` | `/api/discover/new` | ❌ | Newly verified professionals |
+| `GET` | `/api/discover/responsive` | ❌ | Highly responsive professionals (fastest response times) |
+
+### Collections (Pinterest-style Boards)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/collections` | ✅ | Create named collection |
+| `GET` | `/api/collections` | ✅ | List user's collections |
+| `GET` | `/api/collections/:id` | ✅ | Get collection with items |
+| `DELETE` | `/api/collections/:id` | ✅ | Delete collection |
+| `POST` | `/api/collections/:id/items` | ✅ | Add item (professional/service/post) |
+| `DELETE` | `/api/collections/:id/items/:itemId` | ✅ | Remove item |
+
+### Community Posts
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/community/posts` | ❌ | List posts (filter by category) |
+| `GET` | `/api/community/posts/:id` | ❌ | Get single post (detects liked status if authed) |
+| `POST` | `/api/community/posts` | ✅ | Create post (pros only, max 5000 chars) |
+| `POST` | `/api/community/posts/:id/like` | ✅ | Toggle like/unlike |
+| `DELETE` | `/api/community/posts/:id` | ✅ | Delete own post |
+
+### Reels Feed
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/reels/feed` | ❌ | Paginated short video feed (from storefront media type=reel) |
 
 ---
 
@@ -3320,19 +3478,103 @@ git push origin feature/your-feature-name
 - [x] Admin: Category requests, Appeals, Featured Slots, A/B experiments, Waitlist screens
 - [x] ARCHITECTURE.md, RUNBOOKS.md, INCIDENT_RESPONSE.md, THREAT_MODEL.md
 
+### ✅ Completed — Phase 4: Storefront Revolution
+
+- [x] Cinematic banner — full-width hero image/video with gradient overlay
+- [x] Short intro reel — 15–30s video intro with auto-play (muted) in hero section
+- [x] Premium typography — large name, tagline, service category with elegant font stack
+- [x] Animated verified badge — subtle glow/pulse animation on verified professionals
+- [x] Trust indicators above the fold — rating, jobs completed, response time, repeat customers
+- [x] Sticky CTA — "Book Now" button that follows scroll on mobile and desktop
+- [x] Availability indicator — "Available Today" / "Next Available: Tomorrow" live status
+- [x] Before/after slider — before/after card grid with labeled images on storefront
+- [x] Work transformation reels — short video gallery (Instagram Reels-style grid)
+- [x] Story highlights — pinned circular thumbnails on storefront
+- [x] Theme selection — 8 pre-built storefront themes (modern, classic, bold, minimal, elegant, vibrant, dark, professional)
+- [x] Brand colors — primary + accent color picker saved per storefront
+- [x] Custom cover layouts — choose from layout templates (centered, left-aligned, split, hero)
+- [x] Custom sections — reorderable content blocks (About, Services, Portfolio, Reviews, FAQ)
+- [x] Service packages — tiered pricing cards (Basic / Standard / Premium) with features list
+- [x] Humanized booking status language — emoji-driven step labels (Request Sent ✉️ → Quote Received 💰 → Professional Confirmed ✅ → Work Started 🔨 → Job Completed 🎉)
+- [x] Visual booking timeline — step-by-step progress tracker with emoji icons
+- [x] Conversational booking wizard — guided multi-step flow (What → When → Where → Confirm)
+- [x] Backend: storefront media CRUD, theme save, service package CRUD
+- [x] DB migrations: `storefront_media`, `storefront_themes`, `service_packages` tables
+
+### ✅ Completed — Phase 5: Social & Engagement Layer
+
+- [x] Follow system — one-tap follow/unfollow with follower count on storefront
+- [x] Following feed — aggregated activity feed from followed professionals
+- [x] Save collections (Pinterest-style) — bookmark professionals/services into named collections
+- [x] 24-hour stories — professionals post ephemeral updates (availability, offers, current project)
+- [x] Story viewer — horizontal scrollable story bubbles on home page
+- [x] Community posts & tips — long-form expert content with category filtering
+- [x] Like + save + share on community posts
+- [x] Backend: social routes, story routes, collections CRUD, community CRUD
+- [x] DB migrations: `follows`, `collections`, `collection_items`, `stories`, `community_posts` tables
+- [x] Frontend: `Collections.jsx`, `SaveToCollectionModal.jsx`, `CommunityFeed.jsx`
+
+### ✅ Completed — Phase 6: Discovery Revolution
+
+- [x] Reels feed page — vertical swipeable short video feed with overlay actions
+- [x] Reels from storefront — professionals upload reels via storefront media
+- [x] Like + save + share + book actions on each reel
+- [x] Trending nearby — most-booked professionals in user's area this week
+- [x] Newly verified — recently verified professionals to boost early visibility
+- [x] Highly responsive — professionals with fastest response times
+- [x] Discovery carousels on Home page
+- [x] User interactions tracking table for future personalization
+- [x] Backend: `GET /api/discover/trending`, `/new`, `/responsive`, `/api/reels/feed`
+- [x] Frontend: `ReelsFeed.jsx` — full-screen swipeable video player
+
+### ✅ Completed — Phase 7: Trust System Evolution
+
+- [x] Visual trust timeline — join date, milestones, jobs completed, repeat customers, response streaks
+- [x] Milestone badges — auto-awarded at thresholds (10/50/100 jobs, first repeat customer, etc.)
+- [x] 5-tier badge system — 🌱 Rising Pro, ⚡ Fast Responder, ⭐ Customer Favorite, 🏆 Top Rated, 💎 Elite Professional
+- [x] Auto-calculation — badges recalculated weekly via cron job
+- [x] Trust explainability — "Why this pro is trusted" modal with signal breakdown
+- [x] Backend: `GET /api/trust/:id/badges`, `/timeline`, `/explain`
+- [x] Frontend: `TrustTimeline.jsx`, `TrustSection.jsx` components on storefront
+
 ### 🔜 Future Roadmap
 
+**Phase 8: Gamification & Retention**
+- [ ] Response streaks — consecutive days responding within target time
+- [ ] Monthly leaderboards — top professionals per city per category
+- [ ] Loyalty points — earn points per booking, redeem for discounts
+- [ ] Trusted reviewer badges — earned by writing helpful reviews
+- [ ] CRM re-engagement — rebooking nudges, abandoned booking recovery, birthday greetings
+- [ ] Customer segmentation — new, active, at-risk, churned
+
+**Phase 9: AI Layer**
+- [ ] AI storefront builder — auto-generate bio, descriptions, packages from minimal input
+- [ ] AI pricing suggestions — "Pros in your area charge ₹500–₹800 for this"
+- [ ] AI business coach — weekly insights ("Respond faster to get 2x bookings")
+- [ ] AI matching — multi-signal scoring (skills, location, ratings, availability, price)
+- [ ] AI review summaries — "Customers say: fast, reliable, great quality"
+
+**Phase 10: Category-Specific UX**
+- [ ] Category UX templates — Beauty, Home Services, Fitness, Tutors, Photographers
+- [ ] Category-specific trust signals and certification badges
+
+**Infrastructure & DevOps**
 - [ ] BullMQ job queue (replace in-memory; Redis-backed; persistent retries)
-- [ ] ClamAV antivirus on file uploads
-- [ ] Cosign Docker image signing
+- [ ] WhatsApp Business API integration (click-to-chat, booking reminders)
+- [ ] Meilisearch integration (typo-tolerant search, autocomplete)
 - [ ] OpenTelemetry distributed tracing (Jaeger/Tempo)
 - [ ] PagerDuty / Slack Alertmanager integration
 - [ ] Kustomize staging + production overlays
-- [ ] S3 cross-region replication (ap-south-1 → ap-southeast-1)
-- [ ] RDS Multi-AZ (production AWS)
-- [ ] Liveness detection integration (HyperVerge)
-- [ ] WebSocket multi-instance (Redis pub/sub cluster)
-- [ ] Server-side rendering (Next.js migration or Vite SSR)
+- [ ] ClamAV antivirus on file uploads
+- [ ] Media pipeline (adaptive thumbnails, video transcoding)
+- [ ] CDN pipeline (CloudFront/Cloudflare for all media)
+
+**Phase 12: Creator Economy & Professional OS (Future Vision)**
+- [ ] Subscriptions — customers subscribe to premium professional content
+- [ ] Live sessions — video consultations / live Q&A
+- [ ] Digital products — professionals sell guides, templates, courses
+- [ ] Invoicing — generate and send professional invoices
+- [ ] Team management — professionals with employees/assistants
 
 
 
