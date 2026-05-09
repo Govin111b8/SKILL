@@ -12,6 +12,23 @@ import './BookingDetail.css';
 const FLOW = ['requested', 'quoted', 'accepted', 'scheduled', 'in_progress', 'completed'];
 const TERMINAL = ['cancelled', 'disputed', 'refunded'];
 
+// Humanized booking status labels (Phase 4.4)
+const STATUS_LABELS = {
+  requested: { label: 'Request Sent', emoji: '✉️', description: 'Waiting for professional to respond' },
+  quoted: { label: 'Quote Received', emoji: '💰', description: 'Review the quote and accept or decline' },
+  accepted: { label: 'Professional Confirmed', emoji: '✅', description: 'Your booking has been confirmed' },
+  scheduled: { label: 'Scheduled', emoji: '📅', description: 'Job date and time confirmed' },
+  in_progress: { label: 'Work Started', emoji: '🔨', description: 'Professional is working on your job' },
+  completed: { label: 'Job Completed', emoji: '🎉', description: 'The job has been completed' },
+  cancelled: { label: 'Cancelled', emoji: '❌', description: 'This booking was cancelled' },
+  disputed: { label: 'Dispute Raised', emoji: '⚠️', description: 'A dispute has been raised' },
+  refunded: { label: 'Refunded', emoji: '💸', description: 'Payment has been refunded' },
+};
+
+function humanizeStatus(status) {
+  return STATUS_LABELS[status] || { label: status, emoji: '📋', description: '' };
+}
+
 function formatDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -87,7 +104,7 @@ export default function BookingDetail() {
     }
   }
 
-  // Progress bar
+  // Progress bar with humanized labels
   function renderProgress() {
     const status = booking.status;
     const isTerminal = TERMINAL.includes(status);
@@ -105,6 +122,8 @@ export default function BookingDetail() {
             cls = 'current';
           }
 
+          const humanized = humanizeStatus(step);
+
           return (
             <div key={step} style={{ display: 'contents' }}>
               {i > 0 && (
@@ -112,10 +131,10 @@ export default function BookingDetail() {
               )}
               <div className={`bd-progress-step ${cls}`}>
                 <div className="bd-progress-dot">
-                  {cls === 'done' ? <FiCheck size={12} /> : i + 1}
+                  {cls === 'done' ? <FiCheck size={12} /> : <span style={{ fontSize: '14px' }}>{humanized.emoji}</span>}
                 </div>
                 <span className="bd-progress-label">
-                  {step === 'in_progress' ? 'In Progress' : step}
+                  {humanized.label}
                 </span>
               </div>
             </div>
@@ -126,7 +145,7 @@ export default function BookingDetail() {
             <div className="bd-progress-line" />
             <div className="bd-progress-step cancelled">
               <div className="bd-progress-dot"><FiX size={12} /></div>
-              <span className="bd-progress-label">{status}</span>
+              <span className="bd-progress-label">{humanizeStatus(status).label}</span>
             </div>
           </>
         )}
@@ -290,7 +309,7 @@ export default function BookingDetail() {
           <div className="bd-top-header">
             <h1>{booking.title}</h1>
             <span className={`status-badge status-badge--${booking.status}`}>
-              {booking.status === 'in_progress' ? 'In Progress' : booking.status}
+              {humanizeStatus(booking.status).emoji} {humanizeStatus(booking.status).label}
             </span>
           </div>
 
@@ -335,6 +354,10 @@ export default function BookingDetail() {
         {/* Progress & Log */}
         <div className="bd-timeline-card">
           <h2>Status Progress</h2>
+          {/* Current status description */}
+          <div className="bd-status-description" style={{ padding: '8px 16px', marginBottom: '12px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.85rem', color: '#0369a1' }}>
+            {humanizeStatus(booking.status).description}
+          </div>
           {renderProgress()}
 
           {statusLog.length > 0 && (
@@ -344,7 +367,7 @@ export default function BookingDetail() {
                   <div className={`bd-log-dot${i === 0 ? ' active' : ''}`} />
                   <div className="bd-log-content">
                     <div className="bd-log-status">
-                      {entry.to_status === 'in_progress' ? 'In Progress' : entry.to_status}
+                      {humanizeStatus(entry.to_status).emoji} {humanizeStatus(entry.to_status).label}
                     </div>
                     {entry.note && <div className="bd-log-note">{entry.note}</div>}
                   </div>
