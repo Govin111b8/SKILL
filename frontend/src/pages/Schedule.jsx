@@ -174,9 +174,14 @@ function Schedule() {
   const totalHours = useMemo(() => {
     let total = 0;
     schedule.filter(s => s.is_active).forEach(s => {
-      const [sh, sm] = s.start_time.split(':').map(Number);
-      const [eh, em] = s.end_time.split(':').map(Number);
-      total += (eh * 60 + em - sh * 60 - sm) / 60;
+      const startParts = (s.start_time || '00:00').split(':');
+      const endParts = (s.end_time || '00:00').split(':');
+      const sh = Number(startParts[0]) || 0;
+      const sm = Number(startParts[1]) || 0;
+      const eh = Number(endParts[0]) || 0;
+      const em = Number(endParts[1]) || 0;
+      const diff = (eh * 60 + em - sh * 60 - sm) / 60;
+      if (diff > 0) total += diff;
     });
     return Math.max(0, total).toFixed(1);
   }, [schedule]);

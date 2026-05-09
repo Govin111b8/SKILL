@@ -48,10 +48,13 @@ function InviteEarn() {
   }
 
   // Find current tier progress
-  const currentTier = REWARD_TIERS.findIndex(t => referralCount < t.count);
-  const nextTier = REWARD_TIERS[currentTier === -1 ? REWARD_TIERS.length - 1 : currentTier];
-  const prevTier = currentTier > 0 ? REWARD_TIERS[currentTier - 1] : { count: 0 };
-  const progress = nextTier ? Math.min(100, ((referralCount - prevTier.count) / (nextTier.count - prevTier.count)) * 100) : 100;
+  const currentTierIdx = REWARD_TIERS.findIndex(t => referralCount < t.count);
+  const allTiersComplete = currentTierIdx === -1;
+  const nextTier = allTiersComplete ? REWARD_TIERS[REWARD_TIERS.length - 1] : REWARD_TIERS[currentTierIdx];
+  const prevTier = allTiersComplete
+    ? REWARD_TIERS[REWARD_TIERS.length - 1]
+    : currentTierIdx > 0 ? REWARD_TIERS[currentTierIdx - 1] : { count: 0 };
+  const progress = allTiersComplete ? 100 : Math.min(100, Math.max(0, ((referralCount - prevTier.count) / (nextTier.count - prevTier.count)) * 100));
 
   return (
     <div className="invite-earn-card">
