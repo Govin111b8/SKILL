@@ -1,4 +1,5 @@
 import { useWebSocket } from '../context/WebSocketContext';
+import './OnlineIndicator.css';
 
 function OnlineIndicator({ userId, size = 10, style = {} }) {
   const { onlineUsers } = useWebSocket();
@@ -6,16 +7,12 @@ function OnlineIndicator({ userId, size = 10, style = {} }) {
 
   return (
     <span
-      className={`online-indicator ${isOnline ? 'online' : 'offline'}`}
-      title={isOnline ? 'Online' : 'Offline'}
+      className={`online-indicator ${isOnline ? 'online-indicator--online' : 'online-indicator--offline'}`}
+      role="status"
+      aria-label={isOnline ? 'Online' : 'Offline'}
       style={{
-        display: 'inline-block',
         width: size,
         height: size,
-        borderRadius: '50%',
-        backgroundColor: isOnline ? '#22c55e' : '#9ca3af',
-        border: '2px solid #fff',
-        flexShrink: 0,
         ...style,
       }}
     />

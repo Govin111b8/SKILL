@@ -5,6 +5,7 @@
   padding: 1.5rem;
   border: 1px solid var(--gray-100);
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  animation: fadeInUp 0.4s ease both;
 }
 
 .invite-earn-header {
@@ -60,6 +61,73 @@
   color: #f97316;
 }
 
+/* Progress & Tiers */
+.invite-progress {
+  margin-bottom: 1rem;
+}
+
+.invite-progress__bar {
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.invite-progress__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.invite-progress__tiers {
+  display: flex;
+  justify-content: space-between;
+}
+
+.invite-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.invite-tier__dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--gray-400);
+  background: white;
+  transition: all 0.3s;
+}
+
+.invite-tier--done .invite-tier__dot {
+  background: #f97316;
+  border-color: #f97316;
+  color: white;
+  font-size: 0.65rem;
+}
+
+.invite-tier__label {
+  font-size: 0.6rem;
+  color: var(--gray-400);
+  text-align: center;
+  max-width: 60px;
+  line-height: 1.2;
+}
+
+.invite-tier--done .invite-tier__label {
+  color: #f97316;
+  font-weight: 600;
+}
+
 .invite-link-box {
   display: flex;
   gap: 0.5rem;
@@ -93,11 +161,22 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s;
+  transition: all 0.2s;
   font-family: inherit;
 }
-.invite-copy-btn:hover {
-  background: var(--primary-dark, #3730a3);
+
+.invite-copy-btn:hover { background: var(--primary-dark, #3730a3); }
+.invite-copy-btn:active { transform: scale(0.95); }
+
+.invite-copy-btn--copied {
+  background: var(--success, #10b981) !important;
+  animation: copy-success 0.3s ease;
+}
+
+@keyframes copy-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .invite-share-row {
@@ -121,25 +200,28 @@
   font-family: inherit;
 }
 
+.invite-share-btn:active { transform: scale(0.97); }
+
 .invite-share-btn--whatsapp {
   background: #25D366;
   color: white;
 }
-.invite-share-btn--whatsapp:hover {
-  background: #20bd5a;
-}
+.invite-share-btn--whatsapp:hover { background: #20bd5a; }
 
 .invite-share-btn--generic {
   background: var(--gray-100);
   color: var(--gray-700);
   border: 1px solid var(--gray-200);
 }
-.invite-share-btn--generic:hover {
-  background: var(--gray-200);
-}
+.invite-share-btn--generic:hover { background: var(--gray-200); }
 
 @media (max-width: 480px) {
-  .invite-share-row {
-    flex-direction: column;
-  }
+  .invite-share-row { flex-direction: column; }
+  .invite-progress__tiers { gap: 0.25rem; }
+  .invite-tier__label { font-size: 0.55rem; max-width: 50px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invite-earn-card { animation: none; }
+  .invite-copy-btn--copied { animation: none; }
 }
