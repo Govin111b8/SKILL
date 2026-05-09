@@ -6,6 +6,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CustomerLogin from './pages/CustomerLogin';
+import ProfessionalLogin from './pages/ProfessionalLogin';
+import AgentLogin from './pages/AgentLogin';
+import AdminLogin from './pages/AdminLogin';
+import CustomerRegister from './pages/CustomerRegister';
+import ProfessionalRegister from './pages/ProfessionalRegister';
+import AgentRegister from './pages/AgentRegister';
 import SearchResults from './pages/SearchResults';
 import ProfessionalProfile from './pages/ProfessionalProfile';
 import Categories from './pages/Categories';
@@ -65,7 +72,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/login/customer" element={<CustomerLogin />} />
+          <Route path="/login/professional" element={<ProfessionalLogin />} />
+          <Route path="/login/agent" element={<AgentLogin />} />
+          <Route path="/login/admin" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register/customer" element={<CustomerRegister />} />
+          <Route path="/register/professional" element={<ProfessionalRegister />} />
+          <Route path="/register/agent" element={<AgentRegister />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/professionals/:id" element={<ProfessionalProfile />} />
           <Route path="/professionals/:id/storefront" element={<Storefront />} />

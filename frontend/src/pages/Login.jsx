@@ -1,54 +1,25 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiEye, FiEyeOff, FiShield, FiStar, FiZap, FiArrowRight } from 'react-icons/fi';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { FiUser, FiBriefcase, FiUsers, FiShield, FiStar, FiZap } from 'react-icons/fi';
 import './Login.css';
+import './RoleLogin.css';
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="login-page">
+    <div className="role-selection-page">
       {/* Left visual panel */}
-      <div className="login-visual">
-        <div className="login-visual-blobs">
-          <div className="lv-blob lv-blob-1" />
-          <div className="lv-blob lv-blob-2" />
+      <div className="role-selection-visual">
+        <div className="role-selection-visual-blobs">
+          <div className="rs-blob rs-blob-1" />
+          <div className="rs-blob rs-blob-2" />
         </div>
-        <div className="login-visual-content">
-          <span className="lv-icon">⚡</span>
+        <div className="role-selection-visual-content">
+          <span className="rs-icon">⚡</span>
           <h2>Welcome to SkillConnect</h2>
           <p>Connect with verified professionals and get quality work done with confidence.</p>
           <div className="login-visual-features">
             <div className="lv-feature">
               <div className="lv-feature-icon"><FiShield size={18} /></div>
-              <span>Verified & trusted professionals</span>
+              <span>Verified &amp; trusted professionals</span>
             </div>
             <div className="lv-feature">
               <div className="lv-feature-icon"><FiStar size={18} /></div>
@@ -56,64 +27,48 @@ function Login() {
             </div>
             <div className="lv-feature">
               <div className="lv-feature-icon"><FiZap size={18} /></div>
-              <span>Instant booking & secure payments</span>
+              <span>Instant booking &amp; secure payments</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div className="login-form-side">
-        <div className="login-card">
-          <div className="login-card-logo">
+      {/* Right panel — role selection */}
+      <div className="role-selection-form-side">
+        <div className="role-selection-card">
+          <div className="role-selection-card-logo">
             <span>⚡</span> Skill<em>Connect</em>
           </div>
-          <h1>Welcome Back</h1>
-          <p className="login-subtitle">Sign in to continue to your account</p>
+          <h1>Sign In</h1>
+          <p className="role-selection-subtitle">Choose how you want to sign in</p>
 
-          {error && <div className="alert alert-error">{error}</div>}
+          <div className="role-cards">
+            <Link to="/login/customer" className="role-card customer">
+              <div className="role-card-icon"><FiUser size={24} /></div>
+              <span className="role-card-title">Customer</span>
+              <span className="role-card-desc">Find &amp; hire professionals</span>
+            </Link>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-            </div>
+            <Link to="/login/professional" className="role-card professional">
+              <div className="role-card-icon"><FiBriefcase size={24} /></div>
+              <span className="role-card-title">Professional</span>
+              <span className="role-card-desc">Manage bookings &amp; grow</span>
+            </Link>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="password-input-group">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
-              </div>
-            </div>
+            <Link to="/login/agent" className="role-card agent">
+              <div className="role-card-icon"><FiUsers size={24} /></div>
+              <span className="role-card-title">Agent</span>
+              <span className="role-card-desc">Earn referral commissions</span>
+            </Link>
 
-            <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
-              {loading ? 'Signing in...' : <>Sign In <FiArrowRight size={16} /></>}
-            </button>
-          </form>
+            <Link to="/login/admin" className="role-card admin">
+              <div className="role-card-icon"><FiShield size={24} /></div>
+              <span className="role-card-title">Admin</span>
+              <span className="role-card-desc">Platform management</span>
+            </Link>
+          </div>
 
-          <p className="login-footer">
+          <p className="role-selection-footer">
             Don&apos;t have an account? <Link to="/register">Create one</Link>
           </p>
         </div>
