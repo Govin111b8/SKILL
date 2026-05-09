@@ -10,6 +10,7 @@ function CustomerLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -35,6 +36,19 @@ function CustomerLogin() {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDemoLogin() {
+    setError('');
+    setDemoLoading(true);
+    try {
+      await login('customer@demo.com', 'demo123');
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Demo login failed. Please try manually.');
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -74,12 +88,25 @@ function CustomerLogin() {
           <div className="role-login-badge customer">
             <FiUser size={14} /> Customer Login
           </div>
-          <h1>Welcome Back</h1>
+          <h1>Welcome Back, Customer!</h1>
           <p className="role-login-subtitle">Sign in to find &amp; hire skilled professionals</p>
 
-          <div className="demo-credentials">
-            <strong>Demo Credentials</strong>
-            <code>customer@demo.com</code> / <code>demo123</code>
+          {/* Prominent Demo Login Button */}
+          <button
+            className="demo-quick-btn customer"
+            onClick={handleDemoLogin}
+            disabled={demoLoading || loading}
+            aria-label="Quick demo login as customer"
+          >
+            <span className="demo-quick-emoji">🚀</span>
+            <span className="demo-quick-text">
+              <strong>{demoLoading ? 'Logging in...' : 'Try Demo — Instant Customer Login'}</strong>
+              <small>customer@demo.com · No signup needed</small>
+            </span>
+          </button>
+
+          <div className="login-divider">
+            <span>or sign in with your account</span>
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
@@ -119,16 +146,16 @@ function CustomerLogin() {
               </div>
             </div>
 
-            <button type="submit" className="role-login-btn customer" disabled={loading}>
-              {loading ? 'Signing in...' : <>Sign In <FiArrowRight size={16} /></>}
+            <button type="submit" className="role-login-btn customer" disabled={loading || demoLoading}>
+              {loading ? 'Signing in...' : <>Sign In as Customer <FiArrowRight size={16} /></>}
             </button>
           </form>
 
           <p className="role-login-footer">
-            Don&apos;t have an account? <Link to="/register/customer">Create one</Link>
+            Don&apos;t have an account? <Link to="/register/customer">Create Customer Account</Link>
           </p>
           <p className="role-login-footer" style={{ marginTop: '0.5rem' }}>
-            <Link to="/login">← Back to role selection</Link>
+            <Link to="/login">← Choose a different role</Link>
           </p>
         </div>
       </div>

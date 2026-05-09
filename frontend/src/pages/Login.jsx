@@ -1,9 +1,36 @@
-import { Link } from 'react-router-dom';
-import { FiUser, FiBriefcase, FiUsers, FiShield, FiStar, FiZap } from 'react-icons/fi';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiUser, FiBriefcase, FiUsers, FiShield, FiStar, FiZap, FiArrowRight } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 import './RoleLogin.css';
 
 function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [demoLoading, setDemoLoading] = useState('');
+
+  async function handleDemoLogin(role) {
+    const credentials = {
+      customer: { email: 'customer@demo.com', redirect: '/dashboard' },
+      professional: { email: 'pro1@demo.com', redirect: '/dashboard' },
+      agent: { email: 'agent@demo.com', redirect: '/agent/dashboard' },
+      admin: { email: 'admin@demo.com', redirect: '/admin' },
+    };
+    const cred = credentials[role];
+    if (!cred) return;
+    setDemoLoading(role);
+    try {
+      await login(cred.email, 'demo123');
+      navigate(cred.redirect);
+    } catch {
+      // If demo login fails, redirect to role-specific login page
+      navigate(`/login/${role}`);
+    } finally {
+      setDemoLoading('');
+    }
+  }
+
   return (
     <div className="role-selection-page">
       {/* Left visual panel */}
@@ -40,32 +67,88 @@ function Login() {
             <span>⚡</span> Skill<em>Connect</em>
           </div>
           <h1>Sign In</h1>
-          <p className="role-selection-subtitle">Choose how you want to sign in</p>
+          <p className="role-selection-subtitle">Choose your role to sign in</p>
 
-          <div className="role-cards">
-            <Link to="/login/customer" className="role-card customer">
-              <div className="role-card-icon"><FiUser size={24} /></div>
-              <span className="role-card-title">Customer</span>
-              <span className="role-card-desc">Find &amp; hire professionals</span>
-            </Link>
+          <div className="role-cards-list">
+            {/* Customer */}
+            <div className="role-entry customer">
+              <Link to="/login/customer" className="role-entry-info">
+                <div className="role-entry-icon"><FiUser size={22} /></div>
+                <div className="role-entry-text">
+                  <span className="role-entry-title">Customer Login</span>
+                  <span className="role-entry-desc">Find &amp; hire skilled professionals</span>
+                </div>
+                <FiArrowRight size={16} className="role-entry-arrow" />
+              </Link>
+              <button
+                className="demo-login-btn customer"
+                onClick={() => handleDemoLogin('customer')}
+                disabled={!!demoLoading}
+                aria-label="Demo login as Customer"
+              >
+                {demoLoading === 'customer' ? '⏳' : '🚀'} Try Demo
+              </button>
+            </div>
 
-            <Link to="/login/professional" className="role-card professional">
-              <div className="role-card-icon"><FiBriefcase size={24} /></div>
-              <span className="role-card-title">Professional</span>
-              <span className="role-card-desc">Manage bookings &amp; grow</span>
-            </Link>
+            {/* Professional */}
+            <div className="role-entry professional">
+              <Link to="/login/professional" className="role-entry-info">
+                <div className="role-entry-icon"><FiBriefcase size={22} /></div>
+                <div className="role-entry-text">
+                  <span className="role-entry-title">Professional Login</span>
+                  <span className="role-entry-desc">Manage bookings &amp; grow your business</span>
+                </div>
+                <FiArrowRight size={16} className="role-entry-arrow" />
+              </Link>
+              <button
+                className="demo-login-btn professional"
+                onClick={() => handleDemoLogin('professional')}
+                disabled={!!demoLoading}
+                aria-label="Demo login as Professional"
+              >
+                {demoLoading === 'professional' ? '⏳' : '🔧'} Try Demo
+              </button>
+            </div>
 
-            <Link to="/login/agent" className="role-card agent">
-              <div className="role-card-icon"><FiUsers size={24} /></div>
-              <span className="role-card-title">Agent</span>
-              <span className="role-card-desc">Earn referral commissions</span>
-            </Link>
+            {/* Agent */}
+            <div className="role-entry agent">
+              <Link to="/login/agent" className="role-entry-info">
+                <div className="role-entry-icon"><FiUsers size={22} /></div>
+                <div className="role-entry-text">
+                  <span className="role-entry-title">Agent Login</span>
+                  <span className="role-entry-desc">Earn referral commissions</span>
+                </div>
+                <FiArrowRight size={16} className="role-entry-arrow" />
+              </Link>
+              <button
+                className="demo-login-btn agent"
+                onClick={() => handleDemoLogin('agent')}
+                disabled={!!demoLoading}
+                aria-label="Demo login as Agent"
+              >
+                {demoLoading === 'agent' ? '⏳' : '🤝'} Try Demo
+              </button>
+            </div>
 
-            <Link to="/login/admin" className="role-card admin">
-              <div className="role-card-icon"><FiShield size={24} /></div>
-              <span className="role-card-title">Admin</span>
-              <span className="role-card-desc">Platform management</span>
-            </Link>
+            {/* Admin */}
+            <div className="role-entry admin">
+              <Link to="/login/admin" className="role-entry-info">
+                <div className="role-entry-icon"><FiShield size={22} /></div>
+                <div className="role-entry-text">
+                  <span className="role-entry-title">Admin Login</span>
+                  <span className="role-entry-desc">Platform management &amp; oversight</span>
+                </div>
+                <FiArrowRight size={16} className="role-entry-arrow" />
+              </Link>
+              <button
+                className="demo-login-btn admin"
+                onClick={() => handleDemoLogin('admin')}
+                disabled={!!demoLoading}
+                aria-label="Demo login as Admin"
+              >
+                {demoLoading === 'admin' ? '⏳' : '🛡️'} Try Demo
+              </button>
+            </div>
           </div>
 
           <p className="role-selection-footer">

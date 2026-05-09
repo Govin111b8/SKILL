@@ -111,6 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'agent':
         _emailCtl.text = 'agent@demo.com';
         break;
+      case 'admin':
+        _emailCtl.text = 'admin@demo.com';
+        break;
       default:
         _emailCtl.text = 'customer@demo.com';
         break;
@@ -119,7 +122,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {});
   }
 
-  bool get _hasDemoCredentials => !_isAdmin;
+  Future<void> _demoLogin() async {
+    _fillDemo();
+    // Small delay so user can see the fields fill
+    await Future.delayed(const Duration(milliseconds: 200));
+    _submit();
+  }
+
+  bool get _hasDemoCredentials => true; // All roles have demo for now
 
   @override
   Widget build(BuildContext context) {
@@ -277,37 +287,52 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Demo credentials (not shown for admin)
-                  if (_hasDemoCredentials)
-                    GestureDetector(
-                      onTap: _fillDemo,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: _gradient.first.withAlpha(15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _gradient.first.withAlpha(30)),
+                  // Demo credentials — prominent one-tap login button
+                  if (_hasDemoCredentials) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 56,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _gradient.first.withAlpha(60), width: 2, style: BorderStyle.solid),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          backgroundColor: _gradient.first.withAlpha(12),
                         ),
-                        child: Row(children: [
-                          Icon(Icons.touch_app_rounded, size: 16, color: _gradient.first),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _isAgent
-                                  ? 'Tap to fill: agent@demo.com / demo123'
-                                  : _isPro
-                                      ? 'Tap to fill: pro1@demo.com / demo123'
-                                      : 'Tap to fill: customer@demo.com / demo123',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: _gradient.first,
-                              ),
+                        onPressed: auth.loading ? null : _demoLogin,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('🚀 ', style: TextStyle(fontSize: 20)),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Try Demo — Instant $_roleLabel Login',
+                                  style: TextStyle(
+                                    color: _gradient.first,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  _isAgent ? 'agent@demo.com'
+                                    : _isPro ? 'pro1@demo.com'
+                                    : _isAdmin ? 'admin@demo.com'
+                                    : 'customer@demo.com',
+                                  style: TextStyle(
+                                    color: _gradient.first.withAlpha(150),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ]),
+                          ],
+                        ),
                       ),
                     ),
+                  ],
 
                   const SizedBox(height: 24),
 

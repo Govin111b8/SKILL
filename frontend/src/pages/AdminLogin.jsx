@@ -10,6 +10,7 @@ function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -35,6 +36,19 @@ function AdminLogin() {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDemoLogin() {
+    setError('');
+    setDemoLoading(true);
+    try {
+      await login('admin@demo.com', 'demo123');
+      navigate('/admin');
+    } catch (err) {
+      setError(err.message || 'Demo login failed. Please try manually.');
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -82,6 +96,24 @@ function AdminLogin() {
             This area is restricted to authorized administrators only. All access is logged.
           </div>
 
+          {/* Demo Login Button */}
+          <button
+            className="demo-quick-btn admin"
+            onClick={handleDemoLogin}
+            disabled={demoLoading || loading}
+            aria-label="Quick demo login as admin"
+          >
+            <span className="demo-quick-emoji">🛡️</span>
+            <span className="demo-quick-text">
+              <strong>{demoLoading ? 'Authenticating...' : 'Try Demo — Admin Panel Access'}</strong>
+              <small>admin@demo.com · Demo environment only</small>
+            </span>
+          </button>
+
+          <div className="login-divider">
+            <span>or sign in with admin credentials</span>
+          </div>
+
           {error && <div className="alert alert-error">{error}</div>}
 
           <form onSubmit={handleSubmit}>
@@ -119,13 +151,13 @@ function AdminLogin() {
               </div>
             </div>
 
-            <button type="submit" className="role-login-btn admin" disabled={loading}>
+            <button type="submit" className="role-login-btn admin" disabled={loading || demoLoading}>
               {loading ? 'Authenticating...' : <>Secure Sign In <FiLock size={16} /></>}
             </button>
           </form>
 
           <p className="role-login-footer" style={{ marginTop: '2rem' }}>
-            <Link to="/login">← Back to role selection</Link>
+            <Link to="/login">← Choose a different role</Link>
           </p>
         </div>
       </div>

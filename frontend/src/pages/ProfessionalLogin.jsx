@@ -10,6 +10,7 @@ function ProfessionalLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -35,6 +36,19 @@ function ProfessionalLogin() {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDemoLogin() {
+    setError('');
+    setDemoLoading(true);
+    try {
+      await login('pro1@demo.com', 'demo123');
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Demo login failed. Please try manually.');
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -74,12 +88,25 @@ function ProfessionalLogin() {
           <div className="role-login-badge professional">
             <FiBriefcase size={14} /> Professional Login
           </div>
-          <h1>Welcome Back</h1>
+          <h1>Welcome Back, Pro!</h1>
           <p className="role-login-subtitle">Sign in to manage your bookings &amp; grow your business</p>
 
-          <div className="demo-credentials">
-            <strong>Demo Credentials</strong>
-            <code>pro1@demo.com</code> / <code>demo123</code>
+          {/* Prominent Demo Login Button */}
+          <button
+            className="demo-quick-btn professional"
+            onClick={handleDemoLogin}
+            disabled={demoLoading || loading}
+            aria-label="Quick demo login as professional"
+          >
+            <span className="demo-quick-emoji">🔧</span>
+            <span className="demo-quick-text">
+              <strong>{demoLoading ? 'Logging in...' : 'Try Demo — Instant Pro Login'}</strong>
+              <small>pro1@demo.com · No signup needed</small>
+            </span>
+          </button>
+
+          <div className="login-divider">
+            <span>or sign in with your account</span>
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
@@ -119,8 +146,8 @@ function ProfessionalLogin() {
               </div>
             </div>
 
-            <button type="submit" className="role-login-btn professional" disabled={loading}>
-              {loading ? 'Signing in...' : <>Sign In <FiArrowRight size={16} /></>}
+            <button type="submit" className="role-login-btn professional" disabled={loading || demoLoading}>
+              {loading ? 'Signing in...' : <>Sign In as Professional <FiArrowRight size={16} /></>}
             </button>
           </form>
 
@@ -128,7 +155,7 @@ function ProfessionalLogin() {
             Don&apos;t have an account? <Link to="/register/professional">Register as Professional</Link>
           </p>
           <p className="role-login-footer" style={{ marginTop: '0.5rem' }}>
-            <Link to="/login">← Back to role selection</Link>
+            <Link to="/login">← Choose a different role</Link>
           </p>
         </div>
       </div>
