@@ -150,7 +150,7 @@ SkillConnect is a full-stack professional services marketplace that connects cus
 +---------------------------------------------------------------------+
 |                      Backend (Node.js + Express 5)                  |
 |  +------------+  +------------+  +-------------+  +------------+   |
-|  | 38 Routes  |  | 37 Contrlrs|  | 8 Middleware |  | 9 Services |   |
+|  | 38 Routes  |  | 37 Ctrlers |  | 8 Middleware |  | 9 Services |   |
 |  +------------+  +------------+  +-------------+  +------------+   |
 |  +------------+  +------------+  +-------------+                    |
 |  | WebSocket  |  | Cron Jobs  |  | Feature     |                    |
