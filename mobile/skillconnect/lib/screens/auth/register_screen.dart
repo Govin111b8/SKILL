@@ -22,10 +22,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
 
   bool get _isPro => widget.selectedRole == 'professional';
+  bool get _isAgent => widget.selectedRole == 'agent';
 
-  List<Color> get _gradient => _isPro
-      ? const [Color(0xFF06B6D4), Color(0xFF3B82F6)]
-      : const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
+  List<Color> get _gradient {
+    switch (widget.selectedRole) {
+      case 'professional':
+        return const [Color(0xFF06B6D4), Color(0xFF3B82F6)];
+      case 'agent':
+        return const [Color(0xFF10B981), Color(0xFF059669)];
+      default:
+        return const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
+    }
+  }
+
+  String get _roleLabel {
+    switch (widget.selectedRole) {
+      case 'professional': return 'Professional';
+      case 'agent': return 'Agent';
+      default: return 'Customer';
+    }
+  }
+
+  IconData get _roleIcon {
+    switch (widget.selectedRole) {
+      case 'professional': return Icons.work_rounded;
+      case 'agent': return Icons.groups_rounded;
+      default: return Icons.person_rounded;
+    }
+  }
 
   @override
   void dispose() {
@@ -104,13 +128,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(
-                          _isPro ? Icons.work_rounded : Icons.person_rounded,
-                          size: 14, color: Colors.white,
-                        ),
+                        Icon(_roleIcon, size: 14, color: Colors.white),
                         const SizedBox(width: 6),
                         Text(
-                          _isPro ? 'Professional' : 'Customer',
+                          _roleLabel,
                           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ]),
@@ -130,14 +151,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         boxShadow: [BoxShadow(color: _gradient.first.withAlpha(50), blurRadius: 16, offset: const Offset(0, 6))],
                       ),
                       child: Icon(
-                        _isPro ? Icons.work_rounded : Icons.person_add_rounded,
+                        _isPro ? Icons.work_rounded : _isAgent ? Icons.groups_rounded : Icons.person_add_rounded,
                         size: 32, color: Colors.white,
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _isPro ? 'Join as Professional' : 'Create Account',
+                    _isPro ? 'Join as Professional' : _isAgent ? 'Join as Agent' : 'Create Account',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800, letterSpacing: -0.5,
@@ -147,7 +168,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     _isPro
                         ? 'Start getting bookings & grow your business'
-                        : 'Find and hire the best professionals near you',
+                        : _isAgent
+                            ? 'Refer professionals & earn commissions'
+                            : 'Find and hire the best professionals near you',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 13.5),
                   ),
@@ -209,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _locationCtl,
                     decoration: InputDecoration(
-                      hintText: _isPro ? 'Service Location (e.g. Mumbai, MH)' : 'City / Location',
+                      hintText: _isPro ? 'Service Location (e.g. Mumbai, MH)' : _isAgent ? 'Operating City / Region' : 'City / Location',
                       prefixIcon: const Icon(Icons.location_on_outlined),
                     ),
                     validator: (v) => v != null && v.isNotEmpty ? null : 'Required',
@@ -231,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: auth.loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : Text(
-                              _isPro ? 'Register as Professional' : 'Create My Account',
+                              _isPro ? 'Register as Professional' : _isAgent ? 'Register as Agent' : 'Create My Account',
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                     ),
@@ -274,6 +297,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Text(
                             'After registration, complete your profile to start receiving bookings. You can add your skills, portfolio, and pricing from the dashboard.',
                             style: TextStyle(fontSize: 12, color: Colors.cyan.shade800, height: 1.4),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                  if (_isAgent) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade100),
+                      ),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.green.shade700),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'As an agent, you\'ll earn commissions for every professional you refer who completes bookings. Start referring and watch your earnings grow!',
+                            style: TextStyle(fontSize: 12, color: Colors.green.shade800, height: 1.4),
                           ),
                         ),
                       ]),

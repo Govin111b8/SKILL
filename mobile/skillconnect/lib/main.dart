@@ -14,6 +14,8 @@ import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/home/pro_home_screen.dart';
+import 'screens/home/agent_home_screen.dart';
+import 'screens/home/admin_home_screen.dart';
 import 'screens/profile/professional_profile_screen.dart';
 import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
@@ -288,35 +290,73 @@ class _MainShellState extends State<MainShell> {
   StreamSubscription<ConnectionStatus>? _connSub;
   ConnectionStatus _connStatus = ConnectionStatus.disconnected;
 
-  List<Widget> _buildScreens(bool isPro) => isPro
-      ? const [
-          ProHomeScreen(),       // Home: pro dashboard overview
-          BookingsListScreen(),  // Bookings: all pro bookings
-          ThreadsScreen(),       // Chats
-          DashboardScreen(),     // Profile / settings
-        ]
-      : const [
-          HomeScreen(),          // Home: discover pros
-          ServiceHubScreen(),    // Services: browse categories
-          BookingsListScreen(),  // Bookings
-          ThreadsScreen(),       // Chats
-          DashboardScreen(),     // Profile
-        ];
+  List<Widget> _buildScreens(bool isPro, bool isAgent, bool isAdmin) {
+    if (isAdmin) {
+      return const [
+        AdminHomeScreen(),     // Dashboard
+        BookingsListScreen(),  // Users (reuse bookings as placeholder)
+        ThreadsScreen(),       // Reports (reuse chats as placeholder)
+        DashboardScreen(),     // Settings / Profile
+      ];
+    }
+    if (isAgent) {
+      return const [
+        AgentHomeScreen(),     // Overview
+        BookingsListScreen(),  // Referrals (reuse bookings as placeholder)
+        ThreadsScreen(),       // Chats
+        DashboardScreen(),     // Profile
+      ];
+    }
+    if (isPro) {
+      return const [
+        ProHomeScreen(),       // Home: pro dashboard overview
+        BookingsListScreen(),  // Bookings: all pro bookings
+        ThreadsScreen(),       // Chats
+        DashboardScreen(),     // Profile / settings
+      ];
+    }
+    return const [
+      HomeScreen(),          // Home: discover pros
+      ServiceHubScreen(),    // Services: browse categories
+      BookingsListScreen(),  // Bookings
+      ThreadsScreen(),       // Chats
+      DashboardScreen(),     // Profile
+    ];
+  }
 
-  List<NavigationDestination> _destinations(bool isPro) => isPro
-      ? const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
-          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-          NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ]
-      : const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
-          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-          NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ];
+  List<NavigationDestination> _destinations(bool isPro, bool isAgent, bool isAdmin) {
+    if (isAdmin) {
+      return const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Users'),
+        NavigationDestination(icon: Icon(Icons.assessment_outlined), selectedIcon: Icon(Icons.assessment), label: 'Reports'),
+        NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+      ];
+    }
+    if (isAgent) {
+      return const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+        NavigationDestination(icon: Icon(Icons.people_alt_outlined), selectedIcon: Icon(Icons.people_alt), label: 'Referrals'),
+        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      ];
+    }
+    if (isPro) {
+      return const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+        NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      ];
+    }
+    return const [
+      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+      NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
+      NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+      NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+      NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    ];
+  }
 
   @override
   void initState() {
@@ -347,7 +387,9 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
     final isPro = auth.isProfessional;
-    final screens = _buildScreens(isPro);
+    final isAgent = auth.isAgent;
+    final isAdmin = auth.isAdmin;
+    final screens = _buildScreens(isPro, isAgent, isAdmin);
     // Reset index if it goes out of range when role changes
     final safeIndex = _index.clamp(0, screens.length - 1);
 
@@ -426,7 +468,7 @@ class _MainShellState extends State<MainShell> {
           selectedIndex: safeIndex,
           onDestinationSelected: (i) => setState(() => _index = i),
           animationDuration: const Duration(milliseconds: 400),
-          destinations: _destinations(isPro),
+          destinations: _destinations(isPro, isAgent, isAdmin),
         ),
       ),
     );

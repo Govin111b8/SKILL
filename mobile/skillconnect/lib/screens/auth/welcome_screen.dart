@@ -98,8 +98,39 @@ class WelcomeScreen extends StatelessWidget {
                   gradient: const [Color(0xFF06B6D4), Color(0xFF3B82F6)],
                   onTap: () => _goToLogin(context, 'professional'),
                 ),
+                const SizedBox(height: 14),
+
+                // Agent card
+                _RoleCard(
+                  icon: Icons.groups_rounded,
+                  emoji: '🤝',
+                  title: 'Agent',
+                  subtitle: 'Refer professionals, earn commissions\nand grow the network',
+                  gradient: const [Color(0xFF10B981), Color(0xFF059669)],
+                  onTap: () => _goToLogin(context, 'agent'),
+                ),
 
                 const Spacer(flex: 1),
+
+                // Admin login (subtle text button for security)
+                TextButton(
+                  onPressed: () => _goToLogin(context, 'admin'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white.withAlpha(100)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Admin Login',
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(100),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 // Bottom info
                 Container(
