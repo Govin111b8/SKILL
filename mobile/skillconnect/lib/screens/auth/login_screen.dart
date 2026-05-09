@@ -4,7 +4,7 @@ import '../../services/auth_service.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  final String selectedRole; // 'customer' or 'professional'
+  final String selectedRole; // 'customer', 'professional', 'agent', or 'admin'
   const LoginScreen({super.key, this.selectedRole = 'customer'});
 
   @override
@@ -19,10 +19,61 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   bool get _isPro => widget.selectedRole == 'professional';
+  bool get _isAgent => widget.selectedRole == 'agent';
+  bool get _isAdmin => widget.selectedRole == 'admin';
 
-  List<Color> get _gradient => _isPro
-      ? const [Color(0xFF06B6D4), Color(0xFF3B82F6)]
-      : const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
+  List<Color> get _gradient {
+    switch (widget.selectedRole) {
+      case 'professional':
+        return const [Color(0xFF06B6D4), Color(0xFF3B82F6)];
+      case 'agent':
+        return const [Color(0xFF10B981), Color(0xFF059669)];
+      case 'admin':
+        return const [Color(0xFFEF4444), Color(0xFFDC2626)];
+      default:
+        return const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
+    }
+  }
+
+  String get _roleLabel {
+    switch (widget.selectedRole) {
+      case 'professional': return 'Professional';
+      case 'agent': return 'Agent';
+      case 'admin': return 'Admin';
+      default: return 'Customer';
+    }
+  }
+
+  IconData get _roleIcon {
+    switch (widget.selectedRole) {
+      case 'professional': return Icons.work_rounded;
+      case 'agent': return Icons.groups_rounded;
+      case 'admin': return Icons.admin_panel_settings_rounded;
+      default: return Icons.person_rounded;
+    }
+  }
+
+  IconData get _logoIcon {
+    switch (widget.selectedRole) {
+      case 'professional': return Icons.work_rounded;
+      case 'agent': return Icons.groups_rounded;
+      case 'admin': return Icons.shield_rounded;
+      default: return Icons.handyman_rounded;
+    }
+  }
+
+  String get _loginTitle => '$_roleLabel Login';
+
+  String get _loginSubtitle {
+    switch (widget.selectedRole) {
+      case 'professional': return 'Sign in to manage your bookings & profile';
+      case 'agent': return 'Sign in to manage referrals & commissions';
+      case 'admin': return 'Sign in to the admin control panel';
+      default: return 'Sign in to find & hire skilled professionals';
+    }
+  }
+
+  String get _buttonLabel => 'Sign In as $_roleLabel';
 
   @override
   void dispose() {
@@ -42,8 +93,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // Verify the logged-in user matches the selected role
       final loggedRole = auth.user?['role'];
       if (loggedRole != null && loggedRole != widget.selectedRole) {
+        final roleLabels = {'professional': 'Professional', 'customer': 'Customer', 'agent': 'Agent', 'admin': 'Admin'};
+        final label = roleLabels[loggedRole] ?? loggedRole;
         await auth.logout();
-        setState(() => _error = 'This account is registered as a ${loggedRole == "professional" ? "Professional" : "Customer"}. Please use the correct login.');
+        setState(() => _error = 'This account is registered as a $label. Please use the correct login.');
         return;
       }
       Navigator.pushReplacementNamed(context, '/home');
@@ -51,14 +104,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _fillDemo() {
-    if (_isPro) {
-      _emailCtl.text = 'pro1@demo.com';
-    } else {
-      _emailCtl.text = 'customer@demo.com';
+    switch (widget.selectedRole) {
+      case 'professional':
+        _emailCtl.text = 'pro1@demo.com';
+        break;
+      case 'agent':
+        _emailCtl.text = 'agent@demo.com';
+        break;
+      case 'admin':
+        _emailCtl.text = 'admin@demo.com';
+        break;
+      default:
+        _emailCtl.text = 'customer@demo.com';
+        break;
     }
     _passwordCtl.text = 'demo123';
     setState(() {});
   }
+
+  Future<void> _demoLogin() async {
+    _fillDemo();
+    // Small delay so user can see the fields fill
+    await Future.delayed(const Duration(milliseconds: 200));
+    _submit();
+  }
+
+  bool get _hasDemoCredentials => true; // All roles have demo for now
 
   @override
   Widget build(BuildContext context) {
@@ -108,14 +179,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(
-                          _isPro ? Icons.work_rounded : Icons.person_rounded,
-                          size: 14,
-                          color: Colors.white,
-                        ),
+                        Icon(_roleIcon, size: 14, color: Colors.white),
                         const SizedBox(width: 6),
                         Text(
-                          _isPro ? 'Professional' : 'Customer',
+                          _roleLabel,
                           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ]),
@@ -134,16 +201,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [BoxShadow(color: _gradient.first.withAlpha(60), blurRadius: 20, offset: const Offset(0, 8))],
                       ),
-                      child: Icon(
-                        _isPro ? Icons.work_rounded : Icons.handyman_rounded,
-                        size: 38,
-                        color: Colors.white,
-                      ),
+                      child: Icon(_logoIcon, size: 38, color: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    _isPro ? 'Professional Login' : 'Customer Login',
+                    _loginTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -152,9 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _isPro
-                        ? 'Sign in to manage your bookings & profile'
-                        : 'Sign in to find & hire skilled professionals',
+                    _loginSubtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                   ),
@@ -219,41 +280,59 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: auth.loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : Text(
-                              _isPro ? 'Sign In as Professional' : 'Sign In as Customer',
+                              _buttonLabel,
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Demo credentials
-                  GestureDetector(
-                    onTap: _fillDemo,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: _isPro ? Colors.cyan.shade50 : Colors.indigo.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _isPro ? Colors.cyan.shade100 : Colors.indigo.shade100),
-                      ),
-                      child: Row(children: [
-                        Icon(Icons.touch_app_rounded, size: 16, color: _isPro ? Colors.cyan.shade700 : Colors.indigo.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _isPro
-                                ? 'Tap to fill: pro1@demo.com / demo123'
-                                : 'Tap to fill: customer@demo.com / demo123',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _isPro ? Colors.cyan.shade800 : Colors.indigo.shade800,
-                            ),
-                          ),
+                  // Demo credentials — prominent one-tap login button
+                  if (_hasDemoCredentials) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 56,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _gradient.first.withAlpha(60), width: 2, style: BorderStyle.solid),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          backgroundColor: _gradient.first.withAlpha(12),
                         ),
-                      ]),
+                        onPressed: auth.loading ? null : _demoLogin,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('🚀 ', style: TextStyle(fontSize: 20)),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Try Demo — Instant $_roleLabel Login',
+                                  style: TextStyle(
+                                    color: _gradient.first,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  _isAgent ? 'agent@demo.com'
+                                    : _isPro ? 'pro1@demo.com'
+                                    : _isAdmin ? 'admin@demo.com'
+                                    : 'customer@demo.com',
+                                  style: TextStyle(
+                                    color: _gradient.first.withAlpha(150),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
 
                   const SizedBox(height: 24),
 
@@ -269,28 +348,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Register button
-                  SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _gradient.first.withAlpha(80), width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => RegisterScreen(selectedRole: widget.selectedRole)),
-                      ),
-                      child: Text(
-                        _isPro ? 'Create Professional Account' : 'Create Customer Account',
-                        style: TextStyle(
-                          color: _gradient.first,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                  // Register button (not shown for admin — admin accounts are created by existing admins)
+                  if (!_isAdmin)
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _gradient.first.withAlpha(80), width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => RegisterScreen(selectedRole: widget.selectedRole)),
+                        ),
+                        child: Text(
+                          'Create $_roleLabel Account',
+                          style: TextStyle(
+                            color: _gradient.first,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
                   const SizedBox(height: 24),
 
@@ -306,23 +386,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _isPro ? 'As a Professional, you get:' : 'As a Customer, you get:',
+                          'As a $_roleLabel, you get:',
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         const SizedBox(height: 10),
-                        ...(_isPro
-                            ? [
-                                _featureRow(Icons.event_note_rounded, 'Manage bookings & schedule'),
-                                _featureRow(Icons.star_rounded, 'Build your reputation with reviews'),
-                                _featureRow(Icons.trending_up_rounded, 'Grow your client base'),
-                                _featureRow(Icons.account_balance_wallet_rounded, 'Zero commission on earnings'),
-                              ]
-                            : [
-                                _featureRow(Icons.search_rounded, 'Browse 40+ service categories'),
-                                _featureRow(Icons.verified_rounded, 'Hire verified professionals'),
-                                _featureRow(Icons.chat_rounded, 'Chat & book directly'),
-                                _featureRow(Icons.star_rounded, 'Read authentic reviews'),
-                              ]),
+                        ..._featuresForRole(),
                       ],
                     ),
                   ),
@@ -334,6 +402,39 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> _featuresForRole() {
+    switch (widget.selectedRole) {
+      case 'professional':
+        return [
+          _featureRow(Icons.event_note_rounded, 'Manage bookings & schedule'),
+          _featureRow(Icons.star_rounded, 'Build your reputation with reviews'),
+          _featureRow(Icons.trending_up_rounded, 'Grow your client base'),
+          _featureRow(Icons.account_balance_wallet_rounded, 'Zero commission on earnings'),
+        ];
+      case 'agent':
+        return [
+          _featureRow(Icons.people_alt_rounded, 'Refer professionals to the platform'),
+          _featureRow(Icons.monetization_on_rounded, 'Earn commissions on referrals'),
+          _featureRow(Icons.leaderboard_rounded, 'Compete on the agent leaderboard'),
+          _featureRow(Icons.account_balance_wallet_rounded, 'Track earnings & payouts'),
+        ];
+      case 'admin':
+        return [
+          _featureRow(Icons.dashboard_rounded, 'Full platform dashboard & analytics'),
+          _featureRow(Icons.people_rounded, 'Manage users, pros & agents'),
+          _featureRow(Icons.verified_user_rounded, 'Review KYC & verifications'),
+          _featureRow(Icons.report_rounded, 'Handle disputes & reports'),
+        ];
+      default:
+        return [
+          _featureRow(Icons.search_rounded, 'Browse 40+ service categories'),
+          _featureRow(Icons.verified_rounded, 'Hire verified professionals'),
+          _featureRow(Icons.chat_rounded, 'Chat & book directly'),
+          _featureRow(Icons.star_rounded, 'Read authentic reviews'),
+        ];
+    }
   }
 
   Widget _featureRow(IconData icon, String text) {

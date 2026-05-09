@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { FiCopy, FiCheck, FiGift, FiUsers } from 'react-icons/fi';
+import { FiCopy, FiCheck, FiGift, FiUsers, FiShare2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import './InviteEarn.css';
+
+const REWARD_TIERS = [
+  { count: 1, reward: '₹200', label: 'First Invite' },
+  { count: 5, reward: '₹1,200', label: '5 Friends' },
+  { count: 10, reward: '₹3,000', label: '10 Friends' },
+  { count: 25, reward: '₹10,000', label: 'Super Referrer' },
+];
 
 function InviteEarn() {
   const { user } = useAuth();
@@ -10,6 +17,7 @@ function InviteEarn() {
   const referralCode = user?.referral_code || 'SKILL200';
   const inviteLink = `https://skillconnect.in/register?ref=${referralCode}`;
   const reward = '₹200';
+  const referralCount = user?.referral_count || 0;
 
   function handleCopy() {
     navigator.clipboard.writeText(inviteLink).then(() => {
@@ -24,6 +32,29 @@ function InviteEarn() {
     );
     window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener');
   }
+
+  async function handleNativeShare() {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join SkillConnect',
+          text: `Use my code ${referralCode} to get ${reward} off your first booking!`,
+          url: inviteLink,
+        });
+      } catch {}
+    } else {
+      handleCopy();
+    }
+  }
+
+  // Find current tier progress
+  const currentTierIdx = REWARD_TIERS.findIndex(t => referralCount < t.count);
+  const allTiersComplete = currentTierIdx === -1;
+  const nextTier = allTiersComplete ? REWARD_TIERS[REWARD_TIERS.length - 1] : REWARD_TIERS[currentTierIdx];
+  const prevTier = allTiersComplete
+    ? REWARD_TIERS[REWARD_TIERS.length - 1]
+    : currentTierIdx > 0 ? REWARD_TIERS[currentTierIdx - 1] : { count: 0 };
+  const progress = allTiersComplete ? 100 : Math.min(100, Math.max(0, ((referralCount - prevTier.count) / (nextTier.count - prevTier.count)) * 100));
 
   return (
     <div className="invite-earn-card">
@@ -40,7 +71,7 @@ function InviteEarn() {
       <div className="invite-earn-stats">
         <div className="invite-stat">
           <FiUsers size={16} />
-          <span>{user?.referral_count || 0} friends invited</span>
+          <span>{referralCount} friends invited</span>
         </div>
         <div className="invite-stat invite-stat--earnings">
           <FiGift size={16} />
@@ -48,22 +79,45 @@ function InviteEarn() {
         </div>
       </div>
 
+      {/* Progress to next tier */}
+      <div className="invite-progress">
+        <div className="invite-progress__bar">
+          <div className="invite-progress__fill" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="invite-progress__tiers">
+          {REWARD_TIERS.map((tier, i) => (
+            <div
+              key={i}
+              className={`invite-tier ${referralCount >= tier.count ? 'invite-tier--done' : ''}`}
+              title={`${tier.label}: ${tier.reward}`}
+            >
+              <span className="invite-tier__dot">{referralCount >= tier.count ? '✓' : tier.count}</span>
+              <span className="invite-tier__label">{tier.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="invite-link-box">
-        <input type="text" value={inviteLink} readOnly className="invite-link-input" />
-        <button className="invite-copy-btn" onClick={handleCopy}>
+        <input type="text" value={inviteLink} readOnly className="invite-link-input" aria-label="Referral link" />
+        <button
+          className={`invite-copy-btn ${copied ? 'invite-copy-btn--copied' : ''}`}
+          onClick={handleCopy}
+          aria-label={copied ? 'Copied to clipboard' : 'Copy referral link'}
+        >
           {copied ? <><FiCheck size={14} /> Copied!</> : <><FiCopy size={14} /> Copy</>}
         </button>
       </div>
 
       <div className="invite-share-row">
-        <button className="invite-share-btn invite-share-btn--whatsapp" onClick={handleWhatsAppShare}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+        <button className="invite-share-btn invite-share-btn--whatsapp" onClick={handleWhatsAppShare} aria-label="Share via WhatsApp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden="true">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
           Share via WhatsApp
         </button>
-        <button className="invite-share-btn invite-share-btn--generic" onClick={handleCopy}>
-          <FiCopy size={14} /> Copy Link
+        <button className="invite-share-btn invite-share-btn--generic" onClick={handleNativeShare} aria-label="Share link">
+          <FiShare2 size={14} /> Share Link
         </button>
       </div>
     </div>

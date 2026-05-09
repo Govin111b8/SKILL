@@ -13,6 +13,10 @@
   font-family: inherit;
 }
 
+.share-btn:active {
+  transform: scale(0.95);
+}
+
 .share-btn--default {
   background: var(--gray-100);
   color: var(--gray-700);
@@ -21,6 +25,12 @@
 .share-btn--default:hover {
   background: var(--gray-200);
   transform: translateY(-1px);
+}
+
+.share-btn--copied {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
 }
 
 .share-btn--whatsapp {

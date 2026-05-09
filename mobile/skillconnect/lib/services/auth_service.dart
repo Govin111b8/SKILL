@@ -14,6 +14,8 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _token != null;
   bool get loading => _loading;
   bool get isProfessional => _user?['role'] == 'professional';
+  bool get isAgent => _user?['role'] == 'agent';
+  bool get isAdmin => _user?['role'] == 'admin';
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();

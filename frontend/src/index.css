@@ -322,6 +322,43 @@ a:focus-visible {
   html { font-size: 15px; }
 }
 
+/* ── Button Press Feedback (Phase E) ─────────────── */
+button:active:not(:disabled),
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Skeleton Styles ─────────────────────────────── */
+.skeleton-card {
+  padding: 1rem;
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-profile {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.skeleton-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--gray-100);
+}
+
+.skeleton-page {
+  padding: 2rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
 /* ── Reduced Motion ──────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
