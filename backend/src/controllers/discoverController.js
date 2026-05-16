@@ -6,7 +6,7 @@ const { query } = require('../config/database');
  */
 const getTrending = async (req, res, next) => {
   try {
-    const limit = Math.min(20, parseInt(req.query.limit) || 10);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const category = req.query.category;
 
     let sql = `
@@ -52,7 +52,7 @@ const getTrending = async (req, res, next) => {
  */
 const getNewlyVerified = async (req, res, next) => {
   try {
-    const limit = Math.min(20, parseInt(req.query.limit) || 10);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
     const result = await query(
       `SELECT p.id, u.name, u.avatar_url, u.location, p.headline, p.completed_jobs,
@@ -87,7 +87,7 @@ const getNewlyVerified = async (req, res, next) => {
  */
 const getHighlyResponsive = async (req, res, next) => {
   try {
-    const limit = Math.min(20, parseInt(req.query.limit) || 10);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
     const result = await query(
       `SELECT p.id, u.name, u.avatar_url, u.location, p.headline, p.completed_jobs,

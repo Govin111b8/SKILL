@@ -9,6 +9,15 @@ async function createPayment(req, res, next) {
     const { booking_id, method } = req.body;
     const payer_id = req.user.id;
 
+    const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!booking_id || !uuidV4Regex.test(booking_id)) {
+      return res.status(400).json({ error: 'A valid booking_id (UUID v4) is required' });
+    }
+    const validMethods = ['card', 'upi', 'netbanking', 'wallet'];
+    if (method && !validMethods.includes(method)) {
+      return res.status(400).json({ error: `method must be one of: ${validMethods.join(', ')}` });
+    }
+
     // Get booking details
     const bookingRes = await pool.query(
       `SELECT b.*, p.user_id as pro_user_id 
