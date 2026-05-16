@@ -287,6 +287,45 @@ function Storefront() {
         </div>
       )}
 
+      {/* Company-Specific Sections */}
+      {data.provider_type === 'organization' && (
+        <div className="storefront-company-info" style={{ background: 'var(--gray-50, #f8fafc)', padding: '1.5rem', borderRadius: '12px', margin: '1rem 0' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
+            🏢 Company Information
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {data.company_name && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Company Name</div>
+                <div style={{ fontWeight: 600 }}>{data.company_name}</div>
+              </div>
+            )}
+            {data.team_size && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Team Size</div>
+                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FiUsers size={16} /> {data.team_size} members
+                </div>
+              </div>
+            )}
+            {data.company_registration_number && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Registration #</div>
+                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FiShield size={16} /> {data.company_registration_number}
+                </div>
+              </div>
+            )}
+            <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Provider Type</div>
+              <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🏢 Verified Company
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Tabs ── */}
       <div className="storefront-tabs">
         {['portfolio', 'services', 'reviews', 'info', 'contact'].map(tab => (

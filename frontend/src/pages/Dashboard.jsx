@@ -344,6 +344,37 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
         </Link>
       </div>
 
+      {/* ── Quick Action Toggles ── */}
+      <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+        <div className="card-header"><h2><FiZap /> Quick Actions</h2></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: availability === 'available' ? '#ecfdf5' : 'var(--gray-50, #f9fafb)', borderRadius: '10px', border: '1px solid var(--gray-200, #e5e7eb)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {availability === 'available' ? <FiToggleRight size={20} color="#10b981" /> : <FiToggleLeft size={20} color="#9ca3af" />}
+              <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Available Today</span>
+            </div>
+            <button
+              onClick={handleAvailabilityToggle}
+              style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, background: availability === 'available' ? '#dcfce7' : '#e5e7eb', color: availability === 'available' ? '#166534' : '#4b5563' }}
+            >
+              {availability === 'available' ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <Link to={`/professionals/${profile?.id}/storefront`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px', border: '1px solid var(--gray-200, #e5e7eb)', textDecoration: 'none', color: 'inherit' }}>
+            <FiEye size={18} color="#6366f1" />
+            <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>View Storefront</span>
+          </Link>
+          <Link to="/storefront/setup" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px', border: '1px solid var(--gray-200, #e5e7eb)', textDecoration: 'none', color: 'inherit' }}>
+            <FiEdit size={18} color="#f97316" />
+            <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Edit Storefront</span>
+          </Link>
+          <Link to="/onboarding/professional" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px', border: '1px solid var(--gray-200, #e5e7eb)', textDecoration: 'none', color: 'inherit' }}>
+            <FiPlus size={18} color="#10b981" />
+            <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Onboarding Wizard</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Earnings Cards */}
       <div className="earnings-row">
         <div className="earnings-card earnings-card--lifetime">
@@ -580,6 +611,29 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
           ) : (
             <div className="empty-state"><FiTrendingUp size={32} /><p>Add portfolio items to showcase your work</p></div>
           )}
+        </div>
+      </div>
+
+      {/* ── Customer Insights ── */}
+      <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+        <div className="card-header"><h2><FiUsers /> Customer Insights</h2></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', padding: '1rem' }}>
+          <div style={{ textAlign: 'center', padding: '1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary, #6366f1)' }}>{stats.totalCustomers || stats.contacts || 0}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Total Customers</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>{stats.repeatCustomers || 0}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Repeat Customers</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>{stats.completedJobs || 0}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Jobs Completed</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '1rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '10px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ec4899' }}>{stats.rating ? `${Number(stats.rating).toFixed(1)}★` : '—'}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Avg Rating</div>
+          </div>
         </div>
       </div>
     </>

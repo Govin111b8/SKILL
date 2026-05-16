@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiCalendar, FiBriefcase, FiUser, FiAlertCircle, FiPlus } from 'react-icons/fi';
+import { FiCalendar, FiBriefcase, FiUser, FiAlertCircle, FiPlus, FiList } from 'react-icons/fi';
 import { get } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
@@ -53,6 +53,8 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [viewMode, setViewMode] = useState('list');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const role = user?.role === 'professional' ? 'pro' : 'customer';
 
@@ -107,11 +109,21 @@ export default function Bookings() {
               <h1>My Bookings</h1>
               <p>Manage your service bookings</p>
             </div>
-            {role === 'customer' && (
-              <Link to="/search" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <FiPlus /> New Booking
-              </Link>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => setViewMode('list')} className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-outline'}`}>
+                  <FiList size={14} /> List
+                </button>
+                <button onClick={() => setViewMode('calendar')} className={`btn btn-sm ${viewMode === 'calendar' ? 'btn-primary' : 'btn-outline'}`}>
+                  <FiCalendar size={14} /> Calendar
+                </button>
+              </div>
+              {role === 'customer' && (
+                <Link to="/search" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <FiPlus /> New Booking
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
@@ -134,7 +146,9 @@ export default function Bookings() {
           ))}
         </div>
 
-        {loading ? (
+        {viewMode === 'calendar' ? (
+          <BookingCalendar bookings={bookings} month={calendarMonth} setMonth={setCalendarMonth} />
+        ) : loading ? (
           <div className="bookings-list">
             {[...Array(4)].map((_, i) => <BookingSkeleton key={i} />)}
           </div>
@@ -186,6 +200,67 @@ export default function Bookings() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function BookingCalendar({ bookings, month, setMonth }) {
+  const year = month.getFullYear();
+  const m = month.getMonth();
+  const firstDay = new Date(year, m, 1).getDay();
+  const daysInMonth = new Date(year, m + 1, 0).getDate();
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+
+  const bookingsByDay = {};
+  (bookings || []).forEach(b => {
+    const d = new Date(b.preferred_date || b.created_at);
+    if (d.getMonth() === m && d.getFullYear() === year) {
+      const day = d.getDate();
+      if (!bookingsByDay[day]) bookingsByDay[day] = [];
+      bookingsByDay[day].push(b);
+    }
+  });
+
+  const STATUS_COLORS = {
+    requested: '#fbbf24', quoted: '#60a5fa', accepted: '#34d399', confirmed: '#34d399',
+    in_progress: '#818cf8', completed: '#10b981', cancelled: '#ef4444',
+  };
+
+  return (
+    <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid var(--gray-200, #e5e7eb)', padding: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <button onClick={() => setMonth(new Date(year, m - 1, 1))} className="btn btn-outline btn-sm">&larr; Prev</button>
+        <h3 style={{ margin: 0 }}>{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+        <button onClick={() => setMonth(new Date(year, m + 1, 1))} className="btn btn-outline btn-sm">Next &rarr;</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          <div key={d} style={{ padding: '8px', fontWeight: 600, fontSize: '0.75rem', color: 'var(--gray-500)' }}>{d}</div>
+        ))}
+        {days.map((day, i) => (
+          <div key={i} style={{
+            padding: '8px', minHeight: '60px', borderRadius: '8px', fontSize: '0.85rem',
+            background: day && bookingsByDay[day] ? '#f0fdf4' : day ? '#fafafa' : 'transparent',
+            border: day ? '1px solid var(--gray-200, #e5e7eb)' : 'none',
+          }}>
+            {day && (
+              <>
+                <div style={{ fontWeight: day === new Date().getDate() && m === new Date().getMonth() && year === new Date().getFullYear() ? 700 : 400 }}>{day}</div>
+                {bookingsByDay[day]?.map((b, j) => (
+                  <div key={j} style={{
+                    fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', marginTop: '2px',
+                    background: STATUS_COLORS[b.status] || '#e5e7eb', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {b.title || b.status}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

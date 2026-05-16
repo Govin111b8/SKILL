@@ -119,6 +119,26 @@ function ProfessionalCard({ professional }) {
             ))}
           </div>
         )}
+
+        {professional.services?.length > 0 && (
+          <div className="pro-card-services" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+            {professional.services.slice(0, 3).map((s, i) => (
+              <span key={i} style={{
+                fontSize: '0.65rem', padding: '2px 6px', borderRadius: '8px',
+                background: 'var(--primary-light, #eef2ff)', color: 'var(--primary, #6366f1)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+              }}>
+                {typeof s === 'string' ? s : s.name}
+                {s.price_display && ` · ${s.price_display}`}
+              </span>
+            ))}
+            {professional.services.length > 3 && (
+              <span style={{ fontSize: '0.65rem', color: 'var(--gray-500)', alignSelf: 'center' }}>
+                +{professional.services.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
