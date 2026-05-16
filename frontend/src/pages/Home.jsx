@@ -83,12 +83,62 @@ function Home() {
   const [trending, setTrending] = useState([]);
   const [newPros, setNewPros] = useState([]);
   const [responsive, setResponsive] = useState([]);
+  const [nearbyPros, setNearbyPros] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState('idle'); // idle | requesting | granted | denied
 
-  // Load recently viewed from API if logged in
   useEffect(() => {
+    const stored = localStorage.getItem('sc_user_coords');
+    if (stored) {
+      try {
+        const coords = JSON.parse(stored);
+        setUserLocation(coords);
+        setLocationStatus('granted');
+        fetchNearby(coords.lat, coords.lng);
+      } catch {}
+    }
+  }, []);
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      setLocationStatus('denied');
+      return;
+    }
+    setLocationStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(coords);
+        setLocationStatus('granted');
+        localStorage.setItem('sc_user_coords', JSON.stringify(coords));
+        fetchNearby(coords.lat, coords.lng);
+      },
+      () => setLocationStatus('denied'),
+      { timeout: 10000 }
+    );
+  }
+
+  async function fetchNearby(lat, lng) {
+    try {
+      const res = await get(`/search?latitude=${lat}&longitude=${lng}&radius_km=25&limit=8&sort_by=distance`);
+      const items = res.data?.professionals || res.data || [];
+      setNearbyPros(Array.isArray(items) ? items.slice(0, 8) : []);
+    } catch {}
+  }
+
+  // Load recently viewed — localStorage first (instant), then API
+  useEffect(() => {
+    const stored = localStorage.getItem('sc_recently_viewed');
+    if (stored) {
+      try { setRecentlyViewed(JSON.parse(stored)); } catch {}
+    }
     if (isAuthenticated) {
       get('/growth/users/recently-viewed')
-        .then(res => setRecentlyViewed(res.data || []))
+        .then(res => {
+          const data = res.data || [];
+          setRecentlyViewed(data);
+          localStorage.setItem('sc_recently_viewed', JSON.stringify(data.slice(0, 20)));
+        })
         .catch(() => {});
     }
   }, [isAuthenticated]);
@@ -239,6 +289,51 @@ function Home() {
           </div>
         </section>
       )}
+
+      {/* Near You — Geolocation */}
+      <section className="home-section">
+        <div className="container">
+          <div className="section-header">
+            <h2><FiMapPin /> Professionals Near You</h2>
+          </div>
+          {locationStatus === 'idle' && (
+            <div className="near-you-prompt" style={{ textAlign: 'center', padding: '2rem', background: 'var(--gray-50, #f9fafb)', borderRadius: '12px' }}>
+              <FiMapPin size={32} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }} />
+              <p style={{ marginBottom: '1rem', color: 'var(--gray-600)' }}>Enable location to discover professionals near you</p>
+              <button className="btn btn-primary btn-sm" onClick={requestLocation}>
+                <FiMapPin size={14} /> Enable Location
+              </button>
+            </div>
+          )}
+          {locationStatus === 'requesting' && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>📍 Getting your location...</p>
+          )}
+          {locationStatus === 'denied' && (
+            <p style={{ textAlign: 'center', padding: '1rem', color: 'var(--gray-500)', fontSize: '0.9rem' }}>
+              Location access denied. <button className="btn-link" onClick={requestLocation} style={{ color: 'var(--primary)', cursor: 'pointer', background: 'none', border: 'none' }}>Try again</button> or browse by city above.
+            </p>
+          )}
+          {locationStatus === 'granted' && nearbyPros.length > 0 && (
+            <div className="horizontal-scroll">
+              {nearbyPros.map(p => (
+                <Link key={p.id} to={`/professionals/${p.id}/storefront`} className="mini-pro-card" style={{ minWidth: '200px', padding: '1rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--gray-200, #e5e7eb)', textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-light, #eef2ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>
+                    {(p.name || '?')[0]}
+                  </div>
+                  <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '2px' }}>{p.name}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{p.headline || p.category || 'Professional'}</p>
+                  {p.average_rating > 0 && (
+                    <span style={{ fontSize: '0.75rem', color: '#f59e0b' }}>⭐ {Number(p.average_rating).toFixed(1)}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+          {locationStatus === 'granted' && nearbyPros.length === 0 && (
+            <p style={{ textAlign: 'center', padding: '1rem', color: 'var(--gray-500)' }}>No professionals found nearby. Try expanding your search.</p>
+          )}
+        </div>
+      </section>
 
       {/* TRENDING PROFESSIONALS */}
       {trending.length > 0 && (

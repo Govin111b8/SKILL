@@ -251,6 +251,51 @@ function SearchResults() {
         </div>
       </div>
 
+      {/* Quick Filter Chips */}
+      <div className="quick-filter-bar" style={{ display: 'flex', gap: '0.5rem', padding: '0.75rem 0', flexWrap: 'wrap', maxWidth: '1200px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+        <button
+          className={`filter-chip ${filters.available ? 'filter-chip--active' : ''}`}
+          onClick={() => handleFilterChange('available', !filters.available)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', borderRadius: '20px', border: filters.available ? '2px solid #10b981' : '1px solid var(--gray-300, #d1d5db)',
+            background: filters.available ? '#ecfdf5' : '#fff', cursor: 'pointer', fontSize: '0.85rem',
+            fontWeight: filters.available ? 600 : 400, color: filters.available ? '#059669' : 'var(--gray-700, #374151)',
+          }}
+        >
+          🟢 Available Now
+        </button>
+        <button
+          className={`filter-chip ${filters.provider_type === 'individual' ? 'filter-chip--active' : ''}`}
+          onClick={() => handleFilterChange('provider_type', filters.provider_type === 'individual' ? '' : 'individual')}
+          style={{
+            padding: '6px 14px', borderRadius: '20px', border: filters.provider_type === 'individual' ? '2px solid #6366f1' : '1px solid var(--gray-300)',
+            background: filters.provider_type === 'individual' ? '#eef2ff' : '#fff', cursor: 'pointer', fontSize: '0.85rem',
+            fontWeight: filters.provider_type === 'individual' ? 600 : 400, color: filters.provider_type === 'individual' ? '#4f46e5' : 'var(--gray-700)',
+          }}
+        >
+          👤 Individuals
+        </button>
+        <button
+          className={`filter-chip ${filters.provider_type === 'organization' ? 'filter-chip--active' : ''}`}
+          onClick={() => handleFilterChange('provider_type', filters.provider_type === 'organization' ? '' : 'organization')}
+          style={{
+            padding: '6px 14px', borderRadius: '20px', border: filters.provider_type === 'organization' ? '2px solid #6366f1' : '1px solid var(--gray-300)',
+            background: filters.provider_type === 'organization' ? '#eef2ff' : '#fff', cursor: 'pointer', fontSize: '0.85rem',
+            fontWeight: filters.provider_type === 'organization' ? 600 : 400, color: filters.provider_type === 'organization' ? '#4f46e5' : 'var(--gray-700)',
+          }}
+        >
+          🏢 Companies
+        </button>
+        {Number(filters.minRating) >= 4 && (
+          <button className="filter-chip filter-chip--active" onClick={() => handleFilterChange('minRating', '0')}
+            style={{ padding: '6px 14px', borderRadius: '20px', border: '2px solid #f59e0b', background: '#fffbeb', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#92400e' }}
+          >
+            ⭐ {filters.minRating}+ Rated ✕
+          </button>
+        )}
+      </div>
+
       <div className="container">
         <div className="sr-layout">
           {/* Sidebar */}
