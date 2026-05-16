@@ -119,7 +119,7 @@ export default function ProfessionalOnboarding() {
         for (const svc of services) {
           if (!svc.saved) {
             try {
-              await post('/services', { name: svc.name, description: svc.description, price_min: Number(svc.price_min) || 0, price_max: Number(svc.price_max) || 0, duration_minutes: Number(svc.duration_minutes) || 60 });
+              await post('/services/me', { name: svc.name, description: svc.description, price_min: Number(svc.price_min) || 0, price_max: Number(svc.price_max) || 0, duration_minutes: Number(svc.duration_minutes) || 60 });
               svc.saved = true;
             } catch (e) {
               console.error('Failed to save service:', svc.name, e);
@@ -130,7 +130,7 @@ export default function ProfessionalOnboarding() {
         for (const item of portfolioItems) {
           if (!item.saved) {
             try {
-              await post('/portfolio', { media_url: item.url, caption: item.caption, media_type: 'image' });
+              await post('/portfolio', { media_url: item.url, title: item.caption || 'Portfolio Item', description: item.caption || '', media_type: 'image' });
               item.saved = true;
             } catch (e) {
               console.error('Failed to save portfolio item:', e);

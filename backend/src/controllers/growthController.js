@@ -33,7 +33,7 @@ const joinWaitlist = async (req, res, next) => {
 
     // Send confirmation email
     if (email) {
-      emailService.send({
+      emailService.sendEmail({
         to: email,
         subject: `SkillConnect is coming to ${city}!`,
         text: `Hi!\n\nThank you for joining the SkillConnect waitlist for ${city}. We'll notify you as soon as we launch in your city.\n\nThe SkillConnect Team`,

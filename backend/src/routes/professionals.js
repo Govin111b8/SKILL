@@ -6,6 +6,7 @@ const {
   createProfile,
   getProfile,
   updateProfile,
+  updateOwnProfile,
   toggleAvailability,
   getAvailability,
   getProfileByUser,
@@ -35,6 +36,9 @@ router.put('/me/availability', authenticate, authorize('professional'),
   ]),
   toggleAvailability
 );
+
+// Update own professional profile (convenience for onboarding — resolves ID from auth)
+router.put('/profile', authenticate, authorize('professional'), updateOwnProfile);
 
 router.post(
   '/',

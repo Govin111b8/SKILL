@@ -213,12 +213,12 @@ notificationQueue.process('in_app', async (data) => {
 
 commsQueue.process('email', async (data) => {
   const emailService = require('../services/email');
-  await emailService.send(data);
+  await emailService.sendEmail(data);
 });
 
 commsQueue.process('sms', async (data) => {
   const smsService = require('../services/sms');
-  await smsService.send(data);
+  await smsService.sendSMS(data.to || data.phone, data.message || data.text);
 });
 
 emergencyQueue.process('broadcast', async (data) => {

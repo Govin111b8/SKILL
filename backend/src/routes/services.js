@@ -3,6 +3,7 @@ const { authenticate } = require('../middleware/auth');
 const {
   getServices,
   addService,
+  addOwnService,
   updateService,
   deleteService,
   searchServices,
@@ -11,6 +12,7 @@ const {
 const router = Router();
 
 router.get('/search', searchServices);
+router.post('/me', authenticate, addOwnService);
 router.get('/:professionalId', getServices);
 router.post('/:professionalId', authenticate, addService);
 router.put('/item/:serviceId', authenticate, updateService);

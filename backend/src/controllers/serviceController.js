@@ -219,4 +219,21 @@ const searchServices = async (req, res, next) => {
   }
 };
 
-module.exports = { getServices, addService, updateService, deleteService, searchServices };
+/**
+ * Add service using authenticated user's professional ID (convenience for onboarding).
+ */
+const addOwnService = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const prof = await query('SELECT id FROM professionals WHERE user_id = $1', [userId]);
+    if (prof.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found.' });
+    }
+    req.params.professionalId = prof.rows[0].id;
+    return addService(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getServices, addService, addOwnService, updateService, deleteService, searchServices };

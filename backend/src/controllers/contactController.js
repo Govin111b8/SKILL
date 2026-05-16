@@ -84,7 +84,7 @@ const createContact = async (req, res, next) => {
           [profRow.user_id]
         ).catch(() => ({ rows: [] }));
         for (const t of tokens.rows) {
-          pushService.sendToDevice(t.token, {
+          pushService.sendPushNotification(t.token, {
             title: 'New Quote Request',
             body: `${customerName} sent you a quote request`,
           }).catch((err) => logger.error({ err }, 'Failed to send push notification for quote request'));
@@ -92,10 +92,10 @@ const createContact = async (req, res, next) => {
 
         // SMS notification
         if (profRow.phone) {
-          smsService.send({
-            to: profRow.phone,
-            message: `SkillConnect: New quote request from ${customerName}. Login to respond: https://app.skillconnect.in`,
-          }).catch((err) => logger.error({ err }, 'Failed to send SMS notification for contact request'));
+          smsService.sendSMS(
+            profRow.phone,
+            `SkillConnect: New quote request from ${customerName}. Login to respond: https://app.skillconnect.in`
+          ).catch((err) => logger.error({ err }, 'Failed to send SMS notification for contact request'));
         }
       }
 

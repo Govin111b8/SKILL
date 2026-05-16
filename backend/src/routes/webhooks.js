@@ -129,7 +129,7 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
                 }
 
                 // Email invoice to professional
-                await emailService.send({
+                await emailService.sendEmail({
                   to: pro.email,
                   subject: `SkillConnect Invoice ${invoice.invoiceNumber}`,
                   text: `Hi ${pro.name},\n\nThank you for subscribing to SkillConnect ${subscriptionPlan} plan!\n\nInvoice Number: ${invoice.invoiceNumber}\nAmount: ₹${invoice.total}\n\nDownload your invoice: ${invoice.pdfUrl}\n\nThe SkillConnect Team`,

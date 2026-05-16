@@ -260,4 +260,22 @@ const getAvailability = async (req, res, next) => {
   }
 };
 
-module.exports = { createProfile, getProfile, updateProfile, toggleAvailability, getAvailability, getProfileByUser };
+/**
+ * Update own professional profile (convenience route for onboarding).
+ * Resolves professional ID from authenticated user, then delegates to updateProfile logic.
+ */
+const updateOwnProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const existing = await query('SELECT id FROM professionals WHERE user_id = $1', [userId]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found. Please create one first.' });
+    }
+    req.params.id = existing.rows[0].id;
+    return updateProfile(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createProfile, getProfile, updateProfile, updateOwnProfile, toggleAvailability, getAvailability, getProfileByUser };
