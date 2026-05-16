@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useWebSocket } from '../context/WebSocketContext';
 import './OnlineIndicator.css';
 
@@ -18,5 +19,11 @@ function OnlineIndicator({ userId, size = 10, style = {} }) {
     />
   );
 }
+
+OnlineIndicator.propTypes = {
+  userId: PropTypes.string,
+  size: PropTypes.number,
+  style: PropTypes.object,
+};
 
 export default OnlineIndicator;

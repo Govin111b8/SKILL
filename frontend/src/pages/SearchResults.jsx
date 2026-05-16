@@ -124,7 +124,7 @@ function SearchResults() {
 
       <div className="filter-group">
         <label>Category</label>
-        <div className="filter-cat-grid">
+        <div className="filter-cat-grid" role="group" aria-label="Filter by category">
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -213,7 +213,7 @@ function SearchResults() {
               <SearchBar initialQuery={query} initialLocation={location} />
             </div>
             <div className="sr-toolbar-right">
-              <button className="sr-filter-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <button className="sr-filter-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle filters">
                 <FiFilter size={16} />
                 Filters
                 {activeFilters.length > 0 && <span className="sr-filter-badge">{activeFilters.length}</span>}
@@ -221,16 +221,16 @@ function SearchResults() {
 
               <div className="sr-sort">
                 <label><FiArrowDown size={14} /></label>
-                <select value={sort} onChange={e => setSort(e.target.value)}>
+                <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort results">
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
 
               <div className="sr-view-toggle">
-                <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')}>
+                <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} aria-label="Grid view">
                   <FiGrid size={16} />
                 </button>
-                <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
+                <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="List view">
                   <FiList size={16} />
                 </button>
               </div>
@@ -258,7 +258,7 @@ function SearchResults() {
           {sidebarOpen && <div className="sr-overlay" onClick={() => setSidebarOpen(false)} />}
 
           {/* Main */}
-          <div className="sr-main">
+          <div className="sr-main" role="region" aria-label="Search results">
             <div className="sr-results-header">
               <div>
                 <h2 className="sr-heading">

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { FiMapPin, FiStar, FiArrowRight, FiCheck, FiClock, FiBriefcase, FiShield, FiAward } from 'react-icons/fi';
 import StarRating from './StarRating';
@@ -26,7 +27,7 @@ function ProfessionalCard({ professional }) {
   const initial = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
   return (
-    <div className="pro-card">
+    <div className="pro-card" role="article" aria-label={`Professional: ${name}`}>
       {/* Top badges */}
       <div className="pro-card-badges">
         {provider_type === 'organization' && (
@@ -134,5 +135,30 @@ function ProfessionalCard({ professional }) {
     </div>
   );
 }
+
+ProfessionalCard.propTypes = {
+  professional: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string.isRequired,
+    headline: PropTypes.string,
+    photo: PropTypes.string,
+    location: PropTypes.string,
+    verified: PropTypes.bool,
+    provider_type: PropTypes.string,
+    company_name: PropTypes.string,
+    rating: PropTypes.number,
+    average_rating: PropTypes.number,
+    reviews_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    review_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    availability_status: PropTypes.string,
+    pricing_estimate: PropTypes.string,
+    categories: PropTypes.array,
+    years_of_experience: PropTypes.number,
+    completed_jobs: PropTypes.number,
+    response_time_hours: PropTypes.number,
+    reputation_score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    government_id_verified: PropTypes.bool,
+  }).isRequired,
+};
 
 export default ProfessionalCard;
