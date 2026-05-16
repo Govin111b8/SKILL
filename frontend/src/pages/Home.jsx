@@ -95,7 +95,7 @@ function Home() {
         setUserLocation(coords);
         setLocationStatus('granted');
         fetchNearby(coords.lat, coords.lng);
-      } catch {}
+      } catch (err) { console.error('Failed to parse stored coords:', err.message); }
     }
   }, []);
 
@@ -123,14 +123,14 @@ function Home() {
       const res = await get(`/search?latitude=${lat}&longitude=${lng}&radius_km=25&limit=8&sort_by=distance`);
       const items = res.data?.professionals || res.data || [];
       setNearbyPros(Array.isArray(items) ? items.slice(0, 8) : []);
-    } catch {}
+    } catch (err) { console.error('Failed to load nearby professionals:', err.message); }
   }
 
   // Load recently viewed — localStorage first (instant), then API
   useEffect(() => {
     const stored = localStorage.getItem('sc_recently_viewed');
     if (stored) {
-      try { setRecentlyViewed(JSON.parse(stored)); } catch {}
+      try { setRecentlyViewed(JSON.parse(stored)); } catch (err) { console.error('Failed to parse recently viewed:', err.message); }
     }
     if (isAuthenticated) {
       get('/growth/users/recently-viewed')

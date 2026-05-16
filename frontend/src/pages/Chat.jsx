@@ -268,7 +268,7 @@ function Chat() {
 
   const otherName = thread?.other_name || 'Chat';
   const otherAvatar = thread?.other_avatar;
-  const otherInitial = (otherName[0] || '?').toUpperCase();
+  const otherInitial = ((otherName || '?')[0] || '?').toUpperCase();
 
   if (loading) {
     return (

@@ -23,7 +23,8 @@ export default function Collections() {
     try {
       const res = await get('/collections');
       setCollections(res.data || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load collections:', err.message);
       setCollections([]);
     } finally {
       setLoading(false);
@@ -40,7 +41,9 @@ export default function Collections() {
       setIsPublic(false);
       setShowCreate(false);
       await loadCollections();
-    } catch {}
+    } catch (err) {
+      console.error('Failed to create collection:', err.message);
+    }
     setCreating(false);
   }
 
@@ -50,7 +53,9 @@ export default function Collections() {
       await del(`/collections/${id}`);
       setCollections(prev => prev.filter(c => c.id !== id));
       if (expanded === id) setExpanded(null);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to delete collection:', err.message);
+    }
   }
 
   async function toggleExpand(id) {
@@ -62,7 +67,8 @@ export default function Collections() {
     try {
       const res = await get(`/collections/${id}`);
       setExpandedItems(res.data?.items || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load collection items:', err.message);
       setExpandedItems([]);
     }
   }
@@ -74,7 +80,9 @@ export default function Collections() {
       setCollections(prev =>
         prev.map(c => c.id === collectionId ? { ...c, item_count: Math.max(0, c.item_count - 1) } : c)
       );
-    } catch {}
+    } catch (err) {
+      console.error('Failed to remove item:', err.message);
+    }
   }
 
   if (loading) return <LoadingSpinner />;

@@ -117,7 +117,7 @@ async function detectSuspiciousBooking(req, res, next) {
       [userId]
     );
 
-    if (parseInt(recentBookings.rows[0].count) >= 10) {
+    if (parseInt(recentBookings.rows[0]?.count || 0) >= 10) {
       logger.warn(`Suspicious: User ${userId} created 10+ bookings in 1 hour`);
       return res.status(429).json({
         success: false,

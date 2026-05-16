@@ -96,12 +96,12 @@ function StorefrontSetup() {
           });
         }
         if (sf.packages?.length) setPackages(sf.packages);
-      } catch {}
+      } catch (err) { console.error('Failed to load storefront data:', err.message); }
       // Load services
       try {
         const svcRes = await get(`/services/${data.id}`);
         setServices((svcRes.data || svcRes) || []);
-      } catch {}
+      } catch (err) { console.error('Failed to load services:', err.message); }
       // Load categories for service dropdown
       try {
         const catRes = await get('/categories');
@@ -112,7 +112,7 @@ function StorefrontSetup() {
           if (c.children) c.children.forEach(ch => flat.push({ id: ch.id, name: `${c.name} > ${ch.name}` }));
         });
         setServiceCategories(flat);
-      } catch {}
+      } catch (err) { console.error('Failed to load categories:', err.message); }
     } catch { showToast('error', 'Failed to load profile data'); }
     finally { setLoading(false); }
   }

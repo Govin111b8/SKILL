@@ -8,7 +8,7 @@ exports.list = async (req, res, next) => {
       : 'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100';
     const r = await query(sql, [req.user.id]);
     const c = await query('SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL', [req.user.id]);
-    res.json({ success: true, data: r.rows, unread_count: parseInt(c.rows[0].count, 10) });
+    res.json({ success: true, data: r.rows, unread_count: parseInt(c.rows[0]?.count || 0, 10) });
   } catch (e) { next(e); }
 };
 
