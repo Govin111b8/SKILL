@@ -114,6 +114,8 @@ export default function CreateBooking() {
         ...form,
         professional_id: form.professional_id || undefined,
         category_id: parseInt(form.category_id, 10),
+        service_id: form.service_id || undefined,
+        quoted_amount: selectedServiceObj?.price_min ? Number(selectedServiceObj.price_min) : undefined,
       };
       const res = await post('/bookings', payload);
       const bookingData = res.data || res;
@@ -154,6 +156,7 @@ export default function CreateBooking() {
   const isBlocked = availableSlots?.blocked;
   const currentStep = STEPS[step];
   const selectedCategory = categories.find(c => String(c.id) === String(form.category_id));
+  const selectedServiceObj = proServices.find(s => s.id === form.service_id);
 
   return (
     <div className="create-booking">
@@ -362,6 +365,24 @@ export default function CreateBooking() {
                   <span className="confirm-label"><FiFileText size={14} /> Category</span>
                   <span className="confirm-value">{selectedCategory?.name || '—'}</span>
                 </div>
+                {selectedServiceObj && (selectedServiceObj.price_min || selectedServiceObj.price_max) && (
+                  <div className="confirm-row">
+                    <span className="confirm-label">💰 Estimated Price</span>
+                    <span className="confirm-value" style={{ fontWeight: 600, color: '#059669' }}>
+                      ₹{selectedServiceObj.price_min || '—'} – ₹{selectedServiceObj.price_max || '—'}
+                    </span>
+                  </div>
+                )}
+                {selectedServiceObj?.duration_minutes && (
+                  <div className="confirm-row">
+                    <span className="confirm-label"><FiClock size={14} /> Estimated Duration</span>
+                    <span className="confirm-value">
+                      {selectedServiceObj.duration_minutes >= 60
+                        ? `${Math.floor(selectedServiceObj.duration_minutes / 60)}h ${selectedServiceObj.duration_minutes % 60 ? (selectedServiceObj.duration_minutes % 60) + 'm' : ''}`
+                        : `${selectedServiceObj.duration_minutes} minutes`}
+                    </span>
+                  </div>
+                )}
                 {form.description && (
                   <div className="confirm-row">
                     <span className="confirm-label">Details</span>

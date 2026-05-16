@@ -25,7 +25,7 @@ function mapProfessional(p) {
   };
 }
 
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   'All', 'Plumbing', 'Electrical', 'Cleaning', 'Tutoring',
   'Beauty', 'Home Repair', 'Moving', 'Photography', 'Music', 'Fitness', 'Technology',
 ];
@@ -47,6 +47,7 @@ function SearchResults() {
   const [viewMode, setViewMode] = useState('grid');
   const [sort, setSort] = useState('relevance');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [categoryList, setCategoryList] = useState(FALLBACK_CATEGORIES);
 
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
@@ -60,6 +61,17 @@ function SearchResults() {
   const query = searchParams.get('q') || '';
   const location = searchParams.get('location') || '';
 
+  // Fetch categories dynamically from API
+  useEffect(() => {
+    get('/categories')
+      .then(res => {
+        const cats = res.data || res || [];
+        const names = cats.map(c => c.name).filter(Boolean);
+        if (names.length > 0) setCategoryList(['All', ...names]);
+      })
+      .catch(() => { /* keep fallback categories */ });
+  }, []);
+
   useEffect(() => { fetchResults(); }, [searchParams, page, sort]);
 
   async function fetchResults() {
@@ -69,9 +81,8 @@ function SearchResults() {
       if (query) params.set('q', query);
       if (location) params.set('location', location);
       if (filters.category && filters.category !== 'All') params.set('category', filters.category);
-      if (Number(filters.minRating) > 0) params.set('minRating', filters.minRating);
-      if (filters.minPrice) params.set('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+      if (Number(filters.minRating) > 0) params.set('min_rating', filters.minRating);
+      if (filters.maxPrice) params.set('max_price', filters.maxPrice);
       if (filters.available) params.set('available', 'true');
       if (filters.provider_type) params.set('provider_type', filters.provider_type);
       params.set('page', page);
@@ -108,8 +119,8 @@ function SearchResults() {
   const activeFilters = [];
   if (filters.category && filters.category !== 'All') activeFilters.push({ key: 'category', label: filters.category });
   if (Number(filters.minRating) > 0) activeFilters.push({ key: 'minRating', label: `${filters.minRating}★+ Rating` });
-  if (filters.minPrice) activeFilters.push({ key: 'minPrice', label: `Min $${filters.minPrice}` });
-  if (filters.maxPrice) activeFilters.push({ key: 'maxPrice', label: `Max $${filters.maxPrice}` });
+  if (filters.minPrice) activeFilters.push({ key: 'minPrice', label: `Min ₹${filters.minPrice}` });
+  if (filters.maxPrice) activeFilters.push({ key: 'maxPrice', label: `Max ₹${filters.maxPrice}` });
   if (filters.available) activeFilters.push({ key: 'available', label: 'Available now' });
   if (filters.provider_type) activeFilters.push({ key: 'provider_type', label: filters.provider_type === 'organization' ? 'Companies' : 'Individuals' });
 
@@ -125,7 +136,7 @@ function SearchResults() {
       <div className="filter-group">
         <label>Category</label>
         <div className="filter-cat-grid" role="group" aria-label="Filter by category">
-          {CATEGORIES.map(cat => (
+          {categoryList.map(cat => (
             <button
               key={cat}
               className={`filter-cat-btn ${(filters.category === (cat === 'All' ? '' : cat.toLowerCase())) || (cat === 'All' && !filters.category) ? 'active' : ''}`}
@@ -155,7 +166,7 @@ function SearchResults() {
       </div>
 
       <div className="filter-group">
-        <label>Price Range ($/hr)</label>
+        <label>Price Range (₹/hr)</label>
         <div className="price-inputs">
           <input type="number" placeholder="Min" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
           <span className="price-sep">–</span>

@@ -162,6 +162,7 @@ const searchServices = async (req, res, next) => {
   try {
     const searchTerm = req.query.q || '';
     const category = req.query.category || null;
+    const categoryId = req.query.category_id || null;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
@@ -171,28 +172,38 @@ const searchServices = async (req, res, next) => {
     let idx = 1;
 
     if (searchTerm.trim()) {
-      conditions.push(`to_tsvector('english', ps.name) @@ plainto_tsquery('english', $${idx})`);
+      conditions.push(`(to_tsvector('english', ps.name || ' ' || COALESCE(ps.description, '')) @@ plainto_tsquery('english', $${idx}) OR ps.name ILIKE '%' || $${idx} || '%')`);
       values.push(searchTerm.trim());
       idx++;
     }
-    if (category) {
+    if (categoryId) {
       conditions.push(`ps.category_id = $${idx}`);
-      values.push(category);
+      values.push(categoryId);
+      idx++;
+    } else if (category) {
+      // Search by category name (case-insensitive)
+      conditions.push(`(c.name ILIKE $${idx} OR c.name ILIKE '%' || $${idx} || '%')`);
+      values.push(category.trim());
       idx++;
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countQuery = `SELECT COUNT(*)::int AS total FROM professional_services ps ${whereClause}`;
+    const countQuery = `SELECT COUNT(*)::int AS total FROM professional_services ps LEFT JOIN categories c ON ps.category_id = c.id ${whereClause}`;
     const dataQuery = `
       SELECT ps.*, c.name AS category_name,
              p.business_name AS professional_name, p.avg_rating AS professional_rating,
-             p.city AS professional_city
+             p.city AS professional_city,
+             CASE WHEN ps.price_min IS NOT NULL AND ps.price_max IS NOT NULL
+                  THEN '₹' || ps.price_min || ' – ₹' || ps.price_max
+                  WHEN ps.price_min IS NOT NULL THEN 'From ₹' || ps.price_min
+                  WHEN ps.price_max IS NOT NULL THEN 'Up to ₹' || ps.price_max
+                  ELSE NULL END AS price_display
       FROM professional_services ps
       LEFT JOIN categories c ON ps.category_id = c.id
       JOIN professionals p ON ps.professional_id = p.id
       ${whereClause}
-      ORDER BY ps.created_at DESC
+      ORDER BY p.avg_rating DESC NULLS LAST, ps.created_at DESC
       LIMIT $${idx} OFFSET $${idx + 1}`;
 
     const dataValues = [...values, limit, offset];
