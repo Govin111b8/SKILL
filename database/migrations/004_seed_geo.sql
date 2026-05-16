@@ -1,3 +1,5 @@
+BEGIN;
+
 -- 004_seed_geo.sql — Add demo coordinates to existing professionals so geo-search works out of the box
 
 -- Sarah Miller (pro1@demo.com) — Hyderabad
@@ -35,3 +37,5 @@ WHERE user_id = (SELECT id FROM users WHERE email = 'pro9@demo.com');
 
 UPDATE professionals SET latitude = 17.4500, longitude = 78.5500, availability_status = 'offline'
 WHERE user_id = (SELECT id FROM users WHERE email = 'pro10@demo.com');
+
+COMMIT;

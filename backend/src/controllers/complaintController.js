@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { query } = require('../config/database');
 const { notify } = require('../utils/notifier');
 const emailService = require('../services/email');
+const logger = require('../config/logger');
 
 const fileComplaint = async (req, res, next) => {
   try {
@@ -49,13 +50,13 @@ const fileComplaint = async (req, res, next) => {
 
       const reportedUser = user.rows[0];
       if (reportedUser.email) {
-        emailService.send({
+        emailService.sendEmail({
           to: reportedUser.email,
           subject: 'SkillConnect: A complaint has been filed against your account',
           text: `Hi ${reportedUser.name},\n\nA complaint has been filed against your SkillConnect account. Our trust & safety team will review it within 48 hours.\n\nIf you believe this complaint is unfair, you may submit an appeal after receiving our decision.\n\nThe SkillConnect Trust & Safety Team`,
-        }).catch(() => {});
+        }).catch((err) => logger.error({ err }, 'Failed to send complaint notification email'));
       }
-    } catch (_) {}
+    } catch (err) { logger.error({ err }, 'Failed to notify reported user about complaint'); }
 
     const result = await query('SELECT * FROM complaints WHERE id = $1', [id]);
 

@@ -76,7 +76,7 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
                ON CONFLICT DO NOTHING
                RETURNING id`,
               [professionalId, subscriptionPlan, payment.amount / 100, payment.id, orderId, endDate, graceEnd]
-            ).catch(() => ({ rows: [] }));
+            ).catch((err) => { logger.error({ err, professionalId }, 'Failed to insert subscription record — will retry on next webhook'); return { rows: [] }; });
 
             // Update professional's subscription tier
             await pool.query(
@@ -93,7 +93,7 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
               `INSERT INTO payout_log (professional_id, subscription_id, amount, gateway_ref, status)
                VALUES ($1, $2, $3, $4, 'completed')`,
               [professionalId, subResult.rows[0]?.id || null, payment.amount / 100, payment.id]
-            ).catch(() => {});
+            ).catch((err) => logger.error({ err, professionalId }, 'Failed to insert payout log record'));
 
             // ── Generate GST invoice ──────────────────────────────────
             try {
@@ -125,15 +125,15 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
                     [subResult.rows[0].id, professionalId, invoice.invoiceNumber, invoice.invoiceType,
                      pro.gstin || null, baseAmount, invoice.cgst, invoice.sgst, invoice.igst,
                      invoice.total, invoice.pdfUrl]
-                  ).catch(() => {});
+                  ).catch((err) => logger.error({ err, professionalId }, 'Failed to save GST invoice record'));
                 }
 
                 // Email invoice to professional
-                await emailService.send({
+                await emailService.sendEmail({
                   to: pro.email,
                   subject: `SkillConnect Invoice ${invoice.invoiceNumber}`,
                   text: `Hi ${pro.name},\n\nThank you for subscribing to SkillConnect ${subscriptionPlan} plan!\n\nInvoice Number: ${invoice.invoiceNumber}\nAmount: ₹${invoice.total}\n\nDownload your invoice: ${invoice.pdfUrl}\n\nThe SkillConnect Team`,
-                }).catch(() => {});
+                }).catch((err) => logger.error({ err, professionalId }, 'Failed to email GST invoice to professional'));
 
                 logger.info({ invoiceNumber: invoice.invoiceNumber, professionalId }, 'GST invoice created and emailed');
               }

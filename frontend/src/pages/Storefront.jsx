@@ -42,6 +42,7 @@ function Storefront() {
   const [trustData, setTrustData] = useState(null);
   const [showTrustModal, setShowTrustModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [proServices, setProServices] = useState([]);
 
   useEffect(() => { fetchStorefront(); }, [id]);
 
@@ -56,6 +57,11 @@ function Storefront() {
     try {
       const res = await get(`/storefront/${id}`);
       setData(res.data || res);
+      // Fetch professional services
+      try {
+        const svcRes = await get(`/services/${id}`);
+        setProServices((svcRes.data || svcRes) || []);
+      } catch {}
     } catch (err) {
       console.error(err);
     } finally {
@@ -281,6 +287,45 @@ function Storefront() {
         </div>
       )}
 
+      {/* Company-Specific Sections */}
+      {data.provider_type === 'organization' && (
+        <div className="storefront-company-info" style={{ background: 'var(--gray-50, #f8fafc)', padding: '1.5rem', borderRadius: '12px', margin: '1rem 0' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
+            🏢 Company Information
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {data.company_name && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Company Name</div>
+                <div style={{ fontWeight: 600 }}>{data.company_name}</div>
+              </div>
+            )}
+            {data.team_size && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Team Size</div>
+                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FiUsers size={16} /> {data.team_size} members
+                </div>
+              </div>
+            )}
+            {data.company_registration_number && (
+              <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Registration #</div>
+                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FiShield size={16} /> {data.company_registration_number}
+                </div>
+              </div>
+            )}
+            <div style={{ padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--gray-200)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginBottom: '4px' }}>Provider Type</div>
+              <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🏢 Verified Company
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Tabs ── */}
       <div className="storefront-tabs">
         {['portfolio', 'services', 'reviews', 'info', 'contact'].map(tab => (
@@ -366,6 +411,43 @@ function Storefront() {
               <div className="services-intro">
                 <h3>About My Business</h3>
                 <p>{theme.custom_intro || data.bio}</p>
+              </div>
+            )}
+
+            {/* Individual Services Catalog */}
+            {proServices.length > 0 && (
+              <div className="services-catalog" style={{ marginBottom: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Services Offered</h3>
+                <div className="services-grid" style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                  {proServices.map(svc => (
+                    <div key={svc.id} className="service-catalog-card" style={{ background: 'var(--sf-card-bg, #fff)', border: '1px solid var(--border-light, #e5e7eb)', borderRadius: '12px', padding: '1.25rem' }}>
+                      <h4 style={{ margin: '0 0 0.25rem', fontSize: '1rem' }}>{svc.name}</h4>
+                      {svc.description && <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary, #666)' }}>{svc.description}</p>}
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                        {(svc.price_min || svc.price_max) && (
+                          <span style={{ fontWeight: 600, color: 'var(--sf-primary, #6366f1)' }}>
+                            ₹{svc.price_min ? Number(svc.price_min).toLocaleString() : '—'} – ₹{svc.price_max ? Number(svc.price_max).toLocaleString() : '—'}
+                          </span>
+                        )}
+                        {svc.duration_minutes && (
+                          <span style={{ color: 'var(--text-secondary, #888)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <FiClock size={13} /> {svc.duration_minutes} min
+                          </span>
+                        )}
+                      </div>
+                      {svc.category_name && (
+                        <span style={{ display: 'inline-block', fontSize: '0.75rem', background: 'var(--sf-accent-light, #eef2ff)', color: 'var(--sf-primary, #6366f1)', padding: '2px 8px', borderRadius: '12px', marginBottom: '0.75rem' }}>{svc.category_name}</span>
+                      )}
+                      <Link
+                        to={`/bookings/create?professional_id=${id}&professional_name=${encodeURIComponent(data.name)}&service=${encodeURIComponent(svc.name)}&service_id=${svc.id}`}
+                        className="package-book-btn"
+                        style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem' }}
+                      >
+                        Book This Service <FiChevronRight size={14} />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

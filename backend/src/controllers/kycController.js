@@ -260,11 +260,11 @@ exports.adminReview = async (req, res, next) => {
           body: 'Your identity has been verified! Your profile now shows the verified badge.',
         });
         if (user?.email) {
-          emailService.send({
+          emailService.sendEmail({
             to: user.email,
             subject: 'SkillConnect: Your identity has been verified ✅',
             text: `Hi ${user.name},\n\nCongratulations! Your identity documents have been verified. Your profile now shows a verified badge, helping you build trust with customers.\n\nThe SkillConnect Team`,
-          }).catch(() => {});
+          }).catch((err) => logger.error({ err, userId }, 'Failed to send KYC verification approved email'));
         }
       } else {
         await notify(userId, {
@@ -273,14 +273,14 @@ exports.adminReview = async (req, res, next) => {
           body: rejection_reason ? `Reason: ${rejection_reason}. Please re-submit your documents.` : 'Your verification was not approved. Please re-submit clearer documents.',
         });
         if (user?.email) {
-          emailService.send({
+          emailService.sendEmail({
             to: user.email,
             subject: 'SkillConnect: KYC verification requires attention',
             text: `Hi ${user.name},\n\nUnfortunately, your identity documents could not be verified.\n\n${rejection_reason ? `Reason: ${rejection_reason}\n\n` : ''}Please log in and re-submit your documents with better image quality.\n\nThe SkillConnect Team`,
-          }).catch(() => {});
+          }).catch((err) => logger.error({ err, userId }, 'Failed to send KYC verification rejected email'));
         }
       }
-    } catch (_) {}
+    } catch (err) { logger.error({ err, userId }, 'Failed to send KYC review notification'); }
 
     const aggregates = await refreshAggregates(r.rows[0].user_id);
     res.json({ success: true, message: 'Review saved', aggregates });

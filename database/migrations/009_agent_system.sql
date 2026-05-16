@@ -1,3 +1,5 @@
+BEGIN;
+
 -- ============================================================
 -- Migration 009: Agent System & Reward Engine
 -- SkillConnect - Reward-Driven Growth Engine
@@ -129,3 +131,5 @@ CREATE INDEX IF NOT EXISTS idx_agent_onboarded_user_id ON agent_onboarded_users(
 
 -- 11. Add agent_id field to users table for tracking who onboarded them
 ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_by_agent UUID REFERENCES agents(id) ON DELETE SET NULL;
+
+COMMIT;

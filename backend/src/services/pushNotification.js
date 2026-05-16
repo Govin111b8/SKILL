@@ -11,6 +11,7 @@
  */
 
 const logger = require('../config/logger');
+const { withRetry } = require('../utils/retry');
 const { query } = require('../config/database');
 
 const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY || '';
@@ -43,25 +44,27 @@ async function sendPushNotification(deviceToken, { title, body, data = {}, image
     priority: 'high',
   };
 
-  const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-    method: 'POST',
-    headers: {
-      'Authorization': `key=${FCM_SERVER_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(message),
-  });
+  return withRetry(async () => {
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `key=${FCM_SERVER_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
 
-  const result = await response.json();
+    const result = await response.json();
 
-  if (result.failure > 0) {
-    const errorCode = result.results?.[0]?.error;
-    logger.warn({ deviceToken: deviceToken?.substring(0, 20), errorCode }, 'FCM delivery failure');
-    return { success: false, error: errorCode };
-  }
+    if (result.failure > 0) {
+      const errorCode = result.results?.[0]?.error;
+      logger.warn({ deviceToken: deviceToken?.substring(0, 20), errorCode }, 'FCM delivery failure');
+      return { success: false, error: errorCode };
+    }
 
-  logger.info({ title }, 'Push notification sent');
-  return { success: true, messageId: result.results?.[0]?.message_id };
+    logger.info({ title }, 'Push notification sent');
+    return { success: true, messageId: result.results?.[0]?.message_id };
+  }, { maxRetries: 2, baseDelay: 500, serviceName: 'push-notification' });
 }
 
 /**

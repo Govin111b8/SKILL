@@ -41,6 +41,8 @@ import AdminDisputes from './pages/admin/AdminDisputes';
 import AdminCategoryRequests from './pages/admin/AdminCategoryRequests';
 import AdminFeaturedSlots from './pages/admin/AdminFeaturedSlots';
 import AdminAppeals from './pages/admin/AdminAppeals';
+import AdminComplaints from './pages/admin/AdminComplaints';
+import AdminAuditLog from './pages/admin/AdminAuditLog';
 import Storefront from './pages/Storefront';
 import StorefrontSetup from './pages/StorefrontSetup';
 import AgentDashboard from './pages/AgentDashboard';
@@ -53,6 +55,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import ProfessionalTerms from './pages/ProfessionalTerms';
 import ContentModerationPolicy from './pages/ContentModerationPolicy';
+import ProfessionalOnboarding from './pages/ProfessionalOnboarding';
 import Collections from './pages/Collections';
 import CommunityFeed from './pages/CommunityFeed';
 import ReelsFeed from './pages/ReelsFeed';
@@ -61,6 +64,7 @@ import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
 import CookieConsent from './components/CookieConsent';
 import AppInstallBanner from './components/AppInstallBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function App() {
@@ -69,6 +73,7 @@ function App() {
       <AnnouncementBar />
       <Navbar />
       <main className="app-main">
+        <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -88,6 +93,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StorefrontSetup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding/professional"
+            element={
+              <ProtectedRoute allowedRoles={['professional']}>
+                <ProfessionalOnboarding />
               </ProtectedRoute>
             }
           />
@@ -233,7 +246,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
             }
@@ -241,7 +254,7 @@ function App() {
           <Route
             path="/admin/users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminUsers />
               </ProtectedRoute>
             }
@@ -249,7 +262,7 @@ function App() {
           <Route
             path="/admin/kyc"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminKYC />
               </ProtectedRoute>
             }
@@ -257,15 +270,31 @@ function App() {
           <Route
             path="/admin/disputes"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDisputes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/complaints"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminComplaints />
               </ProtectedRoute>
             }
           />
           <Route
             path="/admin/category-requests"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminCategoryRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminCategoryRequests />
               </ProtectedRoute>
             }
@@ -273,7 +302,7 @@ function App() {
           <Route
             path="/admin/featured-slots"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminFeaturedSlots />
               </ProtectedRoute>
             }
@@ -281,8 +310,16 @@ function App() {
           <Route
             path="/admin/appeals"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminAppeals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-log"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAuditLog />
               </ProtectedRoute>
             }
           />
@@ -339,6 +376,7 @@ function App() {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </main>
       <Footer />
       <BottomNav />

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiMapPin, FiX } from 'react-icons/fi';
@@ -53,5 +54,11 @@ function SearchBar({ initialQuery = '', initialLocation = '', variant = 'default
     </form>
   );
 }
+
+SearchBar.propTypes = {
+  initialQuery: PropTypes.string,
+  initialLocation: PropTypes.string,
+  variant: PropTypes.oneOf(['default', 'compact', 'hero']),
+};
 
 export default SearchBar;

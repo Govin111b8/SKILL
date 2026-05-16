@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import StarRating from './StarRating';
 import './ReviewCard.css';
 
@@ -26,5 +27,15 @@ function ReviewCard({ review }) {
     </div>
   );
 }
+
+ReviewCard.propTypes = {
+  review: PropTypes.shape({
+    author: PropTypes.string,
+    rating: PropTypes.number.isRequired,
+    comment: PropTypes.string,
+    date: PropTypes.string,
+    avatar: PropTypes.string,
+  }).isRequired,
+};
 
 export default ReviewCard;

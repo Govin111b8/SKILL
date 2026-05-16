@@ -37,6 +37,28 @@ exports.create = async (req, res, next) => {
             service_lat, service_lng, preferred_date } = req.body;
     if (!professional_id || !title) return res.status(400).json({ success: false, message: 'professional_id and title are required' });
 
+    if (service_lat !== undefined && service_lat !== null) {
+      const lat = parseFloat(service_lat);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        return res.status(400).json({ success: false, message: 'service_lat must be a number between -90 and 90' });
+      }
+    }
+    if (service_lng !== undefined && service_lng !== null) {
+      const lng = parseFloat(service_lng);
+      if (isNaN(lng) || lng < -180 || lng > 180) {
+        return res.status(400).json({ success: false, message: 'service_lng must be a number between -180 and 180' });
+      }
+    }
+    if (preferred_date) {
+      const date = new Date(preferred_date);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ success: false, message: 'preferred_date must be a valid date string' });
+      }
+      if (date < new Date()) {
+        return res.status(400).json({ success: false, message: 'preferred_date cannot be in the past' });
+      }
+    }
+
     const pro = await getPro(professional_id);
     if (!pro) return res.status(404).json({ success: false, message: 'Professional not found' });
 

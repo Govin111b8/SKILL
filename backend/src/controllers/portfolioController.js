@@ -84,15 +84,29 @@ const addPortfolioItem = async (req, res, next) => {
 const getPortfolioItems = async (req, res, next) => {
   try {
     const { professionalId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
 
-    const result = await query(
-      'SELECT * FROM portfolio_items WHERE professional_id = $1 ORDER BY created_at DESC',
-      [professionalId]
-    );
+    const [countResult, result] = await Promise.all([
+      query('SELECT COUNT(*)::int as total FROM portfolio_items WHERE professional_id = $1', [professionalId]),
+      query(
+        'SELECT * FROM portfolio_items WHERE professional_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [professionalId, limit, offset]
+      ),
+    ]);
+
+    const total_count = countResult.rows[0].total;
 
     res.status(200).json({
       success: true,
       data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total_count,
+        total_pages: Math.ceil(total_count / limit),
+      },
     });
   } catch (error) {
     next(error);

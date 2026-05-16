@@ -2,6 +2,7 @@
  * SEOMeta — Reusable component for per-page SEO metadata
  * Uses react-helmet-async for SSR-safe head management
  */
+import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet-async';
 
 const DEFAULT_DESCRIPTION =
@@ -51,5 +52,14 @@ function SEOMeta({
     </Helmet>
   );
 }
+
+SEOMeta.propTypes = {
+  title: PropTypes.string,
+  description: PropTypes.string,
+  image: PropTypes.string,
+  url: PropTypes.string,
+  type: PropTypes.string,
+  structuredData: PropTypes.object,
+};
 
 export default SEOMeta;

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { FiShare2, FiCheck, FiLink } from 'react-icons/fi';
 import './ShareButton.css';
@@ -56,5 +57,12 @@ function ShareButton({ title, text, url, variant = 'default' }) {
     </button>
   );
 }
+
+ShareButton.propTypes = {
+  title: PropTypes.string,
+  text: PropTypes.string,
+  url: PropTypes.string,
+  variant: PropTypes.oneOf(['default', 'whatsapp']),
+};
 
 export default ShareButton;

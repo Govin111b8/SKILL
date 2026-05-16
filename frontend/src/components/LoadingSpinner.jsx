@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 function LoadingSpinner({ size = 'md', text = '' }) {
   const sizes = { sm: 28, md: 44, lg: 64 };
   const dim = sizes[size] || sizes.md;
@@ -58,5 +60,10 @@ function LoadingSpinner({ size = 'md', text = '' }) {
     </div>
   );
 }
+
+LoadingSpinner.propTypes = {
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  text: PropTypes.string,
+};
 
 export default LoadingSpinner;

@@ -169,7 +169,7 @@ async function checkSubscriptionExpiry() {
         const subject = `SkillConnect: Your ${row.subscription_plan} plan expires in ${label}`;
         const text = `Hi ${row.name},\n\nYour SkillConnect ${row.subscription_plan} subscription expires in ${label}.\n\nRenew now to keep your profile boost: https://app.skillconnect.in/payment\n\nThe SkillConnect Team`;
 
-        await emailService.send({ to: row.email, subject, text }).catch((e) =>
+        await emailService.sendEmail({ to: row.email, subject, text }).catch((e) =>
           logger.error({ err: e, userId: row.id }, 'Renewal email failed')
         );
 
@@ -177,7 +177,7 @@ async function checkSubscriptionExpiry() {
           await smsService.sendSMS(
             row.phone,
             `SkillConnect: Your ${row.subscription_plan} plan expires in ${label}. Renew: https://app.skillconnect.in/payment`
-          ).catch(() => {});
+          ).catch((e) => logger.error({ err: e, userId: row.id }, 'Renewal SMS failed'));
         }
         logger.info({ professionalId: row.id, days }, 'Renewal reminder sent');
       }
@@ -208,11 +208,11 @@ async function enforceSubscriptionGrace() {
       const userRow = await query('SELECT email, name FROM users WHERE id = $1', [row.user_id]);
       if (userRow.rows.length > 0) {
         const { email, name } = userRow.rows[0];
-        await emailService.send({
+        await emailService.sendEmail({
           to: email,
           subject: 'SkillConnect: Your subscription has been downgraded',
           text: `Hi ${name},\n\nYour SkillConnect subscription grace period has ended. Your profile has been moved to Basic plan.\n\nRenew anytime to restore your ranking boost: https://app.skillconnect.in/payment\n\nThe SkillConnect Team`,
-        }).catch(() => {});
+        }).catch((e) => logger.error({ err: e, professionalId: row.id }, 'Downgrade email failed'));
       }
     }
     logger.info({ downgraded: result.rowCount }, 'CRON: subscription_grace_enforcer — done');
@@ -239,11 +239,11 @@ async function checkInactiveProfiles() {
     `);
 
     for (const row of warned.rows) {
-      await emailService.send({
+      await emailService.sendEmail({
         to: row.email,
         subject: 'SkillConnect: Your profile will be paused soon',
         text: `Hi ${row.name},\n\nYou haven't logged into SkillConnect in 60 days. Log in within the next 30 days to keep your profile active in search results.\n\nLog in now: https://app.skillconnect.in\n\nThe SkillConnect Team`,
-      }).catch(() => {});
+      }).catch((e) => logger.error({ err: e, professionalId: row.id }, 'Inactivity warning email failed'));
     }
 
     // 90-day auto-deactivate
@@ -260,11 +260,11 @@ async function checkInactiveProfiles() {
     for (const row of deactivated.rows) {
       const userRow = await query('SELECT email, name FROM users WHERE id = $1', [row.user_id]);
       if (userRow.rows.length > 0) {
-        await emailService.send({
+        await emailService.sendEmail({
           to: userRow.rows[0].email,
           subject: 'SkillConnect: Your profile has been paused due to inactivity',
           text: `Hi ${userRow.rows[0].name},\n\nYour profile was paused after 90 days of inactivity. Customers can no longer find you in search.\n\nLog in to reactivate instantly: https://app.skillconnect.in\n\nThe SkillConnect Team`,
-        }).catch(() => {});
+        }).catch((e) => logger.error({ err: e, professionalId: row.id }, 'Deactivation email failed'));
       }
     }
 
@@ -357,7 +357,19 @@ function startCronJobs() {
   // Badge recalculation — weekly Sunday 04:00 IST = Saturday 22:30 UTC
   cron.schedule('30 22 * * 6', recalcBadges, { timezone: 'UTC' });
 
-  logger.info('All 9 cron jobs scheduled');
+  // Expired refresh token blacklist cleanup — daily 05:00 IST = 23:30 UTC
+  cron.schedule('30 23 * * *', cleanExpiredTokenBlacklist, { timezone: 'UTC' });
+
+  // Booking cleanup — archive old completed/cancelled bookings >90 days — weekly Sunday 04:30 IST = Saturday 23:00 UTC
+  cron.schedule('0 23 * * 6', cleanupOldBookings, { timezone: 'UTC' });
+
+  // Complaint escalation — auto-escalate unresolved complaints >30 days — daily 06:00 IST = 00:30 UTC
+  cron.schedule('30 0 * * *', escalateStaleComplaints, { timezone: 'UTC' });
+
+  // Dispute auto-escalation — auto-escalate unresolved disputes >14 days — daily 06:30 IST = 01:00 UTC
+  cron.schedule('0 1 * * *', escalateStaleDisputes, { timezone: 'UTC' });
+
+  logger.info('All 13 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -497,4 +509,105 @@ module.exports = {
   updateResponseRates,
   purgeExpiredKycDocuments,
   recalcBadges,
+  cleanExpiredTokenBlacklist,
+  cleanupOldBookings,
+  escalateStaleComplaints,
+  escalateStaleDisputes,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Expired Token Blacklist Cleanup — daily 05:00 IST (23:30 UTC)
+// Removes expired refresh tokens from blacklist to prevent table bloat
+// ─────────────────────────────────────────────────────────────────────────────
+async function cleanExpiredTokenBlacklist() {
+  logger.info('CRON: token_blacklist_cleanup — start');
+  try {
+    const result = await query(`
+      DELETE FROM refresh_token_blacklist
+      WHERE expires_at < NOW()
+      RETURNING id
+    `);
+    logger.info({ deleted: result.rowCount }, 'CRON: token_blacklist_cleanup — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: token_blacklist_cleanup failed');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. Booking Cleanup — weekly Sunday 04:30 IST (23:00 UTC Saturday)
+// Archives completed/cancelled bookings older than 90 days
+// ─────────────────────────────────────────────────────────────────────────────
+async function cleanupOldBookings() {
+  logger.info('CRON: booking_cleanup — start');
+  try {
+    const result = await query(`
+      UPDATE bookings SET
+        metadata = COALESCE(metadata, '{}'::jsonb) || '{"archived": true}'::jsonb
+      WHERE status IN ('completed', 'cancelled', 'refunded')
+        AND updated_at < NOW() - INTERVAL '90 days'
+        AND (metadata->>'archived') IS DISTINCT FROM 'true'
+      RETURNING id
+    `);
+    logger.info({ archived: result.rowCount }, 'CRON: booking_cleanup — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: booking_cleanup failed');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Complaint Escalation — daily 06:00 IST (00:30 UTC)
+// Auto-escalates unresolved complaints older than 30 days
+// ─────────────────────────────────────────────────────────────────────────────
+async function escalateStaleComplaints() {
+  logger.info('CRON: complaint_escalation — start');
+  try {
+    const result = await query(`
+      UPDATE complaints SET
+        status = 'escalated',
+        updated_at = NOW()
+      WHERE status IN ('pending', 'investigating')
+        AND created_at < NOW() - INTERVAL '30 days'
+      RETURNING id
+    `);
+    if (result.rowCount > 0) {
+      logger.warn({ escalated: result.rowCount }, 'CRON: complaint_escalation — escalated stale complaints');
+    } else {
+      logger.info('CRON: complaint_escalation — no stale complaints');
+    }
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: complaint_escalation failed');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 13. Dispute Auto-Escalation — daily 06:30 IST (01:00 UTC)
+// Auto-escalates unresolved disputes older than 14 days
+// ─────────────────────────────────────────────────────────────────────────────
+async function escalateStaleDisputes() {
+  logger.info('CRON: dispute_escalation — start');
+  try {
+    const result = await query(`
+      UPDATE disputes SET
+        status = 'escalated',
+        updated_at = NOW()
+      WHERE status = 'open'
+        AND created_at < NOW() - INTERVAL '14 days'
+      RETURNING id
+    `);
+    if (result.rowCount > 0) {
+      logger.warn({ escalated: result.rowCount }, 'CRON: dispute_escalation — escalated stale disputes');
+    } else {
+      logger.info('CRON: dispute_escalation — no stale disputes');
+    }
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: dispute_escalation failed');
+    }
+  }
+}

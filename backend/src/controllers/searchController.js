@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const logger = require('../config/logger');
 
 /**
  * Search ranking — 6-factor weighted Trust Score (PRD §6.4.2)
@@ -28,6 +29,7 @@ const search = async (req, res, next) => {
       radius_km,
       availability,
       provider_type,
+      service,               // service-level search filter
       verified_only = 'true', // PRD default: show only verified profiles
       sort_by = 'reputation',
       page = 1,
@@ -39,7 +41,7 @@ const search = async (req, res, next) => {
       query(
         `INSERT INTO search_history (user_id, query_text, filters_json) VALUES ($1, $2, $3)`,
         [req.user.id, q.trim().substring(0, 255), JSON.stringify({ category_id, category_ids, availability, sort_by })]
-      ).catch(() => {});
+      ).catch((err) => logger.error({ err, userId: req.user.id }, 'Failed to save search history'));
     }
 
     const pageNum = Math.max(1, parseInt(page));
@@ -127,6 +129,7 @@ const search = async (req, res, next) => {
       FROM professionals p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN reviews r ON p.id = r.professional_id
+      LEFT JOIN professional_services ps ON ps.professional_id = p.id AND ps.is_active = true
     `;
 
     // ── WHERE conditions ─────────────────────────────────────────────
@@ -158,13 +161,21 @@ const search = async (req, res, next) => {
       }
     }
 
-    // Full-text search across name, headline, bio
+    // Full-text search across name, headline, bio, and service names
     if (q) {
       const escapedQ = q.replace(/[%_\\]/g, '\\$&');
       conditions.push(
-        `(u.name ILIKE $${paramIndex} OR p.headline ILIKE $${paramIndex} OR p.bio ILIKE $${paramIndex})`
+        `(u.name ILIKE $${paramIndex} OR p.headline ILIKE $${paramIndex} OR p.bio ILIKE $${paramIndex} OR ps.name ILIKE $${paramIndex})`
       );
       params.push(`%${escapedQ}%`);
+      paramIndex++;
+    }
+
+    // Service name filter
+    if (service) {
+      const escapedService = service.trim().replace(/[%_\\]/g, '\\$&');
+      conditions.push(`ps.name ILIKE $${paramIndex}`);
+      params.push(`%${escapedService}%`);
       paramIndex++;
     }
 
@@ -203,7 +214,7 @@ const search = async (req, res, next) => {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const groupByClause = `GROUP BY p.id, u.name, u.location, u.email, u.avatar_url,
-      u.government_id_verified, u.last_login_at`;
+      u.government_id_verified, u.last_login_at, u.id`;
 
     // Min rating filter (applied after aggregation)
     let havingClause = '';

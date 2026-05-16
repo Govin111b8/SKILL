@@ -22,18 +22,22 @@ export default function CreateBooking() {
 
   const professionalId = searchParams.get('professional_id') || '';
   const professionalName = searchParams.get('professional_name') || '';
+  const preselectedService = searchParams.get('service') || '';
+  const preselectedServiceId = searchParams.get('service_id') || '';
 
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
+  const [proServices, setProServices] = useState([]);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     professional_id: professionalId,
     category_id: '',
-    title: '',
+    title: preselectedService,
     description: '',
     service_address: '',
     preferred_date: '',
     preferred_time: '',
+    service_id: preselectedServiceId,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -46,6 +50,12 @@ export default function CreateBooking() {
       .then((res) => setCategories(res.data || res || []))
       .catch(() => setCategories([]))
       .finally(() => setLoadingCats(false));
+    // Load professional's services if professional is pre-selected
+    if (professionalId) {
+      get(`/services/${professionalId}`)
+        .then(res => setProServices((res.data || res) || []))
+        .catch(() => setProServices([]));
+    }
   }, []);
 
   // Fetch available time slots when professional and date are selected
@@ -195,6 +205,34 @@ export default function CreateBooking() {
           {/* ── Step 1: WHAT ── */}
           {step === 0 && (
             <div className="wizard-body">
+              {/* Quick service selection if professional has services */}
+              {proServices.length > 0 && (
+                <div className="form-group">
+                  <label><FiTag size={14} /> Select a service</label>
+                  <div className="category-chips">
+                    {proServices.map(svc => (
+                      <button
+                        key={svc.id}
+                        type="button"
+                        className={`category-chip ${form.service_id === svc.id ? 'selected' : ''}`}
+                        onClick={() => setForm({
+                          ...form,
+                          service_id: svc.id,
+                          title: svc.name,
+                          category_id: svc.category_id ? String(svc.category_id) : form.category_id,
+                        })}
+                      >
+                        {svc.name}
+                        {(svc.price_min || svc.price_max) && (
+                          <span style={{ fontSize: '0.75rem', opacity: 0.7, marginLeft: '0.25rem' }}>
+                            (₹{svc.price_min || '—'}–₹{svc.price_max || '—'})
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="form-group">
                 <label><FiFileText size={14} /> What do you need done? <span className="required">*</span></label>
                 <input

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { FiMapPin, FiStar, FiArrowRight, FiCheck, FiClock, FiBriefcase, FiShield, FiAward } from 'react-icons/fi';
 import StarRating from './StarRating';
@@ -26,7 +27,7 @@ function ProfessionalCard({ professional }) {
   const initial = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
   return (
-    <div className="pro-card">
+    <div className="pro-card" role="article" aria-label={`Professional: ${name}`}>
       {/* Top badges */}
       <div className="pro-card-badges">
         {provider_type === 'organization' && (
@@ -118,6 +119,26 @@ function ProfessionalCard({ professional }) {
             ))}
           </div>
         )}
+
+        {professional.services?.length > 0 && (
+          <div className="pro-card-services" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+            {professional.services.slice(0, 3).map((s, i) => (
+              <span key={i} style={{
+                fontSize: '0.65rem', padding: '2px 6px', borderRadius: '8px',
+                background: 'var(--primary-light, #eef2ff)', color: 'var(--primary, #6366f1)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+              }}>
+                {typeof s === 'string' ? s : s.name}
+                {s.price_display && ` · ${s.price_display}`}
+              </span>
+            ))}
+            {professional.services.length > 3 && (
+              <span style={{ fontSize: '0.65rem', color: 'var(--gray-500)', alignSelf: 'center' }}>
+                +{professional.services.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -134,5 +155,30 @@ function ProfessionalCard({ professional }) {
     </div>
   );
 }
+
+ProfessionalCard.propTypes = {
+  professional: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string.isRequired,
+    headline: PropTypes.string,
+    photo: PropTypes.string,
+    location: PropTypes.string,
+    verified: PropTypes.bool,
+    provider_type: PropTypes.string,
+    company_name: PropTypes.string,
+    rating: PropTypes.number,
+    average_rating: PropTypes.number,
+    reviews_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    review_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    availability_status: PropTypes.string,
+    pricing_estimate: PropTypes.string,
+    categories: PropTypes.array,
+    years_of_experience: PropTypes.number,
+    completed_jobs: PropTypes.number,
+    response_time_hours: PropTypes.number,
+    reputation_score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    government_id_verified: PropTypes.bool,
+  }).isRequired,
+};
 
 export default ProfessionalCard;

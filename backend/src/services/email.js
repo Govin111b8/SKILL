@@ -8,6 +8,7 @@
 
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const { withRetry } = require('../utils/retry');
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@skillconnect.in';
@@ -24,31 +25,33 @@ async function sendEmail({ to, subject, html, text }) {
     return { success: true, simulated: true };
   }
 
-  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: EMAIL_FROM, name: APP_NAME },
-      subject,
-      content: [
-        ...(text ? [{ type: 'text/plain', value: text }] : []),
-        ...(html ? [{ type: 'text/html', value: html }] : []),
-      ],
-    }),
-  });
+  return withRetry(async () => {
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: EMAIL_FROM, name: APP_NAME },
+        subject,
+        content: [
+          ...(text ? [{ type: 'text/plain', value: text }] : []),
+          ...(html ? [{ type: 'text/html', value: html }] : []),
+        ],
+      }),
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    logger.error({ status: response.status, err, to }, 'SendGrid send failed');
-    throw new Error(`Email send failed: ${response.status}`);
-  }
+    if (!response.ok) {
+      const err = await response.text();
+      logger.error({ status: response.status, err, to }, 'SendGrid send failed');
+      throw new Error(`Email send failed: ${response.status}`);
+    }
 
-  logger.info({ to, subject }, 'Email sent successfully');
-  return { success: true };
+    logger.info({ to, subject }, 'Email sent successfully');
+    return { success: true };
+  }, { maxRetries: 3, baseDelay: 1000, serviceName: 'email' });
 }
 
 /**

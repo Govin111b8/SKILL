@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Phase 1: Payments, Time Slots, Worker Schedule, Disputes, Referrals, Warranties, Emergency Services
 -- Idempotent migration
 
@@ -276,3 +278,5 @@ ALTER TABLE professionals ADD COLUMN IF NOT EXISTS max_service_radius_km INTEGER
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR(20);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by UUID REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS loyalty_balance INTEGER NOT NULL DEFAULT 0;
+
+COMMIT;

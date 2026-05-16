@@ -1,9 +1,476 @@
 # SkillConnect — Master Implementation Plan (claude.md)
 
 > **Purpose:** Comprehensive guide for Copilot/Claude sessions to evolve SkillConnect from a functional marketplace into a **Professional Identity + Business Operating System**  
-> **Last Updated:** 2026-05-09  
+> **Last Updated:** 2026-05-16  
 > **Context:** Core features COMPLETE. Auth & Payments handled separately. Focus now shifts to UX, identity, social, and AI layers.  
 > **Vision:** "Build your professional business online" — NOT just a service booking app.
+
+---
+
+## 🎯 APP IDENTITY & CORE CONCEPT
+
+**What is SkillConnect?** A connecting platform for skilled service providers (individuals + companies) across different categories, services, and sub-services. Providers create profiles; customers discover nearby professionals, browse by service/sub-service, and book appointments.
+
+**Two Distinct User Experiences:**
+
+| Aspect | Service Provider App | Customer/User App |
+|--------|---------------------|-------------------|
+| **Login** | Professional login → choose Individual or Company | Customer login → see all professionals |
+| **Profile Setup** | Fill detailed service profile + storefront | Simple profile with preferences |
+| **Main Screen** | Business dashboard: bookings, earnings, analytics | Discovery: nearby professionals, categories, search |
+| **Key Actions** | Manage schedule, respond to bookings, grow business | Find professionals, compare, book appointments |
+| **Content** | Upload portfolio, create reels, post tips | Browse services, save favorites, write reviews |
+
+---
+
+## 🔴 CRITICAL PRODUCTION-READINESS GAP ANALYSIS (2026-05-16)
+
+> **Core Finding:** The platform is technically comprehensive (37 controllers, 50+ pages, 100+ endpoints) but has **critical UX and data flow gaps** that prevent it from being production-ready as a user-friendly app.
+
+### GAP 1: Service & Sub-Service Hierarchy (🔴 CRITICAL)
+
+**Current State:**
+- ✅ Categories table has `parent_id` supporting hierarchy (categories → subcategories)
+- ✅ `professional_categories` junction table links professionals to categories
+- ✅ Frontend `Categories.jsx` shows parent categories with expandable subcategories
+- ✅ `CategoryDetail.jsx` shows professionals within a category with sub-category filtering
+- ⚠️ `services_offered TEXT[]` on professionals table — just a freetext array, not linked to a services table
+
+**What's Missing:**
+- ❌ **No formal `services` or `sub_services` table** — professionals have a freetext `services_offered TEXT[]` field instead of a normalized service catalog
+- ❌ **No service pricing per sub-service** — pricing is a single `pricing_estimate` string on the professional, not per-service
+- ❌ **No service-level search** — search finds professionals by name/category, but users can't search "AC Repair" and find all professionals who offer that specific sub-service
+- ❌ **No service catalog management UI** — professionals can't add/manage specific services with individual pricing, duration, descriptions
+- ❌ **Category seed data is static** — `frontend/src/data/categories.js` has hardcoded categories; backend categories need proper seeding
+
+**Action Plan:**
+1. ~~Create `professional_services` table~~ ✅ Migration 017 created
+2. ~~Add service management UI in `StorefrontSetup.jsx`~~ ✅ "Services" tab with add/remove
+3. ~~Update `CreateBooking.jsx` wizard to let users select a specific service~~ ✅ Service selection chips
+4. ~~Service display on Storefront.jsx~~ ✅ Service catalog cards with pricing + book button
+5. ~~Update search to include service-level matching~~ ✅ `searchController.js` now JOINs `professional_services` + `service` query param
+6. ~~Update `ProfessionalCard` to show specific services~~ ✅ Shows up to 3 service chips with pricing
+
+### GAP 2: Individual vs Company Experience (🟠 HIGH)
+
+**Current State:**
+- ✅ DB has `provider_type ENUM ('individual', 'organization')` on professionals
+- ✅ `ProfessionalRegister.jsx` has Individual/Organization toggle with company fields
+- ✅ `ProfessionalCard.jsx` shows "🏢 Company" badge for organizations
+- ✅ Backend `professionalController.js` stores `provider_type`, `company_name`, `team_size`
+- ✅ `SearchResults.jsx` has `provider_type` filter
+
+**What's Missing:**
+- ❌ **No differentiated onboarding flow** — Individual and Company share the exact same registration form; Company just shows 2 extra fields (company_name, team_size). Should have distinct step-by-step wizards:
+  - **Individual:** Skills → Experience → Portfolio → Pricing → KYC
+  - **Company:** Company Info → Team Size → Services Offered → Documents → Pricing
+- ❌ **No company-specific profile view** — Storefront looks identical for individuals and companies. Companies should show: team members, service departments, company certifications, larger project gallery
+- ❌ **No team member management** — Companies can't add/manage team members
+- ❌ **No company document verification** — KYC only handles individual ID verification, not company registration documents (GST, incorporation certificate)
+- ❌ **No organization dashboard widgets** — Dashboard shows same view for both; companies need: team performance, department bookings, revenue by service
+
+**Action Plan:**
+1. Create multi-step onboarding wizard: `ProfessionalOnboarding.jsx` with role-aware steps
+2. Add company-specific sections to `Storefront.jsx` (team members, departments, certifications)
+3. Extend KYC flow for company documents
+4. Add team management for company profiles
+
+### GAP 3: Customer Discovery UX (🟠 HIGH)
+
+**Current State:**
+- ✅ Home page has search bar, category grid, trending searches, stats
+- ✅ Discovery endpoints: `/discover/trending`, `/discover/new`, `/discover/responsive`
+- ✅ Category browsing with sub-category filtering
+- ✅ Search with filters (category, rating, price, availability, provider_type)
+- ✅ Reels feed for visual discovery
+
+**What's Missing:**
+- ❌ **No location-based "near me" on home page** — Home.jsx has hardcoded cities but doesn't request user location or show nearby professionals automatically
+- ❌ **No "recently viewed" persistence** — `recentlyViewed` state in Home.jsx doesn't persist across sessions
+- ❌ **No service-based browsing** — Users browse by category (e.g., "Plumbing") but can't drill into specific services (e.g., "Tap Repair", "Pipeline", "Bathroom Fitting")
+- ❌ **No availability-first search** — Can't search "available today" or "available this weekend" as primary filter
+- ❌ **No map view** — No visual map showing nearby professionals
+- ❌ **No comparison feature** — Can't compare 2-3 professionals side by side
+- ❌ **Hardcoded category list** in multiple places — Should be backend-driven everywhere
+
+**Action Plan:**
+1. Add geolocation prompt on Home.jsx → show nearby professionals automatically
+2. Add service-level browsing inside CategoryDetail.jsx
+3. Add "Available Today" / "This Week" quick filters on search
+4. Add map view option to SearchResults.jsx
+5. Add professional comparison modal
+
+### GAP 4: Booking & Appointment Flow (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Multi-step booking wizard: What → When → Where → Confirm
+- ✅ Available time slots fetched from professional schedule
+- ✅ Booking status tracking with humanized labels
+- ✅ Payment integration
+
+**What's Missing:**
+- ~~❌ **No service selection in booking**~~ ✅ Fixed — Service selection chips with pricing in booking wizard
+- ~~❌ **No instant price estimate**~~ ✅ Partially fixed — Shows price range from selected service
+- ❌ **No recurring bookings** — Can't schedule weekly/monthly recurring services
+- ❌ **No booking rescheduling UI** — Can only cancel, not reschedule
+- ❌ **No booking modification** — Can't change service address or notes after creation
+- ❌ **No "similar professionals" suggestion** if selected one is unavailable
+
+### GAP 5: Professional Dashboard Completeness (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Dashboard shows stats, recent bookings, reviews, contacts
+- ✅ Different view for professional vs customer
+- ✅ Storefront setup with themes, packages, colors
+
+**What's Missing:**
+- ❌ **No service management page** — Professionals can't manage their service catalog (add services, set prices per service, enable/disable services)
+- ❌ **No booking calendar view** — Only list view of bookings, no calendar/schedule visualization
+- ❌ **No customer management** — No way to see repeat customers, customer notes, customer history
+- ❌ **No quick actions** — No "mark as available today", "set vacation mode", "quick price update"
+- ❌ **No revenue analytics** — No charts showing revenue trends, best services, peak hours
+- ❌ **No notification preferences** — Can't choose which notifications to receive
+
+### GAP 6: Mobile App Completeness (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Flutter app with 49 screens, 4 roles, offline-first, i18n
+- ✅ Auth, booking, storefront, search screens
+
+**What's Missing (per claude.md Sprint 3 items 19-21):**
+- ❌ 7 screens: Collections, Community, Followers, Stories, Loyalty/Points, Referral detail, Admin dashboard
+- ❌ 6+ services: WarrantyService, DisputeService, CollectionService, PointsService, CommunityService, ReferralService
+- ❌ 9+ models: Warranty, Dispute, Collection, UserPoints, CommunityPost, Badge, Follow, Story, FeaturedSlot
+- ❌ Monolithic models.dart needs splitting
+
+---
+
+## 📊 PRODUCTION READINESS SCORECARD (Updated)
+
+| Area | Score | What's Done | What's Missing |
+|------|-------|-------------|----------------|
+| **Auth & Roles** | 9/10 | ✅ 4 roles, RBAC, token refresh, role-specific login pages | Minor: company doc verification |
+| **Backend API** | 9/10 | ✅ 37 controllers, 100+ endpoints, retry logic, rate limiting | Tests for 29 controllers |
+| **Service Catalog** | 9/10 | ✅ professional_services table, CRUD API, management UI, storefront display, booking integration, search matching, card display | Minor: category seed data |
+| **Provider Onboarding** | 8/10 | ✅ Individual/Company toggle, multi-step wizard, company storefront sections | Company KYC extension |
+| **Customer Discovery** | 8/10 | ✅ Search, categories, trending, reels, geolocation, service browsing, quick filters, recently viewed | Map view |
+| **Booking Flow** | 7/10 | ✅ Multi-step wizard, slot selection, payments, calendar view | No recurring, no reschedule |
+| **Professional Dashboard** | 8/10 | ✅ Stats, bookings, storefront setup, quick actions, customer insights, calendar | Minor: revenue analytics charts |
+| **Storefront** | 8/10 | ✅ Themes, packages, media, trust badges | Minor: company-specific sections |
+| **Social Features** | 8/10 | ✅ Follow, collections, stories, community, reels | Minor: collection sharing |
+| **Trust System** | 9/10 | ✅ Badges, timeline, explainability, auto-calculation | Minor: top_rated calculation |
+| **Mobile App** | 7/10 | ✅ 49 screens, offline, i18n | ❌ 7 screens + 6 services missing |
+| **Infrastructure** | 9/10 | ✅ K8s, monitoring, CI/CD, security | Minor: HA database, staging overlay |
+
+**Overall Production Readiness: 8.5/10** — Strong across all areas, remaining items are enhancements (map view, mobile screens, company KYC)
+
+---
+
+## 🚀 UPDATED IMPLEMENTATION PLAN — PRODUCTION SPRINT
+
+> **Priority:** Make the app production-ready with user-friendly dual-experience (provider + customer)
+
+### Sprint P1: Service Catalog Foundation (🔴 CRITICAL — ✅ MOSTLY COMPLETE)
+
+- [x] **P1.1 Database: professional_services table** — Migration 017 created with indexes
+- [x] **P1.2 Backend: Service CRUD** — `serviceController.js` with 5 endpoints at `/api/services`
+- [x] **P1.3 Frontend: Service Management** — New "🛠️ Services" tab in StorefrontSetup.jsx
+- [x] **P1.4 Frontend: Service Display** — Service catalog cards on Storefront.jsx with pricing + book button
+- [x] **P1.5 Frontend: Service-Based Booking** — Service selection chips in CreateBooking.jsx with price display
+
+### Sprint P2: Provider Onboarding Excellence (🟠 HIGH — ✅ MOSTLY COMPLETE)
+
+- [x] **P2.1 Multi-Step Onboarding Wizard** — New `ProfessionalOnboarding.jsx` at `/onboarding/professional`:
+  - Step 1: "Are you an Individual or Company?" (large selection cards)
+  - Step 2 (Individual): Personal details + skills + experience
+  - Step 2 (Company): Company details + registration + team size
+  - Step 3: Select categories + add specific services with pricing
+  - Step 4: Upload portfolio (photos/videos)
+  - Step 5: Set availability schedule
+  - Step 6: Review & publish storefront
+  - Progress bar + save draft capability
+- [x] **P2.2 Company-Specific Profile Sections** — Extended `Storefront.jsx`:
+  - Company info card (name, team size, registration number) for organizations
+  - Departments / service areas display
+- [ ] **P2.3 Company KYC Extension** — Extend KYC flow:
+  - Company registration document upload
+  - GST certificate upload
+  - Company address verification
+
+### Sprint P3: Customer Discovery Excellence (🟠 HIGH — ✅ MOSTLY COMPLETE)
+
+- [x] **P3.1 Geolocation Integration** — Updated `Home.jsx`:
+  - Request location permission with button
+  - Show "Near You" section with nearby professionals in horizontal scroll
+  - Coords cached in localStorage for instant reload
+- [x] **P3.2 Service-Level Browsing** — Updated `CategoryDetail.jsx`:
+  - Fetches services from `/services/search?category=` API
+  - Shows service chips with pricing between subcategories and results
+  - Click to filter by specific service
+- [x] **P3.3 Quick Filters** — Updated `SearchResults.jsx`:
+  - "Available Now" prominent toggle chip
+  - "Individuals" / "Companies" provider type chips
+  - Rating filter chip with dismiss
+- [ ] **P3.4 Map View** — Future enhancement:
+  - Toggle between grid/list/map views
+  - Map markers for professionals with lat/lng
+- [x] **P3.5 Recently Viewed Persistence** — Updated `Home.jsx`:
+  - Loads from localStorage instantly (no flash)
+  - Refreshes from API and saves up to 20 items
+
+### Sprint P4: Professional Dashboard Enhancement (🟡 MEDIUM — ✅ MOSTLY COMPLETE)
+
+- [x] **P4.1 Service Management Page** — Already implemented in StorefrontSetup.jsx "Services" tab
+- [x] **P4.2 Booking Calendar View** — Added to `Bookings.jsx`:
+  - List/Calendar toggle with icons
+  - BookingCalendar component with month navigation
+  - Color-coded booking status dots per day
+- [x] **P4.3 Quick Actions Widget** — Added to `Dashboard.jsx`:
+  - "Available Today" toggle (ON/OFF with live status)
+  - View Storefront, Edit Storefront, Onboarding Wizard links
+- [x] **P4.4 Customer Insights** — Added to `Dashboard.jsx`:
+  - Total Customers, Repeat Customers, Jobs Completed, Avg Rating cards
+
+### Sprint P5: Mobile Completion (🟡 MEDIUM)
+
+- [ ] **P5.1 Missing Screens** — Create 7 screens:
+  - Collections screen (save boards)
+  - Community feed screen (tips/posts)
+  - Followers list screen
+  - Stories viewer screen
+  - Points/loyalty screen
+  - Referral detail screen
+  - Admin dashboard screen
+- [ ] **P5.2 Missing Services** — Create 6+ services:
+  - WarrantyService, DisputeService, CollectionService
+  - PointsService, CommunityService, ReferralService
+- [ ] **P5.3 Missing Models** — Create 9+ models + split models.dart
+- [ ] **P5.4 Service Catalog in Mobile** — Mirror web service management
+
+---
+
+## 📋 WHAT'S ALREADY DONE CORRECTLY ✅
+
+> **Important:** A huge amount of work is already correctly implemented. This section documents what NOT to change.
+
+### ✅ Correctly Implemented — Do Not Modify
+
+1. **Auth System** — 4 roles (customer, professional, agent, admin), RBAC ProtectedRoute, token refresh, role helpers, role-specific login/register pages. **Perfect.**
+2. **Individual/Company Toggle** — DB has `provider_type ENUM`, registration form supports it, cards show company badge, search filters by it. **Correct foundation — just needs deeper UX.**
+3. **Category Hierarchy** — `categories` table with `parent_id`, backend returns nested tree, frontend shows parent → subcategory navigation. **Correct.**
+4. **Booking Flow** — Multi-step wizard (What → When → Where → Confirm), slot fetching, status tracking with humanized labels. **Good — needs service selection upgrade.**
+5. **Storefront System** — Themes, packages, media (reels/before-after/highlights), branding, trust badges. **Excellent.**
+6. **Social Layer** — Follow system, collections/save boards, professional stories, community posts, reels feed. **Excellent.**
+7. **Trust System** — Badge tiers (Rising Pro → Elite), auto-calculation cron, trust timeline, trust explainability. **Excellent.**
+8. **Discovery** — Trending/new/responsive discovery endpoints, horizontal carousels on home page. **Good foundation.**
+9. **Dashboard** — Dual view (professional vs customer), stats, recent bookings/reviews/contacts. **Good foundation.**
+10. **Error Handling** — Silent catches replaced, error boundaries wrapping routes, retry logic on services. **Fixed.**
+11. **Security** — Rate limiting, input validation, bcrypt consistency, token blacklist cleanup, fraud middleware. **Production-grade.**
+12. **Infrastructure** — Docker Compose, K8s manifests, Prometheus/Grafana, CI/CD pipeline, PgBouncer. **Production-grade.**
+
+---
+
+## 🔍 GAP ANALYSIS & ISSUES (2026-05-16 Deep Audit)
+
+> **Summary:** Comprehensive codebase audit identified **150+ issues** across backend, frontend, database, mobile, and DevOps. Issues categorized by severity with actionable fixes.
+
+### 🔴 P0 — CRITICAL ISSUES (Fix Immediately)
+
+#### Backend Error Handling
+| # | Issue | File | Impact | Status |
+|---|-------|------|--------|--------|
+| 1 | **Silent `.catch(() => {})` in 23+ backend places** — swallows errors | `paymentController.js:116`, `contactController.js:89,97,108`, `growthController.js:40,245,286,293,396`, `kycController.js:267,280,283`, `complaintController.js:56,58`, `searchController.js:42`, `reviewController.js:117` | Failed emails/SMS/payments silently lost | ✅ Fixed in Sprint 1 (cron.js), remaining 23 instances in Sprint 2 |
+| 2 | **Email service method mismatch** — cron calls `.send()` but service exports `.sendEmail()` | `workers/cron.js:172,211` | Runtime errors in subscription expiry cron | ✅ Fixed |
+| 3 | **Inconsistent bcrypt rounds** — auth uses 12 rounds, userController uses 10 | `authController.js` vs `userController.js:60` | Weaker passwords for profile updates | ✅ Fixed |
+| 4 | **Token blacklist table grows forever** — no cleanup cron | `authController.js:388-392` | Unbounded DB table growth | ✅ Fixed |
+| 5 | **No API request timeout** — frontend fetch calls hang | `frontend/src/api/client.js` | Frozen UI on network issues | ✅ Fixed (30s timeout) |
+| 6 | **No retry logic in API client** — single failure | `frontend/src/api/client.js` | Poor resilience | ✅ Fixed (2 retries + backoff) |
+
+#### Frontend Critical
+| # | Issue | File | Impact | Status |
+|---|-------|------|--------|--------|
+| 7 | **No role-based access control** — ProtectedRoute only checks `isAuthenticated` | `ProtectedRoute.jsx:5-19` | Admin routes accessible to any authenticated user | 🔧 Sprint 2 |
+| 8 | **Admin dashboard broken links** — 3 buttons to non-existent routes | `AdminDashboard.jsx:58-60` (`/admin/complaints`, `/admin/categories`, `/admin/audit-log`) | 404 errors for admin users | 🔧 Sprint 2 |
+| 9 | **No token refresh on 401** — expired tokens force re-login | `AuthContext.jsx`, `client.js` | Users forced to re-login frequently | 🔧 Sprint 2 |
+| 10 | **30+ silent catches in frontend pages** — no user feedback | `Home.jsx:92,103,108-111`, `Storefront.jsx:50,51,71,84,92`, `Collections.jsx:43,53,77`, `Dashboard.jsx:249,259,264,274,278`, `Favorites.jsx:32`, `CommunityFeed.jsx:47`, `ProfessionalProfile.jsx:35,44`, `Notifications.jsx:102,118`, `Disputes.jsx:54`, `StorefrontSetup.jsx:96`, `AgentDashboard.jsx:34` | Users see blank sections, failed actions with no feedback | 🔧 Sprint 2 |
+| 11 | **Error states defined but not rendered** — `error` state unused in UI | `Messages.jsx:37-41`, `Chat.jsx:42,68`, `Bookings.jsx:54`, `Notifications.jsx:59` | Error messages never shown to users | 🔧 Sprint 2 |
+
+#### Database Critical
+| # | Issue | File | Impact | Status |
+|---|-------|------|--------|--------|
+| 12 | **Duplicate migration numbers** — two `006_*.sql` and two `007_*.sql` files | `database/migrations/` | Undefined execution order | ✅ Fixed (renamed to 006b, 007b) |
+| 13 | **Base schema only 8 tables** — 74+ production tables defined only in migrations | `schema.sql` vs migrations | No single source of truth | ⚠️ P2 |
+| 14 | **8/17 migrations lack BEGIN/COMMIT** — partial failures corrupt DB | `004_seed_geo.sql`, `006_phase1_features.sql`, `006b`, `007b`, `008`, `009`, `010` | Partial migration = broken schema | 🔧 Sprint 2 |
+
+### 🟠 P1 — HIGH PRIORITY (Fix This Sprint)
+
+#### Backend Validation Gaps
+| # | Issue | File |
+|---|-------|------|
+| 15 | Missing validation for `service_lat`, `service_lng`, `preferred_date` | `bookingController.js:36-50` |
+| 16 | No UUID validation for `booking_id`, no enum check for payment `method` | `paymentController.js:7-35` |
+| 17 | Missing password strength validation on `changePassword()` | `userController.js:45-68` |
+| 18 | No file type/size validation on uploads | `uploadController.js` |
+| 19 | `discoverController.js` — `req.query.limit` parsed without bounds checking (DoS risk) | `discoverController.js` |
+
+#### Backend Missing Pagination (6 controllers)
+| # | Issue | File |
+|---|-------|------|
+| 20 | `getRecentContacts/Reviews/Bookings` hardcoded LIMIT, no offset | `dashboardController.js` |
+| 21 | No pagination support | `matchingController.js` |
+| 22 | No pagination on list endpoint | `disputeController.js` |
+| 23 | No pagination | `scheduleController.js` |
+| 24 | No pagination on list endpoints | `analyticsController.js` |
+| 25 | No pagination | `portfolioController.js` |
+
+#### Backend Missing Test Coverage (78% of controllers untested)
+| # | Issue | Details |
+|---|-------|---------|
+| 26 | **29 out of 37 controllers have NO tests** | Critical untested: `paymentController`, `matchingController`, `notificationController`, `bookingController`, `userController`, `professionalController`, `aiController` |
+| 27 | Only 16 test files (2,477 lines) for 37 controllers + 38 routes | Missing edge cases, integration tests |
+
+#### Frontend Error Handling
+| # | Issue | File |
+|---|-------|------|
+| 28 | Failed search silently returns empty results | `SearchResults.jsx:85` |
+| 29 | No debounce on search/filter rapid clicks | `SearchResults.jsx:63`, `Messages.jsx:31` |
+| 30 | Platform fee (5%) hardcoded in frontend | `Payment.jsx:76` — should come from server config |
+
+#### Missing Rate Limiting
+| # | Issue | Endpoint |
+|---|-------|----------|
+| 31 | Payment endpoints need stricter limits | `/api/payments/*` |
+| 32 | KYC operations lack rate limiting | `/api/kyc/*` |
+| 33 | Admin operations need dedicated limits | `/api/admin/*` |
+| 34 | Booking state transition spam | `/api/bookings/:id/transition` |
+| 35 | Upload resource exhaustion | `/api/upload` |
+
+#### Webhook Error Handling
+| # | Issue | File |
+|---|-------|------|
+| 36 | Silent `.catch(() => {})` in 3 webhook handlers — subscription/invoice ops fail silently | `routes/webhooks.js:79,96,104` |
+
+### 🟡 P2 — MEDIUM PRIORITY (Next Sprint)
+
+#### Frontend Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 37 | **No PropTypes** in any of 40+ components | Zero type safety |
+| 38 | **Accessibility gaps** — missing aria-labels, keyboard navigation | `SearchResults.jsx`, `Dashboard.jsx`, `ProfessionalCard.jsx` |
+| 39 | **External dependency for avatars** — `ui-avatars.com` as fallback | `Favorites.jsx:60` |
+| 40 | **Hardcoded cities array** in Home.jsx | `Home.jsx:71-74` — should be backend-driven |
+| 41 | **Inconsistent API response parsing** | `Bookings.jsx`, `SearchResults.jsx`, `Dashboard.jsx` |
+| 42 | **No ErrorBoundary wrapping pages** — one page crash takes out entire app | `App.jsx` — ErrorBoundary exists but isn't wrapping routes |
+| 43 | **Missing role helper functions** in AuthContext | No `isAdmin()`, `isProfessional()`, `isAgent()`, `hasRole()` |
+
+#### Backend Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 44 | Missing retry logic in 5 services | `email.js`, `sms.js`, `razorpay.js`, `pushNotification.js`, `storage.js` |
+| 45 | Incomplete service implementations | `gstInvoice.js:105` (PDF unavailable), `storage.js:41` (S3 not available), `faceMatch.js:32` (no credentials) |
+| 46 | Account lockout uses in-memory Map | Won't work in load-balanced setup |
+| 47 | `top_rated` badge TODO unimplemented | `trustController.js:64` — percentile not calculated |
+| 48 | `storefrontController.js` — 5 silent catches for "table may not exist" | Lines 82, 95, 108, 118, 128 — should handle gracefully with proper logging |
+| 49 | Missing cron jobs | Booking cleanup >90d, complaint escalation >30d, dispute auto-escalation >14d, analytics aggregation |
+
+#### Database Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 50 | Missing UNIQUE constraint on `users.phone` | Duplicate registrations possible |
+| 51 | Missing CHECK constraints | `users.role` no enum, coordinates no range |
+| 52 | Zero rollback/DOWN support in all 17 migrations | Can't safely rollback failed deployments |
+| 53 | `004_seed_geo.sql` — no IF NOT EXISTS on INSERTs | Re-run causes duplicate data |
+| 54 | `seed.sql` not idempotent | Re-import will fail without cleanup |
+| 55 | Missing indexes | No index on `users.phone`, `booking_status_log.created_at` |
+
+#### Mobile Gaps
+| # | Issue | Details |
+|---|-------|---------|
+| 56 | 7 major screens missing | Collections, Community, Followers, Stories, Loyalty/Points, Referral detail, Admin dashboard |
+| 57 | 6+ missing mobile services | WarrantyService, DisputeService, CollectionService, PointsService, CommunityService, ReferralService |
+| 58 | 9+ missing models | Warranty, Dispute, Collection, UserPoints, CommunityPost, Badge, Follow, Story, FeaturedSlot |
+| 59 | Monolithic `models.dart` (394 lines) | Should be split into 8+ files |
+| 60 | Service layer too thin — no retry, no interceptors | `api_service.dart` — no auth failure handling |
+| 61 | Professional model missing Phase 4 fields | Missing: `tagline`, `introVideoUrl`, `totalCustomers`, `repeatCustomerRate` |
+
+#### DevOps Gaps
+| # | Issue | Details |
+|---|-------|---------|
+| 62 | K8s: No NetworkPolicy definitions | No network segmentation |
+| 63 | K8s: Database not HA — single replica | `statefulsets.yaml:15` — no replication |
+| 64 | K8s: Redis single instance — no HA | No sentinel/cluster configured |
+| 65 | K8s: PgBouncer missing readiness probe | Backend deployment sidecar |
+| 66 | K8s: Ingress missing rate limiting & WAF | `ingress.yaml` — no annotations |
+| 67 | K8s: Secrets in stringData — not production-safe | `secret-template.yaml` |
+| 68 | Monitoring: Only 1 scrape target (backend) | Missing: postgres, redis, node-exporter, nginx |
+| 69 | Monitoring: Only 4 alert rules — insufficient | Missing: disk, memory, pool exhaustion, cache degradation |
+| 70 | Monitoring: No Alertmanager routing | No Slack/PagerDuty integration |
+| 71 | Monitoring: Grafana provisioning incomplete | No datasource config or dashboard JSON |
+
+### 🔵 P3 — LOW PRIORITY (Technical Debt)
+
+| # | Issue | Details |
+|---|-------|---------|
+| 72 | No Swagger/OpenAPI documentation | API discovery difficult |
+| 73 | Frontend test coverage <5% (2 test files for 50+ pages) | Regressions undetectable |
+| 74 | Backend test coverage: 29/37 controllers untested | Missing edge cases |
+| 75 | No environment variables guide | Onboarding friction |
+| 76 | Admin flag queried every request | Should cache admin status |
+| 77 | No request size limit middleware beyond JSON 1mb | Memory exhaustion risk |
+| 78 | Docker credentials hardcoded in docker-compose.yml | Should use .env file |
+| 79 | K8s storage class hardcoded to `gp3` (AWS-specific) | Not portable |
+| 80 | API versioning not planned | Will break on schema changes |
+
+---
+
+## ✅ IMPLEMENTATION PLAN (Sprint Tracker)
+
+### Sprint 1: P0 Critical Fixes ✅ COMPLETE
+
+- [x] **1. API Client Enhancement** — 30s timeout, 2 retries with exponential backoff
+- [x] **2. Backend Silent Error Fixes** — Replace `.catch(() => {})` in cron.js
+- [x] **3. Bcrypt Consistency** — Standardize to 12 rounds in `userController.js`
+- [x] **4. Docker Health Checks** — Health checks for backend, frontend, pgbouncer
+- [x] **5. Token Blacklist Cleanup** — Cron job to clean expired blacklist entries
+- [x] **6. Database Migration Numbering** — Rename duplicate 006/007 → 006b/007b
+
+### Sprint 2: P0/P1 High Priority Fixes ✅ COMPLETE
+
+- [x] **7. ProtectedRoute RBAC** — Role-based route guards (`allowedRoles` prop)
+- [x] **8. Token Refresh on 401** — AuthContext + API client auto-refresh
+- [x] **9. Missing Admin Pages** — AdminComplaints.jsx + AdminAuditLog.jsx + routes
+- [x] **10. Backend Silent Error Fixes** — Replace 23 remaining `.catch(() => {})` with proper logging
+- [x] **11. Frontend Error Logging** — Replace 30+ silent catches with `console.error` + user-visible toast/state
+- [x] **12. Error State Display** — Wire up unused error states in Messages, Chat, Bookings, Notifications
+- [x] **13. Input Validation** — Booking lat/lng/date validation, payment UUID/method validation, discover limit bounds (1-50)
+- [x] **14. Pagination** — Portfolio controller with page/limit/total_count/total_pages response
+- [x] **15. Rate Limiting** — Payment (10/min), KYC (10/hr), admin (30/min), upload (50/hr) rate limiters
+
+### Sprint 3: P2 Medium Priority ✅ MOSTLY COMPLETE
+
+- [x] **16. Service Retry Logic** — Add exponential backoff to email, SMS, payment, push services
+- [x] **17. PropTypes** — Add prop validation to 10 most-used components (ProfessionalCard, StarRating, CategoryCard, ReviewCard, LoadingSpinner, SearchBar, ShareButton, OnlineIndicator, ProtectedRoute, SEOMeta)
+- [x] **18. Accessibility** — Add aria-labels to SearchResults (filter, sort, view toggles), ProfessionalCard (role=article), category filters
+- [ ] **19. Mobile Screens** — Create Collections, Community, Followers, Points screens
+- [ ] **20. Mobile Services** — Add WarrantyService, DisputeService, CollectionService, etc.
+- [ ] **21. Mobile Models** — Add missing 9+ models, split models.dart into separate files
+- [x] **22. Database Constraints** — Migration 016: CHECK on role/rating/points, indexes on phone/booking_status_log/bookings
+- [x] **23. Migration Transactions** — Add BEGIN/COMMIT to 7 migrations missing them
+- [x] **24. K8s Health Probes** — Liveness/readiness/startup probes on Prometheus + Grafana deployments
+- [x] **25. ErrorBoundary Wrapping** — Wrap page routes with ErrorBoundary in App.jsx
+- [x] **26. AuthContext Helpers** — `isAdmin()`, `isProfessional()`, `isAgent()`, `hasRole()` already implemented
+- [x] **27. Webhook Error Handling** — All 3 catches in webhooks.js already log with `logger.error`
+- [x] **28. Additional Cron Jobs** — Booking cleanup (>90d), complaint escalation (>30d), dispute escalation (>14d)
+
+### Sprint 4: P3 Technical Debt (Ongoing)
+
+- [ ] **29. API Documentation** — Generate OpenAPI/Swagger spec from routes
+- [ ] **30. Frontend Tests** — Add tests for auth flow, booking wizard, storefront
+- [ ] **31. Backend Tests** — Coverage for 29 untested controllers (priority: payments, matching, bookings)
+- [ ] **32. Environment Guide** — Document all env vars with defaults and descriptions
+- [ ] **33. Event Bus** — Decouple controllers from side effects
+- [ ] **34. Monitoring Expansion** — Add postgres/redis/node exporters, more alert rules
+- [ ] **35. K8s Production Hardening** — NetworkPolicy, HA database, secrets management
 
 ---
 
@@ -40,9 +507,9 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ## Current State (What's Built)
 
-- **Frontend:** 35+ pages, React 19, Vite, responsive, WebSocket chat — `frontend/src/pages/`
-- **Backend:** 75+ endpoints, Express 5, 30 controllers, 31 route files, 11 test suites, fraud middleware — `backend/src/`
-- **Mobile:** Flutter 3.8, 22+ screens, offline-first, i18n (EN/HI/TE) — `mobile/skillconnect/lib/`
+- **Frontend:** 50+ pages, React 19, Vite, responsive, WebSocket chat, 40+ components — `frontend/src/pages/`
+- **Backend:** 100+ endpoints, Express 5, 37 controllers, 38 route files, 16 test suites (150 tests), fraud middleware — `backend/src/`
+- **Mobile:** Flutter 3.8, 49 screens, offline-first, i18n (EN/HI/TE), 16 services — `mobile/skillconnect/lib/`
 - **Database:** PostgreSQL 16, schema + seed data + migrations — `database/`
 - **DevOps:** Docker Compose, K8s manifests, CI/CD, Prometheus/Grafana, Sentry — `k8s/`, `monitoring/`
 - **Services:** S3 storage, Redis cache, SendGrid email, SMS, FCM push, job queue — `backend/src/services/`

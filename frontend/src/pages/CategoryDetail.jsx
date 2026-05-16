@@ -67,6 +67,8 @@ function CategoryDetail() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [sortBy, setSortBy] = useState('rating');
+  const [categoryServices, setCategoryServices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
 
   // WebSocket presence data
   let onlineUsers = {};
@@ -98,6 +100,19 @@ function CategoryDetail() {
     },
     [category]
   );
+
+  // Fetch services for this category
+  useEffect(() => {
+    if (category?.name) {
+      get(`/services/search?category=${encodeURIComponent(category.name)}&limit=20`)
+        .then(res => {
+          const svcs = res.data || [];
+          const unique = [...new Map(svcs.map(s => [s.name.toLowerCase(), s])).values()];
+          setCategoryServices(unique);
+        })
+        .catch(() => {});
+    }
+  }, [category?.name]);
 
   // Init from URL query param ?sub=...
   useEffect(() => {
@@ -231,6 +246,33 @@ function CategoryDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── Service-Level Browse Chips ── */}
+      {categoryServices.length > 0 && (
+        <div className="cd-services-wrap">
+          <div className="container">
+            <div className="service-browse-chips" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', margin: '1rem 0' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--gray-500)', alignSelf: 'center' }}>Services:</span>
+              {categoryServices.map(svc => (
+                <button
+                  key={svc.id || svc.name}
+                  onClick={() => setSelectedService(selectedService === svc.name ? null : svc.name)}
+                  style={{
+                    padding: '4px 12px', borderRadius: '16px', fontSize: '0.8rem', cursor: 'pointer',
+                    border: selectedService === svc.name ? '2px solid var(--primary)' : '1px solid var(--gray-300, #d1d5db)',
+                    background: selectedService === svc.name ? 'var(--primary-light, #eef2ff)' : '#fff',
+                    color: selectedService === svc.name ? 'var(--primary, #6366f1)' : 'var(--gray-700)',
+                    fontWeight: selectedService === svc.name ? 600 : 400,
+                  }}
+                >
+                  {svc.name}
+                  {svc.price_display && <span style={{ marginLeft: '4px', fontSize: '0.7rem', opacity: 0.7 }}>{svc.price_display}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Professionals ── */}
       <div className="cd-pros-wrap">

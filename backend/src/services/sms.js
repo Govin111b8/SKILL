@@ -9,6 +9,7 @@
 
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const { withRetry } = require('../utils/retry');
 const redis = require('../config/redis');
 
 const SMS_PROVIDER = process.env.SMS_PROVIDER || 'none';
@@ -98,9 +99,9 @@ async function sendViaMSG91(phone, message) {
  */
 async function sendSMS(phone, message) {
   if (SMS_PROVIDER === 'twilio') {
-    return sendViaTwilio(phone, message);
+    return withRetry(() => sendViaTwilio(phone, message), { maxRetries: 2, baseDelay: 1000, serviceName: 'sms-twilio' });
   } else if (SMS_PROVIDER === 'msg91') {
-    return sendViaMSG91(phone, message);
+    return withRetry(() => sendViaMSG91(phone, message), { maxRetries: 2, baseDelay: 1000, serviceName: 'sms-msg91' });
   } else {
     logger.warn({ phone, message: message.substring(0, 50) }, 'SMS not configured — logged only');
     return { success: true, simulated: true };

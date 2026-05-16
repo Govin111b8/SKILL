@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Migration: Add provider_type to professionals table
 -- Supports both individual freelancers and organization/company profiles
 
@@ -17,3 +19,5 @@ ALTER TABLE professionals
 
 -- Index for filtering by provider_type
 CREATE INDEX idx_professionals_provider_type ON professionals(provider_type);
+
+COMMIT;

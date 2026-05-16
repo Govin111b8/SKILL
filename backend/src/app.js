@@ -51,6 +51,7 @@ const discoverRoutes = require('./routes/discover');
 const collectionsRoutes = require('./routes/collections');
 const communityRoutes = require('./routes/community');
 const reelsRoutes = require('./routes/reels');
+const serviceRoutes = require('./routes/services');
 
 const app = express();
 
@@ -115,6 +116,42 @@ const apiLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
+// Stricter rate limiting for sensitive endpoints
+const paymentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'Too many payment requests. Please wait.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const kycLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'Too many KYC requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { success: false, message: 'Admin rate limit exceeded.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
+  message: { success: false, message: 'Upload rate limit exceeded. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply stricter limits before route handlers
+app.use('/api/payments', paymentLimiter);
+app.use('/api/kyc', kycLimiter);
+app.use('/api/admin', adminLimiter);
+app.use('/api/upload', uploadLimiter);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
@@ -152,6 +189,7 @@ app.use('/api/discover', discoverRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/reels', reelsRoutes);
+app.use('/api/services', serviceRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

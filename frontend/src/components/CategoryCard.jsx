@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import './CategoryCard.css';
 
@@ -16,5 +17,14 @@ function CategoryCard({ category }) {
     </Link>
   );
 }
+
+CategoryCard.propTypes = {
+  category: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    icon: PropTypes.elementType,
+    count: PropTypes.number,
+    slug: PropTypes.string,
+  }).isRequired,
+};
 
 export default CategoryCard;
