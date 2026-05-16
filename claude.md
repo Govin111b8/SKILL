@@ -7,6 +7,310 @@
 
 ---
 
+## 🎯 APP IDENTITY & CORE CONCEPT
+
+**What is SkillConnect?** A connecting platform for skilled service providers (individuals + companies) across different categories, services, and sub-services. Providers create profiles; customers discover nearby professionals, browse by service/sub-service, and book appointments.
+
+**Two Distinct User Experiences:**
+
+| Aspect | Service Provider App | Customer/User App |
+|--------|---------------------|-------------------|
+| **Login** | Professional login → choose Individual or Company | Customer login → see all professionals |
+| **Profile Setup** | Fill detailed service profile + storefront | Simple profile with preferences |
+| **Main Screen** | Business dashboard: bookings, earnings, analytics | Discovery: nearby professionals, categories, search |
+| **Key Actions** | Manage schedule, respond to bookings, grow business | Find professionals, compare, book appointments |
+| **Content** | Upload portfolio, create reels, post tips | Browse services, save favorites, write reviews |
+
+---
+
+## 🔴 CRITICAL PRODUCTION-READINESS GAP ANALYSIS (2026-05-16)
+
+> **Core Finding:** The platform is technically comprehensive (37 controllers, 50+ pages, 100+ endpoints) but has **critical UX and data flow gaps** that prevent it from being production-ready as a user-friendly app.
+
+### GAP 1: Service & Sub-Service Hierarchy (🔴 CRITICAL)
+
+**Current State:**
+- ✅ Categories table has `parent_id` supporting hierarchy (categories → subcategories)
+- ✅ `professional_categories` junction table links professionals to categories
+- ✅ Frontend `Categories.jsx` shows parent categories with expandable subcategories
+- ✅ `CategoryDetail.jsx` shows professionals within a category with sub-category filtering
+- ⚠️ `services_offered TEXT[]` on professionals table — just a freetext array, not linked to a services table
+
+**What's Missing:**
+- ❌ **No formal `services` or `sub_services` table** — professionals have a freetext `services_offered TEXT[]` field instead of a normalized service catalog
+- ❌ **No service pricing per sub-service** — pricing is a single `pricing_estimate` string on the professional, not per-service
+- ❌ **No service-level search** — search finds professionals by name/category, but users can't search "AC Repair" and find all professionals who offer that specific sub-service
+- ❌ **No service catalog management UI** — professionals can't add/manage specific services with individual pricing, duration, descriptions
+- ❌ **Category seed data is static** — `frontend/src/data/categories.js` has hardcoded categories; backend categories need proper seeding
+
+**Action Plan:**
+1. Create `professional_services` table: `(id, professional_id, category_id, name, description, price_min, price_max, duration_minutes, is_active)`
+2. Add service management UI in `StorefrontSetup.jsx` — add/edit/remove specific services with pricing
+3. Update search to include service-level matching
+4. Update `ProfessionalCard` to show specific services they offer
+5. Update `CreateBooking.jsx` wizard to let users select a specific service (not just category)
+
+### GAP 2: Individual vs Company Experience (🟠 HIGH)
+
+**Current State:**
+- ✅ DB has `provider_type ENUM ('individual', 'organization')` on professionals
+- ✅ `ProfessionalRegister.jsx` has Individual/Organization toggle with company fields
+- ✅ `ProfessionalCard.jsx` shows "🏢 Company" badge for organizations
+- ✅ Backend `professionalController.js` stores `provider_type`, `company_name`, `team_size`
+- ✅ `SearchResults.jsx` has `provider_type` filter
+
+**What's Missing:**
+- ❌ **No differentiated onboarding flow** — Individual and Company share the exact same registration form; Company just shows 2 extra fields (company_name, team_size). Should have distinct step-by-step wizards:
+  - **Individual:** Skills → Experience → Portfolio → Pricing → KYC
+  - **Company:** Company Info → Team Size → Services Offered → Documents → Pricing
+- ❌ **No company-specific profile view** — Storefront looks identical for individuals and companies. Companies should show: team members, service departments, company certifications, larger project gallery
+- ❌ **No team member management** — Companies can't add/manage team members
+- ❌ **No company document verification** — KYC only handles individual ID verification, not company registration documents (GST, incorporation certificate)
+- ❌ **No organization dashboard widgets** — Dashboard shows same view for both; companies need: team performance, department bookings, revenue by service
+
+**Action Plan:**
+1. Create multi-step onboarding wizard: `ProfessionalOnboarding.jsx` with role-aware steps
+2. Add company-specific sections to `Storefront.jsx` (team members, departments, certifications)
+3. Extend KYC flow for company documents
+4. Add team management for company profiles
+
+### GAP 3: Customer Discovery UX (🟠 HIGH)
+
+**Current State:**
+- ✅ Home page has search bar, category grid, trending searches, stats
+- ✅ Discovery endpoints: `/discover/trending`, `/discover/new`, `/discover/responsive`
+- ✅ Category browsing with sub-category filtering
+- ✅ Search with filters (category, rating, price, availability, provider_type)
+- ✅ Reels feed for visual discovery
+
+**What's Missing:**
+- ❌ **No location-based "near me" on home page** — Home.jsx has hardcoded cities but doesn't request user location or show nearby professionals automatically
+- ❌ **No "recently viewed" persistence** — `recentlyViewed` state in Home.jsx doesn't persist across sessions
+- ❌ **No service-based browsing** — Users browse by category (e.g., "Plumbing") but can't drill into specific services (e.g., "Tap Repair", "Pipeline", "Bathroom Fitting")
+- ❌ **No availability-first search** — Can't search "available today" or "available this weekend" as primary filter
+- ❌ **No map view** — No visual map showing nearby professionals
+- ❌ **No comparison feature** — Can't compare 2-3 professionals side by side
+- ❌ **Hardcoded category list** in multiple places — Should be backend-driven everywhere
+
+**Action Plan:**
+1. Add geolocation prompt on Home.jsx → show nearby professionals automatically
+2. Add service-level browsing inside CategoryDetail.jsx
+3. Add "Available Today" / "This Week" quick filters on search
+4. Add map view option to SearchResults.jsx
+5. Add professional comparison modal
+
+### GAP 4: Booking & Appointment Flow (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Multi-step booking wizard: What → When → Where → Confirm
+- ✅ Available time slots fetched from professional schedule
+- ✅ Booking status tracking with humanized labels
+- ✅ Payment integration
+
+**What's Missing:**
+- ❌ **No service selection in booking** — Wizard asks "what do you need?" as freetext title, not "select a service" from professional's catalog
+- ❌ **No instant price estimate** — Price only comes after professional quotes; should show range based on selected service
+- ❌ **No recurring bookings** — Can't schedule weekly/monthly recurring services
+- ❌ **No booking rescheduling UI** — Can only cancel, not reschedule
+- ❌ **No booking modification** — Can't change service address or notes after creation
+- ❌ **No "similar professionals" suggestion** if selected one is unavailable
+
+### GAP 5: Professional Dashboard Completeness (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Dashboard shows stats, recent bookings, reviews, contacts
+- ✅ Different view for professional vs customer
+- ✅ Storefront setup with themes, packages, colors
+
+**What's Missing:**
+- ❌ **No service management page** — Professionals can't manage their service catalog (add services, set prices per service, enable/disable services)
+- ❌ **No booking calendar view** — Only list view of bookings, no calendar/schedule visualization
+- ❌ **No customer management** — No way to see repeat customers, customer notes, customer history
+- ❌ **No quick actions** — No "mark as available today", "set vacation mode", "quick price update"
+- ❌ **No revenue analytics** — No charts showing revenue trends, best services, peak hours
+- ❌ **No notification preferences** — Can't choose which notifications to receive
+
+### GAP 6: Mobile App Completeness (🟡 MEDIUM)
+
+**Current State:**
+- ✅ Flutter app with 49 screens, 4 roles, offline-first, i18n
+- ✅ Auth, booking, storefront, search screens
+
+**What's Missing (per claude.md Sprint 3 items 19-21):**
+- ❌ 7 screens: Collections, Community, Followers, Stories, Loyalty/Points, Referral detail, Admin dashboard
+- ❌ 6+ services: WarrantyService, DisputeService, CollectionService, PointsService, CommunityService, ReferralService
+- ❌ 9+ models: Warranty, Dispute, Collection, UserPoints, CommunityPost, Badge, Follow, Story, FeaturedSlot
+- ❌ Monolithic models.dart needs splitting
+
+---
+
+## 📊 PRODUCTION READINESS SCORECARD (Updated)
+
+| Area | Score | What's Done | What's Missing |
+|------|-------|-------------|----------------|
+| **Auth & Roles** | 9/10 | ✅ 4 roles, RBAC, token refresh, role-specific login pages | Minor: company doc verification |
+| **Backend API** | 9/10 | ✅ 37 controllers, 100+ endpoints, retry logic, rate limiting | Tests for 29 controllers |
+| **Service Catalog** | 3/10 | ⚠️ Freetext `services_offered`, basic categories | ❌ No service table, no per-service pricing, no service search |
+| **Provider Onboarding** | 5/10 | ✅ Individual/Company toggle, basic form | ❌ No wizard flow, no company-specific onboarding |
+| **Customer Discovery** | 6/10 | ✅ Search, categories, trending, reels | ❌ No geo-location, no service-level browse, no map |
+| **Booking Flow** | 7/10 | ✅ Multi-step wizard, slot selection, payments | ❌ No service selection, no recurring, no reschedule |
+| **Professional Dashboard** | 6/10 | ✅ Stats, bookings, storefront setup | ❌ No service management, no calendar view, no CRM |
+| **Storefront** | 8/10 | ✅ Themes, packages, media, trust badges | Minor: company-specific sections |
+| **Social Features** | 8/10 | ✅ Follow, collections, stories, community, reels | Minor: collection sharing |
+| **Trust System** | 9/10 | ✅ Badges, timeline, explainability, auto-calculation | Minor: top_rated calculation |
+| **Mobile App** | 7/10 | ✅ 49 screens, offline, i18n | ❌ 7 screens + 6 services missing |
+| **Infrastructure** | 9/10 | ✅ K8s, monitoring, CI/CD, security | Minor: HA database, staging overlay |
+
+**Overall Production Readiness: 7.2/10** — Technically strong but missing core marketplace UX for services & discovery
+
+---
+
+## 🚀 UPDATED IMPLEMENTATION PLAN — PRODUCTION SPRINT
+
+> **Priority:** Make the app production-ready with user-friendly dual-experience (provider + customer)
+
+### Sprint P1: Service Catalog Foundation (🔴 CRITICAL — Do First)
+
+- [ ] **P1.1 Database: professional_services table** — Create migration 017:
+  ```sql
+  CREATE TABLE professional_services (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    professional_id UUID NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+    category_id INTEGER REFERENCES categories(id),
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    price_min DECIMAL(10,2),
+    price_max DECIMAL(10,2),
+    duration_minutes INTEGER,
+    is_active BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  CREATE INDEX idx_prof_services_professional ON professional_services(professional_id);
+  CREATE INDEX idx_prof_services_category ON professional_services(category_id);
+  ```
+- [ ] **P1.2 Backend: Service CRUD** — New `serviceController.js`:
+  - `POST /api/professionals/:id/services` — add service
+  - `GET /api/professionals/:id/services` — list services
+  - `PUT /api/professionals/services/:serviceId` — update service
+  - `DELETE /api/professionals/services/:serviceId` — remove service
+  - `GET /api/services/search?q=&category=` — search services across all professionals
+- [ ] **P1.3 Frontend: Service Management** — New section in `StorefrontSetup.jsx`:
+  - Service list with add/edit/remove
+  - Price range per service
+  - Duration estimate per service
+  - Category tag per service
+- [ ] **P1.4 Frontend: Service Display** — Update `Storefront.jsx`:
+  - Show "Services Offered" section with cards: name, price range, duration, book button
+  - Each service card links to booking with pre-selected service
+- [ ] **P1.5 Frontend: Service-Based Booking** — Update `CreateBooking.jsx`:
+  - Step 1 "What?" shows professional's service list (not just freetext)
+  - Selected service auto-fills price range estimate
+  - Service-based search: `/search?service=AC+Repair`
+
+### Sprint P2: Provider Onboarding Excellence (🟠 HIGH)
+
+- [ ] **P2.1 Multi-Step Onboarding Wizard** — New `ProfessionalOnboarding.jsx`:
+  - Step 1: "Are you an Individual or Company?" (large selection cards)
+  - Step 2 (Individual): Personal details + skills + experience
+  - Step 2 (Company): Company details + registration + team size
+  - Step 3: Select categories + add specific services with pricing
+  - Step 4: Upload portfolio (photos/videos)
+  - Step 5: Set availability schedule
+  - Step 6: Review & publish storefront
+  - Progress bar + save draft capability
+- [ ] **P2.2 Company-Specific Profile Sections** — Extend `Storefront.jsx`:
+  - Team members section (if organization)
+  - Company certifications / documents
+  - Departments / service areas
+- [ ] **P2.3 Company KYC Extension** — Extend KYC flow:
+  - Company registration document upload
+  - GST certificate upload
+  - Company address verification
+
+### Sprint P3: Customer Discovery Excellence (🟠 HIGH)
+
+- [ ] **P3.1 Geolocation Integration** — Update `Home.jsx`:
+  - Request location permission on first visit
+  - Show "Near You" section with nearby professionals
+  - "Change Location" button with city selector + GPS
+- [ ] **P3.2 Service-Level Browsing** — Update `CategoryDetail.jsx`:
+  - Show sub-services within each category as clickable chips
+  - Clicking a sub-service shows only professionals who offer it
+  - Price range display per service
+- [ ] **P3.3 Quick Filters** — Update `SearchResults.jsx`:
+  - "Available Today" toggle (prominent)
+  - "Available This Week" filter
+  - "Companies Only" / "Individuals Only" toggle
+  - Price range slider
+- [ ] **P3.4 Map View** — New optional view in `SearchResults.jsx`:
+  - Toggle between grid/list/map views
+  - Map markers for professionals with lat/lng
+  - Cluster markers in dense areas
+  - Click marker → mini card with book button
+- [ ] **P3.5 Recently Viewed Persistence** — Update `Home.jsx`:
+  - Store recently viewed professional IDs in localStorage
+  - Fetch and display on home page
+
+### Sprint P4: Professional Dashboard Enhancement (🟡 MEDIUM)
+
+- [ ] **P4.1 Service Management Page** — New section or page:
+  - Add/edit/remove services with pricing
+  - Enable/disable individual services
+  - Reorder services
+- [ ] **P4.2 Booking Calendar View** — Add to `Bookings.jsx`:
+  - Calendar view showing booked slots
+  - Tap date to see bookings for that day
+  - Color-coded by status
+- [ ] **P4.3 Quick Actions Widget** — Add to `Dashboard.jsx`:
+  - "Set Available Today" toggle
+  - "Vacation Mode" toggle
+  - "Quick Price Update" for popular services
+- [ ] **P4.4 Customer Insights** — Add to `Dashboard.jsx`:
+  - Repeat customers list
+  - Total unique customers
+  - Customer booking frequency
+
+### Sprint P5: Mobile Completion (🟡 MEDIUM)
+
+- [ ] **P5.1 Missing Screens** — Create 7 screens:
+  - Collections screen (save boards)
+  - Community feed screen (tips/posts)
+  - Followers list screen
+  - Stories viewer screen
+  - Points/loyalty screen
+  - Referral detail screen
+  - Admin dashboard screen
+- [ ] **P5.2 Missing Services** — Create 6+ services:
+  - WarrantyService, DisputeService, CollectionService
+  - PointsService, CommunityService, ReferralService
+- [ ] **P5.3 Missing Models** — Create 9+ models + split models.dart
+- [ ] **P5.4 Service Catalog in Mobile** — Mirror web service management
+
+---
+
+## 📋 WHAT'S ALREADY DONE CORRECTLY ✅
+
+> **Important:** A huge amount of work is already correctly implemented. This section documents what NOT to change.
+
+### ✅ Correctly Implemented — Do Not Modify
+
+1. **Auth System** — 4 roles (customer, professional, agent, admin), RBAC ProtectedRoute, token refresh, role helpers, role-specific login/register pages. **Perfect.**
+2. **Individual/Company Toggle** — DB has `provider_type ENUM`, registration form supports it, cards show company badge, search filters by it. **Correct foundation — just needs deeper UX.**
+3. **Category Hierarchy** — `categories` table with `parent_id`, backend returns nested tree, frontend shows parent → subcategory navigation. **Correct.**
+4. **Booking Flow** — Multi-step wizard (What → When → Where → Confirm), slot fetching, status tracking with humanized labels. **Good — needs service selection upgrade.**
+5. **Storefront System** — Themes, packages, media (reels/before-after/highlights), branding, trust badges. **Excellent.**
+6. **Social Layer** — Follow system, collections/save boards, professional stories, community posts, reels feed. **Excellent.**
+7. **Trust System** — Badge tiers (Rising Pro → Elite), auto-calculation cron, trust timeline, trust explainability. **Excellent.**
+8. **Discovery** — Trending/new/responsive discovery endpoints, horizontal carousels on home page. **Good foundation.**
+9. **Dashboard** — Dual view (professional vs customer), stats, recent bookings/reviews/contacts. **Good foundation.**
+10. **Error Handling** — Silent catches replaced, error boundaries wrapping routes, retry logic on services. **Fixed.**
+11. **Security** — Rate limiting, input validation, bcrypt consistency, token blacklist cleanup, fraud middleware. **Production-grade.**
+12. **Infrastructure** — Docker Compose, K8s manifests, Prometheus/Grafana, CI/CD pipeline, PgBouncer. **Production-grade.**
+
+---
+
 ## 🔍 GAP ANALYSIS & ISSUES (2026-05-16 Deep Audit)
 
 > **Summary:** Comprehensive codebase audit identified **150+ issues** across backend, frontend, database, mobile, and DevOps. Issues categorized by severity with actionable fixes.
