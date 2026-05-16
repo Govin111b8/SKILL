@@ -51,6 +51,7 @@ const discoverRoutes = require('./routes/discover');
 const collectionsRoutes = require('./routes/collections');
 const communityRoutes = require('./routes/community');
 const reelsRoutes = require('./routes/reels');
+const serviceRoutes = require('./routes/services');
 
 const app = express();
 
@@ -188,6 +189,7 @@ app.use('/api/discover', discoverRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/reels', reelsRoutes);
+app.use('/api/services', serviceRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });
