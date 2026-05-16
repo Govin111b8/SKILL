@@ -20,7 +20,7 @@ function formatDate(dateStr) {
 
 function formatAmount(amount) {
   if (amount == null) return '';
-  return `$${Number(amount).toFixed(2)}`;
+  return `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function StatusBadge({ status }) {

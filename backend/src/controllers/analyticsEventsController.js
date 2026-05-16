@@ -70,7 +70,7 @@ const ingestEvents = async (req, res, next) => {
  */
 const getFunnelAnalytics = async (req, res, next) => {
   try {
-    const { days = 30 } = req.query;
+    const daysNum = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);
 
     const funnel = await query(
       `SELECT 
@@ -78,11 +78,11 @@ const getFunnelAnalytics = async (req, res, next) => {
          COUNT(DISTINCT user_id) as unique_users,
          COUNT(*) as total_events
        FROM analytics_events
-       WHERE event_timestamp > NOW() - INTERVAL '${parseInt(days)} days'
+       WHERE event_timestamp > NOW() - make_interval(days => $1)
          AND event_name IN ('searchCompleted', 'providerProfileViewed', 'bookingStarted', 'bookingConfirmed', 'paymentCompleted')
        GROUP BY event_name
        ORDER BY total_events DESC`,
-      []
+      [daysNum]
     );
 
     // Drop-off analysis
@@ -93,11 +93,11 @@ const getFunnelAnalytics = async (req, res, next) => {
          COUNT(*) as count
        FROM analytics_events
        WHERE event_name = 'bookingDropOff'
-         AND event_timestamp > NOW() - INTERVAL '${parseInt(days)} days'
+         AND event_timestamp > NOW() - make_interval(days => $1)
        GROUP BY properties->>'last_step', properties->>'reason'
        ORDER BY count DESC
        LIMIT 20`,
-      []
+      [daysNum]
     );
 
     res.json({
@@ -105,7 +105,7 @@ const getFunnelAnalytics = async (req, res, next) => {
       data: {
         funnel: funnel.rows,
         dropoffs: dropoffs.rows,
-        period_days: parseInt(days),
+        period_days: daysNum,
       },
     });
   } catch (error) {
@@ -119,7 +119,7 @@ const getFunnelAnalytics = async (req, res, next) => {
  */
 const getPerformanceMetrics = async (req, res, next) => {
   try {
-    const { days = 7 } = req.query;
+    const daysNum = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 365);
 
     const metrics = await query(
       `SELECT 
@@ -129,17 +129,17 @@ const getPerformanceMetrics = async (req, res, next) => {
          COUNT(*) as sample_count
        FROM analytics_events
        WHERE event_name IN ('cold_start', 'screen_load', 'slow_api')
-         AND event_timestamp > NOW() - INTERVAL '${parseInt(days)} days'
+         AND event_timestamp > NOW() - make_interval(days => $1)
          AND properties->>'duration_ms' IS NOT NULL
        GROUP BY event_name`,
-      []
+      [daysNum]
     );
 
     res.json({
       success: true,
       data: {
         metrics: metrics.rows,
-        period_days: parseInt(days),
+        period_days: daysNum,
       },
     });
   } catch (error) {

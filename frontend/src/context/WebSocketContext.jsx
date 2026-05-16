@@ -34,9 +34,12 @@ export function WebSocketProvider({ children }) {
   const addToast = useCallback((message, variant = 'info') => {
     const id = `toast-${Date.now()}-${++toastIdCounter}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = setTimeout(() => {
+      if (mountedRef.current) {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }
     }, 5000);
+    return timer;
   }, []);
 
   const dismissToast = useCallback((id) => {

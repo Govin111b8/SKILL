@@ -56,7 +56,7 @@ export default function CreateBooking() {
         .then(res => setProServices((res.data || res) || []))
         .catch(() => setProServices([]));
     }
-  }, []);
+  }, [professionalId]);
 
   // Fetch available time slots when professional and date are selected
   useEffect(() => {

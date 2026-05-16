@@ -44,8 +44,8 @@ const search = async (req, res, next) => {
       ).catch((err) => logger.error({ err, userId: req.user.id }, 'Failed to save search history'));
     }
 
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
     const offset = (pageNum - 1) * limitNum;
     const params = [];
     const conditions = [];

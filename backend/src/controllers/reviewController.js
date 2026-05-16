@@ -194,7 +194,7 @@ const getReviews = async (req, res, next) => {
   try {
     const { professionalId } = req.params;
     const { page = 1, limit = 10, cursor } = req.query;
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
 
     let whereExtra = "AND r.moderation_status = 'approved'";
     const params = [professionalId, limitNum];

@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const logger = require('../config/logger');
 
 /**
  * GET /api/storefront/:id
@@ -79,7 +80,7 @@ const getStorefront = async (req, res, next) => {
         [id]
       );
       theme = themeResult.rows[0] || null;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, id }, 'Storefront theme query failed'); }
 
     // Storefront media (best-effort)
     let media = [];
@@ -92,7 +93,7 @@ const getStorefront = async (req, res, next) => {
         [id]
       );
       media = mediaResult.rows;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, id }, 'Storefront media query failed'); }
 
     // Service packages (best-effort)
     let packages = [];
@@ -105,7 +106,7 @@ const getStorefront = async (req, res, next) => {
         [id]
       );
       packages = pkgResult.rows;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, id }, 'Service packages query failed'); }
 
     // Badges (best-effort)
     let badges = [];
@@ -115,7 +116,7 @@ const getStorefront = async (req, res, next) => {
         [id]
       );
       badges = badgeResult.rows;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, id }, 'Badges query failed'); }
 
     // Follower count (best-effort)
     let follower_count = 0;
@@ -125,7 +126,7 @@ const getStorefront = async (req, res, next) => {
         [id]
       );
       follower_count = followResult.rows[0]?.count || 0;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, id }, 'Follower count query failed'); }
 
     res.status(200).json({
       success: true,
