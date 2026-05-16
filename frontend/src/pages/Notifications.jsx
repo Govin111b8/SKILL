@@ -99,7 +99,7 @@ function Notifications() {
         setNotifications((prev) =>
           prev.map((n) => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n)
         );
-      } catch { /* ignore */ }
+      } catch (err) { console.error('Mark notification read failed:', err.message); }
     }
 
     if (notif.link_url) {
@@ -115,7 +115,7 @@ function Notifications() {
         prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
       resetUnreadNotificationCount();
-    } catch { /* ignore */ }
+    } catch (err) { console.error('Mark all read failed:', err.message); }
     setMarkingAll(false);
   }
 

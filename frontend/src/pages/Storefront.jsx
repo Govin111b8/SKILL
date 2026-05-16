@@ -48,8 +48,8 @@ function Storefront() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      get(`/favorites/check/${id}`).then(res => setSaved(res.favorited || false)).catch(() => {});
-      get(`/social/check/${id}`).then(res => setFollowing(res.following || false)).catch(() => {});
+      get(`/favorites/check/${id}`).then(res => setSaved(res.favorited || false)).catch((err) => console.error('Favorites check failed:', err.message));
+      get(`/social/check/${id}`).then(res => setFollowing(res.following || false)).catch((err) => console.error('Follow check failed:', err.message));
     }
   }, [id, isAuthenticated]);
 

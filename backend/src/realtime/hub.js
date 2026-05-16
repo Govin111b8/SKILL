@@ -69,7 +69,7 @@ function attach(server) {
             if (msg.status) presence.set(userId, { lastSeen: new Date(), status: msg.status });
             break;
         }
-      } catch (_) {}
+      } catch (err) { logger.warn({ err: err.message }, 'Failed to parse WebSocket message'); }
     });
 
     ws.on('close', () => {
@@ -105,7 +105,7 @@ async function handleReadReceipt(userId, threadId) {
     }
     const otherUserId = isCustomer ? thread.pro_user_id : thread.customer_id;
     sendTo(otherUserId, { type: 'messages_read', threadId, by: userId, at: Date.now() });
-  } catch (_) {}
+  } catch (err) { logger.warn({ err: err.message, threadId }, 'Failed to mark messages as read'); }
 }
 
 function sendTo(userId, payload) {

@@ -14,7 +14,7 @@ export default function SaveToCollectionModal({ itemType, itemId, onClose }) {
   useEffect(() => {
     get('/collections')
       .then(res => setCollections(res.data || []))
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load collections:', err.message))
       .finally(() => setLoading(false));
   }, []);
 

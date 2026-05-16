@@ -117,7 +117,7 @@ async function sendPush(userId, title, body, data = {}, imageUrl) {
     await query(
       `UPDATE device_tokens SET is_active = FALSE WHERE id = ANY($1::uuid[])`,
       [invalidTokenIds]
-    ).catch(() => {});
+    ).catch((err) => { logger.error({ err: err.message, count: invalidTokenIds.length }, 'Failed to deactivate invalid device tokens'); });
     logger.info({ count: invalidTokenIds.length }, 'Deactivated invalid device tokens');
   }
 }

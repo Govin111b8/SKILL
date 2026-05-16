@@ -139,7 +139,7 @@ function Home() {
           setRecentlyViewed(data);
           localStorage.setItem('sc_recently_viewed', JSON.stringify(data.slice(0, 20)));
         })
-        .catch(() => {});
+        .catch((err) => { console.error('Failed to load recently viewed:', err.message); });
     }
   }, [isAuthenticated]);
 
@@ -150,15 +150,15 @@ function Home() {
         const cities = (res.data || []).filter(c => c.is_active !== false).map(c => c.name);
         if (cities.length > 0) setSupportedCities(cities);
       })
-      .catch(() => {}); // silently fall back to DEFAULT_CITIES
+      .catch((err) => { console.error('Failed to load cities:', err.message); }); // fall back to DEFAULT_CITIES
   }, []);
 
   // Load discovery data
   useEffect(() => {
-    get('/stories/feed?limit=10').then(res => setStoryFeed(res.data || [])).catch(() => {});
-    get('/discover/trending?limit=8').then(res => setTrending(res.data || [])).catch(() => {});
-    get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch(() => {});
-    get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch(() => {});
+    get('/stories/feed?limit=10').then(res => setStoryFeed(res.data || [])).catch((err) => console.error('Stories feed error:', err.message));
+    get('/discover/trending?limit=8').then(res => setTrending(res.data || [])).catch((err) => console.error('Trending error:', err.message));
+    get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch((err) => console.error('New pros error:', err.message));
+    get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch((err) => console.error('Responsive error:', err.message));
   }, []);
 
   function handleCityChange(city) {

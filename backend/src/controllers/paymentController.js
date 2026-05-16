@@ -138,7 +138,8 @@ async function releaseEscrow(req, res, next) {
     const { payment_id } = req.params;
 
     const paymentRes = await pool.query(
-      `SELECT p.*, b.customer_id, b.professional_id, b.status as booking_status
+      `SELECT p.*, b.customer_id, b.professional_id, b.status as booking_status,
+              (SELECT COUNT(*) FROM disputes d WHERE d.booking_id = b.id AND d.status NOT IN ('resolved', 'closed', 'dismissed')) as active_disputes
        FROM payments p
        JOIN bookings b ON p.booking_id = b.id
        WHERE p.id = $1`,
@@ -157,6 +158,10 @@ async function releaseEscrow(req, res, next) {
 
     if (payment.booking_status !== 'completed') {
       return res.status(400).json({ error: 'Booking must be completed before releasing payment' });
+    }
+
+    if (parseInt(payment.active_disputes, 10) > 0) {
+      return res.status(400).json({ error: 'Cannot release payment while there is an active dispute' });
     }
 
     const result = await pool.query(

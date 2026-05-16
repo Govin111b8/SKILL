@@ -29,7 +29,7 @@ export default function Favorites() {
     try {
       await post('/favorites/toggle', { professional_id: professionalId });
       setFavorites((prev) => prev.filter((f) => f.id !== professionalId));
-    } catch { /* swallow */ }
+    } catch (err) { console.error('Favorite toggle failed:', err.message); }
   }
 
   if (loading) return <LoadingSpinner />;

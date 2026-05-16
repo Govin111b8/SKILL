@@ -110,7 +110,7 @@ function CategoryDetail() {
           const unique = [...new Map(svcs.map(s => [s.name.toLowerCase(), s])).values()];
           setCategoryServices(unique);
         })
-        .catch(() => {});
+        .catch((err) => console.error('Failed to load category services:', err.message));
     }
   }, [category?.name]);
 

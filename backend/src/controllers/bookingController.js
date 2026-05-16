@@ -57,6 +57,10 @@ exports.create = async (req, res, next) => {
       if (date < new Date()) {
         return res.status(400).json({ success: false, message: 'preferred_date cannot be in the past' });
       }
+      const maxDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+      if (date > maxDate) {
+        return res.status(400).json({ success: false, message: 'preferred_date cannot be more than 90 days in the future' });
+      }
     }
 
     const pro = await getPro(professional_id);
@@ -178,6 +182,7 @@ exports.transition = async (req, res, next) => {
     if (to === 'quoted' && payload.quoted_amount != null) {
       const amt = parseFloat(payload.quoted_amount);
       if (isNaN(amt) || amt <= 0) return res.status(400).json({ success: false, message: 'quoted_amount must be a positive number' });
+      if (amt > 1000000) return res.status(400).json({ success: false, message: 'quoted_amount cannot exceed ₹10,00,000' });
       params.push(amt); sets.push(`quoted_amount = $${params.length}::numeric`);
     }
     if (to === 'scheduled' && payload.scheduled_for) {

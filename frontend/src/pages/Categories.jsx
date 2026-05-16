@@ -74,7 +74,8 @@ function Categories() {
           setCategories(prev => mergeCategories(prev, topLevel));
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Failed to load categories from API:', err.message);
         // API unavailable — keep static data
       });
     return () => { cancelled = true; };
