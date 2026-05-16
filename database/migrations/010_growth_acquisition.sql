@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Growth & User Acquisition tables
 -- Newsletter subscriptions, waitlist, and analytics events
 
@@ -88,3 +90,5 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
+
+COMMIT;

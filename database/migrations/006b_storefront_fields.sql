@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Migration: Add storefront fields to professionals table
 -- Provides additional branding and contact fields for the professional storefront page
 
@@ -12,3 +14,5 @@ ALTER TABLE professionals
   ADD COLUMN IF NOT EXISTS return_policy TEXT,
   ADD COLUMN IF NOT EXISTS operating_hours TEXT,
   ADD COLUMN IF NOT EXISTS operating_days TEXT;
+
+COMMIT;

@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Analytics events table for mobile event tracking
 CREATE TABLE IF NOT EXISTS analytics_events (
     id BIGSERIAL PRIMARY KEY,
@@ -52,3 +54,5 @@ CREATE TABLE IF NOT EXISTS performance_metrics (
     measured_at DATE DEFAULT CURRENT_DATE,
     UNIQUE(metric_type, metric_name, measured_at)
 );
+
+COMMIT;
