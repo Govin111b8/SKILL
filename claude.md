@@ -176,20 +176,31 @@
 #### Backend Security & Logic Gaps
 | # | Issue | File | Impact | Status |
 |---|-------|------|--------|--------|
-| 81 | **Payment escrow releases without dispute check** — `releaseEscrow()` checks booking completed but not dispute status | `paymentController.js:162-165` | Funds released during active disputes | ❌ Fix Now |
-| 82 | **Remaining silent catches** — 6 instances still exist in backend | `realtime/hub.js:47`, `middleware/auth.js:33`, `routes/payments.js (2)`, `services/pushNotification.js (1)` | Errors silently swallowed in production | ❌ Fix Now |
+| 81 | **Payment escrow releases without dispute check** — `releaseEscrow()` checks booking completed but not dispute status | `paymentController.js:162-165` | Funds released during active disputes | ✅ Fixed |
+| 82 | **Remaining silent catches** — 6 instances still exist in backend | `realtime/hub.js:47`, `middleware/auth.js:33`, `routes/payments.js (2)`, `services/pushNotification.js (1)` | Errors silently swallowed in production | ✅ Fixed |
 | 83 | **Referral code bypass** — no deduplication check, users can apply same code multiple times | `referralController.js` | Duplicate reward credits | ❌ Fix Now |
-| 84 | **No rate limiting on auth endpoints** — `/register`, `/login`, `/forgot-password` lack route-level rate limits | `routes/auth.js` | Brute force attacks possible | ❌ Fix Now |
-| 85 | **Booking date allows 100+ years in future** — no upper bound validation | `bookingController.js:52-59` | Spam bookings, data pollution | ❌ Fix Now |
-| 86 | **`quoted_amount`/`final_amount` no max cap** — parsed as float without range validation | `bookingController.js:178-181` | Billing system vulnerability | ❌ Fix Now |
+| 84 | **No rate limiting on auth endpoints** — `/register`, `/login`, `/forgot-password` lack route-level rate limits | `routes/auth.js` | Brute force attacks possible | ✅ Already in app.js |
+| 85 | **Booking date allows 100+ years in future** — no upper bound validation | `bookingController.js:52-59` | Spam bookings, data pollution | ✅ Fixed (90d cap) |
+| 86 | **`quoted_amount`/`final_amount` no max cap** — parsed as float without range validation | `bookingController.js:178-181` | Billing system vulnerability | ✅ Fixed (₹10L cap) |
+| 86b | **SQL injection in analytics** — string interpolation in INTERVAL queries | `analyticsEventsController.js`, `adminController.js` | SQL injection attack | ✅ Fixed (parameterized) |
+| 86c | **NaN pagination** — parseInt without fallback causes NaN offsets | `searchController.js`, `categoryController.js`, `contactController.js`, `reviewController.js` | Broken pagination | ✅ Fixed |
+| 86d | **Upload path traversal** — unvalidated folder query parameter | `uploadController.js` | File system traversal | ✅ Fixed (whitelist) |
+| 86e | **Unsafe COUNT access** — missing null checks on `.rows[0].count` | `notificationController.js`, `fraudPrevention.js` | Runtime crashes | ✅ Fixed |
+| 86f | **Missing password validation** — changePassword accepts weak passwords | `userController.js` | Weak passwords | ✅ Fixed (8+, uppercase, digit) |
+| 86g | **5 storefrontController silent catches** — errors swallowed for theme/media/badges/packages/followers | `storefrontController.js` | Hidden DB errors | ✅ Fixed (logger.warn) |
 
 #### Frontend Security & UX Gaps
 | # | Issue | File | Impact | Status |
 |---|-------|------|--------|--------|
-| 87 | **No logout API call** — frontend clears localStorage but never calls `POST /auth/logout` | `AuthContext.jsx:83-89` | Server-side sessions remain active | ❌ Fix Now |
-| 88 | **Remaining silent catches** — 22 instances across 11 frontend files | `Home.jsx(6)`, `Dashboard.jsx(5)`, `Storefront.jsx(2)`, `Notifications.jsx(2)`, `ProfessionalProfile.jsx(2)`, etc. | Users see blank sections, no feedback | ❌ Fix Now |
-| 89 | **WebSocket timer memory leaks** — `setInterval`/`setTimeout` not cleaned up on unmount | `WebSocketContext.jsx:37-39,95,231` | Memory leak in long sessions | ❌ Fix Now |
-| 90 | **Dashboard.jsx.bak file in source** — backup file committed to repository | `frontend/src/pages/Dashboard.jsx.bak` | Code clutter, potential confusion | ❌ Fix Now |
+| 87 | **No logout API call** — frontend clears localStorage but never calls `POST /auth/logout` | `AuthContext.jsx:83-89` | Server-side sessions remain active | ✅ Fixed |
+| 88 | **Remaining silent catches** — 22+ instances across 11+ frontend files | Multiple files | Users see blank sections, no feedback | ✅ Fixed (40+ catches now log errors) |
+| 89 | **WebSocket timer memory leaks** — `setTimeout` not guarded by mountedRef | `WebSocketContext.jsx:37-39` | Memory leak in long sessions | ✅ Fixed |
+| 90 | **Dashboard.jsx.bak file in source** — backup file committed to repository | `frontend/src/pages/Dashboard.jsx.bak` | Code clutter, potential confusion | ✅ Removed |
+| 90b | **Wrong currency symbol** — Bookings.jsx uses $ instead of ₹ | `Bookings.jsx:22-24` | Wrong currency for India-first app | ✅ Fixed (₹ with locale) |
+| 90c | **Missing useEffect dependency** — CreateBooking doesn't re-fetch on professionalId change | `CreateBooking.jsx:59` | Stale service data | ✅ Fixed |
+| 90d | **Chat null reference** — otherName[0] crashes when otherName is undefined | `Chat.jsx:271` | Chat page crash | ✅ Fixed |
+| 90e | **ReelsFeed array bounds** — reels[current] undefined when navigating past end | `ReelsFeed.jsx:61` | Reels page crash | ✅ Fixed (fallback guard) |
+| 90f | **Emergency.jsx wrong fallback** — categories state gets object instead of array | `Emergency.jsx:39` | .map() crash on categories | ✅ Fixed |
 
 ### 🟠 NEW P1 — HIGH PRIORITY
 
@@ -202,10 +213,10 @@
 | 94 | **AI cache unbounded** — 10k entry cap with FIFO, should use LRU | `services/ai.js:52-56` | Memory leak potential |
 | 95 | **Razorpay error handling gap** — error response parsed assuming JSON, no 5xx fallback | `services/razorpay.js:39-44` | Crashes on malformed responses |
 | 96 | **No input sanitization for XSS** — all text fields (bio, headline, description) stored as-is | Multiple controllers | XSS when data rendered |
-| 97 | **`top_rated` badge always false** — TODO at `trustController.js:64` never implemented | `trustController.js:64` | Badge never awarded |
+| 97 | **`top_rated` badge always false** — TODO at `trustController.js:64` never implemented | `trustController.js:64` | Badge never awarded | ✅ Fixed |
 | 98 | **Inconsistent response formats** — mix of `{success,data}`, `{error}`, and plain objects | Multiple controllers/routes | Client parsing errors |
-| 99 | **Missing file type/size validation on uploads** | `uploadController.js` | Security risk |
-| 100 | **Missing password strength validation on change** | `userController.js:45-68` | Weak passwords accepted |
+| 99 | **Missing file type/size validation on uploads** | `uploadController.js` | Security risk | ✅ Partially fixed (folder whitelist) |
+| 100 | **Missing password strength validation on change** | `userController.js:45-68` | Weak passwords accepted | ✅ Fixed |
 
 #### Frontend Quality
 | # | Issue | File | Impact |
@@ -218,7 +229,7 @@
 | 106 | **Hardcoded demo credentials in production code** | `Login.jsx:14-19` | Security exposure |
 | 107 | **No React.memo on list components** — ProfessionalCard, ReviewCard re-render entire lists | Multiple pages | Performance degradation |
 | 108 | **No code splitting / lazy loading** — all 57 pages imported statically | `App.jsx` | Large initial bundle |
-| 109 | **Footer has placeholder phone number** | `Footer.jsx:60` — `+1 (555) 123-4567` | Unprofessional appearance |
+| 109 | **Footer has placeholder phone number** | `Footer.jsx:60` — `+1 (555) 123-4567` | Unprofessional appearance | ✅ Fixed |
 
 ### 🟡 NEW P2 — MEDIUM PRIORITY
 
@@ -270,23 +281,23 @@
 
 | Area | Previous | Updated | Delta | Key Issue |
 |------|----------|---------|-------|-----------|
-| **Auth & Roles** | 9/10 | 8.5/10 | -0.5 | No logout API call, no auth rate limiting |
-| **Backend API** | 9/10 | 8/10 | -1.0 | 6 silent catches, escrow bug, N+1 queries |
+| **Auth & Roles** | 9/10 | 9/10 | 0 | ✅ Logout API added, rate limiting in place |
+| **Backend API** | 9/10 | 8.5/10 | -0.5 | SQL injection fixed, silent catches fixed, N+1 queries remain |
 | **Service Catalog** | 9/10 | 9/10 | 0 | Solid |
 | **Provider Onboarding** | 8/10 | 8/10 | 0 | Company KYC still pending |
-| **Customer Discovery** | 8/10 | 7.5/10 | -0.5 | No debouncing, no lazy loading |
-| **Booking Flow** | 7/10 | 6.5/10 | -0.5 | Date validation gap, no double-submit prevention |
-| **Professional Dashboard** | 8/10 | 7.5/10 | -0.5 | Dashboard.jsx.bak, 5 silent catches |
-| **Storefront** | 8/10 | 8/10 | 0 | Good |
+| **Customer Discovery** | 8/10 | 8/10 | 0 | Silent catches fixed |
+| **Booking Flow** | 7/10 | 7.5/10 | +0.5 | Date validation + amount cap added |
+| **Professional Dashboard** | 8/10 | 8/10 | 0 | .bak removed, silent catches fixed |
+| **Storefront** | 8/10 | 8.5/10 | +0.5 | Silent catches now logged properly |
 | **Social Features** | 8/10 | 8/10 | 0 | Good |
-| **Trust System** | 9/10 | 8.5/10 | -0.5 | top_rated badge never awarded |
+| **Trust System** | 9/10 | 9/10 | 0 | ✅ top_rated badge implemented |
 | **Mobile App** | 7/10 | 6.5/10 | -0.5 | Monolithic models, thin service layer |
 | **Infrastructure** | 9/10 | 7/10 | -2.0 | No NetworkPolicy, single DB replica, placeholder deploy |
-| **Security** | 9/10 | 7.5/10 | -1.5 | No XSS sanitization, no auth rate limiting, escrow bug |
+| **Security** | 9/10 | 8.5/10 | -0.5 | ✅ SQL injection, path traversal, password validation fixed |
 | **Performance** | 8/10 | 7/10 | -1.0 | N+1 queries, no code splitting, no memo |
 | **Test Coverage** | 6/10 | 6/10 | 0 | 22/38 controllers still untested |
 
-**Updated Overall: 7.7/10** (was 8.5/10 — previous score was optimistic, deep audit reveals real gaps)
+**Updated Overall: 8.1/10** (up from 7.7 — critical security & stability bugs fixed)
 
 ---
 
