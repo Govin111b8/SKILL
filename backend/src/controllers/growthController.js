@@ -37,7 +37,7 @@ const joinWaitlist = async (req, res, next) => {
         to: email,
         subject: `SkillConnect is coming to ${city}!`,
         text: `Hi!\n\nThank you for joining the SkillConnect waitlist for ${city}. We'll notify you as soon as we launch in your city.\n\nThe SkillConnect Team`,
-      }).catch(() => {});
+      }).catch((err) => logger.error({ err, email }, 'Failed to send waitlist confirmation email'));
     }
 
     res.status(201).json({ success: true, message: `You are on the waitlist for ${city}!` });
@@ -242,7 +242,7 @@ const exportData = async (req, res, next) => {
       `INSERT INTO audit_log (id, user_id, action, details, ip_address, created_at)
        VALUES ($1, $2, 'data_export', '{"type":"dpdpa_export"}'::jsonb, $3, NOW())`,
       [crypto.randomUUID(), userId, req.ip || null]
-    ).catch(() => {});
+    ).catch((err) => logger.error({ err, userId }, 'Failed to log data export in audit_log'));
 
     const exportPayload = {
       exported_at: new Date().toISOString(),
@@ -283,14 +283,14 @@ const deleteAccount = async (req, res, next) => {
     await query(
       `UPDATE professionals SET is_available = FALSE WHERE user_id = $1`,
       [userId]
-    ).catch(() => {});
+    ).catch((err) => logger.error({ err, userId }, 'Failed to hide professional profile during account deletion'));
 
     // Log soft delete
     await query(
       `INSERT INTO soft_deletes_log (id, entity_type, entity_id, deleted_by, reason, deleted_at, can_restore)
        VALUES ($1, 'user', $2, $2, $3, NOW(), TRUE)`,
       [crypto.randomUUID(), userId, reason || 'User requested account deletion']
-    ).catch(() => {});
+    ).catch((err) => logger.error({ err, userId }, 'Failed to log soft delete in soft_deletes_log'));
 
     res.json({ success: true, message: 'Your account has been scheduled for deletion. Data will be permanently removed within 30 days.' });
   } catch (err) { next(err); }
@@ -393,7 +393,7 @@ const trackRecentlyViewed = async (userId, professionalId) => {
     let ids = (await redis.get(key)) || [];
     ids = [professionalId, ...ids.filter(id => id !== professionalId)].slice(0, 10);
     await redis.set(key, ids, 30 * 24 * 3600); // 30 days TTL
-  } catch (_) {}
+  } catch (err) { logger.error({ err, userId, professionalId }, 'Failed to track recently viewed professional'); }
 };
 
 module.exports = {

@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const logger = require('../config/logger');
 
 /**
  * Search ranking — 6-factor weighted Trust Score (PRD §6.4.2)
@@ -39,7 +40,7 @@ const search = async (req, res, next) => {
       query(
         `INSERT INTO search_history (user_id, query_text, filters_json) VALUES ($1, $2, $3)`,
         [req.user.id, q.trim().substring(0, 255), JSON.stringify({ category_id, category_ids, availability, sort_by })]
-      ).catch(() => {});
+      ).catch((err) => logger.error({ err, userId: req.user.id }, 'Failed to save search history'));
     }
 
     const pageNum = Math.max(1, parseInt(page));

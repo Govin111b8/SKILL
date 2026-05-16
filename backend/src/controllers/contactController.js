@@ -3,6 +3,7 @@ const { query } = require('../config/database');
 const { notify } = require('../utils/notifier');
 const smsService = require('../services/sms');
 const pushService = require('../services/pushNotification');
+const logger = require('../config/logger');
 
 const createContact = async (req, res, next) => {
   try {
@@ -86,7 +87,7 @@ const createContact = async (req, res, next) => {
           pushService.sendToDevice(t.token, {
             title: 'New Quote Request',
             body: `${customerName} sent you a quote request`,
-          }).catch(() => {});
+          }).catch((err) => logger.error({ err }, 'Failed to send push notification for quote request'));
         }
 
         // SMS notification
@@ -94,7 +95,7 @@ const createContact = async (req, res, next) => {
           smsService.send({
             to: profRow.phone,
             message: `SkillConnect: New quote request from ${customerName}. Login to respond: https://app.skillconnect.in`,
-          }).catch(() => {});
+          }).catch((err) => logger.error({ err }, 'Failed to send SMS notification for contact request'));
         }
       }
 
@@ -105,7 +106,7 @@ const createContact = async (req, res, next) => {
         body: `${customerName} wants to ${contact_type === 'quote_request' ? 'get a quote for' : 'contact you about'} your services`,
         related_id: id,
       });
-    } catch (_) {}
+    } catch (err) { logger.error({ err }, 'Failed to send contact notification'); }
 
     res.status(201).json({
       success: true,

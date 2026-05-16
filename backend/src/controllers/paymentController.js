@@ -113,7 +113,7 @@ async function verifyPayment(req, res, next) {
     // Send receipt email
     const userRes = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
     if (userRes.rows.length > 0) {
-      emailService.sendPaymentReceipt(userRes.rows[0].email, payment).catch(() => {});
+      emailService.sendPaymentReceipt(userRes.rows[0].email, payment).catch((err) => logger.error({ err, paymentId: payment.id }, 'Failed to send payment receipt email'));
     }
 
     logger.info({ paymentId: payment.id }, 'Payment verified and held in escrow');

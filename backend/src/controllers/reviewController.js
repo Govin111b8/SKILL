@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const { notify } = require('../utils/notifier');
+const logger = require('../config/logger');
 
 // Simple profanity filter using a word list
 const PROFANITY_PATTERNS = [
@@ -114,7 +115,7 @@ const createReview = async (req, res, next) => {
             related_id: professional_id,
           });
         }
-      } catch (_) {}
+      } catch (err) { logger.error({ err, professional_id }, 'Failed to send review received notification'); }
     }
 
     res.status(201).json({
