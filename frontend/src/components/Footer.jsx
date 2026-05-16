@@ -57,7 +57,7 @@ function Footer() {
               </p>
               <div className="footer-contact-list">
                 <span><FiMail size={14} /> support@skillconnect.com</span>
-                <span><FiPhone size={14} /> +1 (555) 123-4567</span>
+                <span><FiPhone size={14} /> +91 1800-XXX-XXXX</span>
                 <span><FiMapPin size={14} /> Available Nationwide</span>
               </div>
             </div>

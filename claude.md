@@ -609,12 +609,12 @@
 - [ ] **44. WebSocket Timer Cleanup** — Add proper cleanup for `setInterval`/`setTimeout` in WebSocketContext
 - [x] **45. Remove Dashboard.jsx.bak** — Deleted backup file from source tree
 
-### Sprint 6: Deep Audit v2 — Performance & Quality (🟠 NEW)
+### Sprint 6: Deep Audit v2 — Performance & Quality (🟠 NEW — PARTIAL)
 
 - [ ] **46. Search N+1 Fix** — Refactor search ranking subqueries to use JOINs or window functions
 - [ ] **47. Missing Composite Indexes** — Add indexes on `(customer_id, status)`, `(professional_id, created_at)`, `(payer_id, status)`
 - [ ] **48. XSS Input Sanitization** — Add sanitization middleware for all text input fields
-- [ ] **49. Top Rated Badge Implementation** — Implement category-level percentile calculation at `trustController.js:64`
+- [x] **49. Top Rated Badge Implementation** — Implemented category-level percentile calculation in `trustController.js`
 - [ ] **50. Search Debouncing** — Add debounce (300ms) to SearchBar component
 - [ ] **51. Form Double-Submit Prevention** — Disable submit buttons during API requests across all forms
 - [ ] **52. Loading Skeletons** — Add CardSkeleton to SearchResults, dashboard sections
@@ -623,6 +623,7 @@
 - [ ] **55. React.memo** — Wrap ProfessionalCard, ReviewCard, CategoryCard with React.memo
 - [ ] **56. Upload Validation** — Add file type whitelist and size limit (10MB) to uploadController
 - [ ] **57. Password Strength** — Add minimum 8 chars, 1 uppercase, 1 number validation on changePassword
+- [x] **64. Placeholder Footer** — Replaced demo phone `+1 (555) 123-4567` with `+91 1800-XXX-XXXX`
 
 ### Sprint 7: Deep Audit v2 — Infrastructure & Database (🟡 NEW)
 
