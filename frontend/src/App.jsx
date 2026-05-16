@@ -55,6 +55,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import ProfessionalTerms from './pages/ProfessionalTerms';
 import ContentModerationPolicy from './pages/ContentModerationPolicy';
+import ProfessionalOnboarding from './pages/ProfessionalOnboarding';
 import Collections from './pages/Collections';
 import CommunityFeed from './pages/CommunityFeed';
 import ReelsFeed from './pages/ReelsFeed';
@@ -92,6 +93,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StorefrontSetup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding/professional"
+            element={
+              <ProtectedRoute allowedRoles={['professional']}>
+                <ProfessionalOnboarding />
               </ProtectedRoute>
             }
           />
