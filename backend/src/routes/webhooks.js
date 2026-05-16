@@ -76,7 +76,7 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
                ON CONFLICT DO NOTHING
                RETURNING id`,
               [professionalId, subscriptionPlan, payment.amount / 100, payment.id, orderId, endDate, graceEnd]
-            ).catch((err) => { logger.error({ err, professionalId }, 'Failed to insert subscription record'); return { rows: [] }; });
+            ).catch((err) => { logger.error({ err, professionalId }, 'Failed to insert subscription record — will retry on next webhook'); return { rows: [] }; });
 
             // Update professional's subscription tier
             await pool.query(

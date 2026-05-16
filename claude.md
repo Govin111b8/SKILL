@@ -171,7 +171,7 @@
 - [x] **5. Token Blacklist Cleanup** — Cron job to clean expired blacklist entries
 - [x] **6. Database Migration Numbering** — Rename duplicate 006/007 → 006b/007b
 
-### Sprint 2: P0/P1 High Priority Fixes 🔧 IN PROGRESS
+### Sprint 2: P0/P1 High Priority Fixes ✅ COMPLETE
 
 - [x] **7. ProtectedRoute RBAC** — Role-based route guards (`allowedRoles` prop)
 - [x] **8. Token Refresh on 401** — AuthContext + API client auto-refresh
@@ -179,11 +179,11 @@
 - [x] **10. Backend Silent Error Fixes** — Replace 23 remaining `.catch(() => {})` with proper logging
 - [x] **11. Frontend Error Logging** — Replace 30+ silent catches with `console.error` + user-visible toast/state
 - [x] **12. Error State Display** — Wire up unused error states in Messages, Chat, Bookings, Notifications
-- [ ] **13. Input Validation** — Add validation middleware to booking, payment endpoints
-- [ ] **14. Pagination** — Add offset/limit to analytics, storefront, portfolio, message controllers
-- [ ] **15. Rate Limiting** — Per-action rate limits for payments, KYC, admin, uploads
+- [x] **13. Input Validation** — Booking lat/lng/date validation, payment UUID/method validation, discover limit bounds (1-50)
+- [x] **14. Pagination** — Portfolio controller with page/limit/total_count/total_pages response
+- [x] **15. Rate Limiting** — Payment (10/min), KYC (10/hr), admin (30/min), upload (50/hr) rate limiters
 
-### Sprint 3: P2 Medium Priority (Future Sessions)
+### Sprint 3: P2 Medium Priority 🔧 IN PROGRESS
 
 - [ ] **16. Service Retry Logic** — Add exponential backoff to email, SMS, payment, push services
 - [ ] **17. PropTypes** — Add prop validation to top 20 most-used components
@@ -192,12 +192,12 @@
 - [ ] **20. Mobile Services** — Add WarrantyService, DisputeService, CollectionService, etc.
 - [ ] **21. Mobile Models** — Add missing 9+ models, split models.dart into separate files
 - [ ] **22. Database Constraints** — Add UNIQUE on phone, CHECK on role/rating/coordinates
-- [ ] **23. Migration Transactions** — Add BEGIN/COMMIT to 8 migrations missing them
+- [x] **23. Migration Transactions** — Add BEGIN/COMMIT to 7 migrations missing them
 - [ ] **24. K8s Health Probes** — Add liveness/readiness to monitoring services
-- [ ] **25. ErrorBoundary Wrapping** — Wrap page routes with ErrorBoundary in App.jsx
-- [ ] **26. AuthContext Helpers** — Add `isAdmin()`, `isProfessional()`, `hasRole()` convenience functions
-- [ ] **27. Webhook Error Handling** — Replace 3 silent catches in webhooks.js
-- [ ] **28. Additional Cron Jobs** — Booking cleanup, complaint escalation, dispute auto-escalation
+- [x] **25. ErrorBoundary Wrapping** — Wrap page routes with ErrorBoundary in App.jsx
+- [x] **26. AuthContext Helpers** — `isAdmin()`, `isProfessional()`, `isAgent()`, `hasRole()` already implemented
+- [x] **27. Webhook Error Handling** — All 3 catches in webhooks.js already log with `logger.error`
+- [x] **28. Additional Cron Jobs** — Booking cleanup (>90d), complaint escalation (>30d), dispute escalation (>14d)
 
 ### Sprint 4: P3 Technical Debt (Ongoing)
 

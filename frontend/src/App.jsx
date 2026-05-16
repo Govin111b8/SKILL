@@ -63,6 +63,7 @@ import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
 import CookieConsent from './components/CookieConsent';
 import AppInstallBanner from './components/AppInstallBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
       <AnnouncementBar />
       <Navbar />
       <main className="app-main">
+        <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -365,6 +367,7 @@ function App() {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </main>
       <Footer />
       <BottomNav />
