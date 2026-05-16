@@ -57,7 +57,7 @@ const changePassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hash = await bcrypt.hash(new_password, salt);
     await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
 

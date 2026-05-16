@@ -1,9 +1,170 @@
 # SkillConnect — Master Implementation Plan (claude.md)
 
 > **Purpose:** Comprehensive guide for Copilot/Claude sessions to evolve SkillConnect from a functional marketplace into a **Professional Identity + Business Operating System**  
-> **Last Updated:** 2026-05-09  
+> **Last Updated:** 2026-05-16  
 > **Context:** Core features COMPLETE. Auth & Payments handled separately. Focus now shifts to UX, identity, social, and AI layers.  
 > **Vision:** "Build your professional business online" — NOT just a service booking app.
+
+---
+
+## 🔍 GAP ANALYSIS & ISSUES (2026-05-16 Audit)
+
+> **Summary:** Deep codebase audit identified **100+ issues** across backend, frontend, database, mobile, and DevOps. Issues categorized by severity with actionable fixes.
+
+### 🔴 P0 — CRITICAL ISSUES (Fix Immediately)
+
+#### Backend Error Handling
+| # | Issue | File | Impact |
+|---|-------|------|--------|
+| 1 | **Silent `.catch(() => {})` in 40+ places** — swallows errors without logging | `paymentController.js`, `contactController.js`, `growthController.js`, `kycController.js:267,280`, `workers/cron.js` | Failed emails/SMS/payments silently lost |
+| 2 | **Email service method mismatch** — cron calls `.send()` but service exports `.sendEmail()` | `workers/cron.js:172,211` | Runtime errors in subscription expiry cron |
+| 3 | **Inconsistent bcrypt rounds** — auth uses 12 rounds, userController uses 10 | `authController.js` vs `userController.js:60` | Weaker passwords for profile updates |
+| 4 | **Token blacklist table grows forever** — no cleanup cron for `refresh_token_blacklist` | `authController.js:388-392` | Unbounded DB table growth |
+| 5 | **No API request timeout** — frontend fetch calls can hang indefinitely | `frontend/src/api/client.js` | Frozen UI on network issues |
+| 6 | **No retry logic in API client** — single failure = user sees error | `frontend/src/api/client.js` | Poor resilience |
+
+#### Frontend Critical
+| # | Issue | File | Impact |
+|---|-------|------|--------|
+| 7 | **No role-based access control** — ProtectedRoute only checks `isAuthenticated` | `ProtectedRoute.jsx:5-19` | Admin routes accessible to any authenticated user |
+| 8 | **Admin dashboard broken links** — buttons navigate to non-existent routes (`/admin/complaints`, `/admin/audit-log`) | `AdminDashboard.jsx:58-60` | 404 errors for admin users |
+| 9 | **No token refresh on 401** — expired tokens show errors instead of auto-refreshing | `AuthContext.jsx`, `client.js` | Users forced to re-login frequently |
+
+#### Database Critical
+| # | Issue | File | Impact |
+|---|-------|------|--------|
+| 10 | **Duplicate migration numbers** — two `006_*.sql` and two `007_*.sql` files | `database/migrations/` | Undefined execution order, FK violations |
+| 11 | **Base schema only 8 tables** — 74+ production tables defined only in migrations | `schema.sql` vs migrations | Schema.sql misleading, incomplete |
+
+### 🟠 P1 — HIGH PRIORITY (Fix This Sprint)
+
+#### Backend Validation Gaps
+| # | Issue | File |
+|---|-------|------|
+| 12 | Missing validation for `service_lat`, `service_lng`, `preferred_date` | `bookingController.js:36-50` |
+| 13 | No UUID validation for `booking_id`, no enum check for payment `method` | `paymentController.js:7-35` |
+| 14 | Missing password strength validation on `changePassword()` | `userController.js:45-68` |
+| 15 | No file type/size validation on uploads | `uploadController.js` |
+| 16 | Routes without auth middleware: `/api/reels/feed`, `/api/discover/*`, `/api/trust/*` | Various route files |
+
+#### Backend Missing Pagination
+| # | Issue | File |
+|---|-------|------|
+| 17 | `getRecentContacts/Reviews/Bookings` hardcoded LIMIT, no offset | `dashboardController.js` |
+| 18 | No pagination support | `matchingController.js` |
+| 19 | No pagination on list endpoint | `disputeController.js` |
+| 20 | No pagination | `scheduleController.js` |
+
+#### Frontend Error Handling
+| # | Issue | File |
+|---|-------|------|
+| 21 | Silent `catch {}` — 25+ instances swallow errors | `ProfessionalProfile.jsx:44,70`, `SaveToCollectionModal.jsx:26,41`, `Collections.jsx:26,43,53,65` |
+| 22 | Failed search silently returns empty results | `SearchResults.jsx:85` |
+| 23 | Error state exists but not displayed in render | `Messages.jsx:37-41`, `Chat.jsx:42` |
+| 24 | No debounce on search/filter rapid clicks | `SearchResults.jsx:63`, `Messages.jsx:31` |
+
+#### Missing Rate Limiting
+| # | Issue | Endpoint |
+|---|-------|----------|
+| 25 | Booking state transition spam | `/api/bookings/:id/transition` |
+| 26 | No per-conversation rate limiting | `/api/messages` |
+| 27 | Multiple refund attempts not limited | `/api/payments/:id/refund` |
+| 28 | Upload resource exhaustion | `/api/upload` |
+
+### 🟡 P2 — MEDIUM PRIORITY (Next Sprint)
+
+#### Frontend Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 29 | **No PropTypes** in any of 40+ components | Zero type safety |
+| 30 | **Accessibility gaps** — missing aria-labels, keyboard navigation (Space bar) | `SearchResults.jsx`, `Dashboard.jsx`, `ProfessionalCard.jsx` |
+| 31 | **External dependency for avatars** — `ui-avatars.com` as fallback | `Favorites.jsx:60` |
+| 32 | **Hardcoded demo credentials** | `Login.jsx:14-18` |
+| 33 | **Hardcoded trending data** | `Home.jsx:15-25` |
+| 34 | **Inconsistent API response parsing** | `Bookings.jsx`, `SearchResults.jsx`, `Dashboard.jsx` |
+
+#### Backend Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 35 | Missing retry logic in 5 services | `email.js`, `sms.js`, `razorpay.js`, `ai.js`, `faceMatch.js` |
+| 36 | Incomplete service implementations | `gstInvoice.js:105` (PDF unavailable), `storage.js:41`, `faceMatch.js:32` |
+| 37 | Account lockout uses in-memory Map | Won't work in load-balanced setup |
+| 38 | Hardcoded config values in 10+ places | Email FROM, search defaults, fraud TTLs |
+| 39 | `top_rated` badge always returns false | `trustController.js:64` — percentile not implemented |
+
+#### Database Quality
+| # | Issue | Details |
+|---|-------|---------|
+| 40 | Missing UNIQUE constraint on `users.phone` | Duplicate registrations possible |
+| 41 | Missing CHECK constraints | `users.role` no enum, coordinates no range |
+| 42 | Zero rollback/DOWN support in all 17 migrations | Can't safely rollback failed deployments |
+| 43 | `004_seed_geo.sql` — no IF NOT EXISTS on INSERTs | Re-run causes duplicate data |
+
+#### Mobile Gaps
+| # | Issue | Details |
+|---|-------|---------|
+| 44 | 5 major screens missing | Collections, Community, Followers, Stories, Loyalty |
+| 45 | Monolithic `models.dart` (394 lines) | Should be split into 8+ files |
+| 46 | Service layer too thin | 1,342 lines for 75+ backend endpoints |
+| 47 | Missing social/collection/community APIs | No mobile service coverage for Phase 5 features |
+
+#### DevOps Gaps
+| # | Issue | Details |
+|---|-------|---------|
+| 48 | Docker: No health checks on backend, frontend, pgbouncer | Silent container failures |
+| 49 | Docker: No `depends_on` condition for frontend→backend | Race condition on startup |
+| 50 | K8s: No health probes on Prometheus/Grafana | Monitoring failures undetected |
+| 51 | K8s: No NetworkPolicy definitions | No network segmentation |
+
+### 🔵 P3 — LOW PRIORITY (Technical Debt)
+
+| # | Issue | Details |
+|---|-------|---------|
+| 52 | No Swagger/OpenAPI documentation | API discovery difficult |
+| 53 | Frontend test coverage <5% (2 test files for 50+ pages) | Regressions undetectable |
+| 54 | Backend test coverage shallow (~155 lines per test) | Missing edge cases |
+| 55 | No environment variables guide | Onboarding friction |
+| 56 | Admin flag queried every request | Should cache admin status |
+| 57 | Missing cron jobs: token cleanup, message archival, digest emails | Operational gaps |
+| 58 | No request size limit middleware beyond JSON 1mb | Memory exhaustion risk |
+
+---
+
+## ✅ IMPLEMENTATION PLAN (Immediate Actions)
+
+### Sprint 1: P0 Critical Fixes (This Session)
+
+- [x] **1. API Client Enhancement** — Add request timeout (30s), auto-retry with exponential backoff, 401 token refresh
+- [x] **2. Backend Silent Error Fixes** — Replace `.catch(() => {})` with proper logging in cron.js and controllers
+- [x] **3. Bcrypt Consistency** — Standardize to 12 rounds in `userController.js`
+- [x] **4. Docker Health Checks** — Add health checks for backend, frontend, pgbouncer services
+- [x] **5. Token Blacklist Cleanup** — Add cron job to clean expired entries from `refresh_token_blacklist`
+- [x] **6. Database Migration Numbering** — Rename duplicate 006/007 migrations to avoid conflicts
+
+### Sprint 2: P1 High Priority (Next Session)
+
+- [ ] **7. Input Validation** — Add validation middleware to booking, payment, upload endpoints
+- [ ] **8. ProtectedRoute RBAC** — Add role-based route guards for admin/professional routes
+- [ ] **9. Frontend Error Display** — Add user-visible error states to Messages, Chat, SearchResults
+- [ ] **10. Pagination** — Add offset/limit to dashboard, matching, dispute, schedule controllers
+- [ ] **11. Rate Limiting** — Add per-action rate limits for transitions, messages, refunds, uploads
+
+### Sprint 3: P2 Medium Priority (Future Sessions)
+
+- [ ] **12. Service Retry Logic** — Add exponential backoff to email, SMS, payment services
+- [ ] **13. PropTypes** — Add prop validation to top 20 most-used components
+- [ ] **14. Accessibility** — Add aria-labels, keyboard navigation to interactive elements
+- [ ] **15. Mobile Screens** — Create Collections, Community, Followers screens
+- [ ] **16. Database Constraints** — Add UNIQUE on phone, CHECK on role/rating/coordinates
+- [ ] **17. K8s Health Probes** — Add liveness/readiness to monitoring services
+
+### Sprint 4: P3 Technical Debt (Ongoing)
+
+- [ ] **18. API Documentation** — Generate OpenAPI/Swagger spec from routes
+- [ ] **19. Frontend Tests** — Add tests for auth flow, booking wizard, storefront
+- [ ] **20. Backend Tests** — Add edge case tests for FSM transitions, concurrent bookings
+- [ ] **21. Environment Guide** — Document all env vars with defaults and descriptions
+- [ ] **22. Event Bus** — Decouple controllers from side effects
 
 ---
 
@@ -40,9 +201,9 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ## Current State (What's Built)
 
-- **Frontend:** 35+ pages, React 19, Vite, responsive, WebSocket chat — `frontend/src/pages/`
-- **Backend:** 75+ endpoints, Express 5, 30 controllers, 31 route files, 11 test suites, fraud middleware — `backend/src/`
-- **Mobile:** Flutter 3.8, 22+ screens, offline-first, i18n (EN/HI/TE) — `mobile/skillconnect/lib/`
+- **Frontend:** 50+ pages, React 19, Vite, responsive, WebSocket chat, 40+ components — `frontend/src/pages/`
+- **Backend:** 100+ endpoints, Express 5, 37 controllers, 38 route files, 16 test suites (150 tests), fraud middleware — `backend/src/`
+- **Mobile:** Flutter 3.8, 49 screens, offline-first, i18n (EN/HI/TE), 16 services — `mobile/skillconnect/lib/`
 - **Database:** PostgreSQL 16, schema + seed data + migrations — `database/`
 - **DevOps:** Docker Compose, K8s manifests, CI/CD, Prometheus/Grafana, Sentry — `k8s/`, `monitoring/`
 - **Services:** S3 storage, Redis cache, SendGrid email, SMS, FCM push, job queue — `backend/src/services/`

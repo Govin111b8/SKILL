@@ -1,5 +1,9 @@
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
+const REQUEST_TIMEOUT_MS = 30000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
 function getHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   const token = localStorage.getItem('token');
@@ -20,8 +24,43 @@ async function handleResponse(response) {
   return data;
 }
 
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function requestWithRetry(url, options = {}, retries = MAX_RETRIES) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options);
+
+      // Don't retry client errors (4xx) except 408/429
+      if (!response.ok && response.status < 500 && response.status !== 408 && response.status !== 429) {
+        return response;
+      }
+
+      if (response.ok || attempt === retries) {
+        return response;
+      }
+    } catch (err) {
+      if (attempt === retries) throw err;
+      // Don't retry user-initiated aborts
+      if (err.name === 'AbortError' && attempt === 0) throw err;
+    }
+
+    // Exponential backoff: 1s, 2s
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * Math.pow(2, attempt)));
+  }
+}
+
 export async function get(endpoint) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await requestWithRetry(`${BASE_URL}${endpoint}`, {
     method: 'GET',
     headers: getHeaders(),
   });
@@ -29,7 +68,7 @@ export async function get(endpoint) {
 }
 
 export async function post(endpoint, body) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await requestWithRetry(`${BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body),
@@ -38,7 +77,7 @@ export async function post(endpoint, body) {
 }
 
 export async function put(endpoint, body) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await requestWithRetry(`${BASE_URL}${endpoint}`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body),
@@ -47,7 +86,7 @@ export async function put(endpoint, body) {
 }
 
 export async function del(endpoint) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await requestWithRetry(`${BASE_URL}${endpoint}`, {
     method: 'DELETE',
     headers: getHeaders(),
   });
