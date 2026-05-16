@@ -48,6 +48,9 @@ function StorefrontSetup() {
   });
   const [packages, setPackages] = useState([]);
   const [newPackage, setNewPackage] = useState({ name: '', tier: 'standard', price: '', description: '', features: '' });
+  const [services, setServices] = useState([]);
+  const [newService, setNewService] = useState({ name: '', description: '', price_min: '', price_max: '', duration_minutes: '', category_id: '' });
+  const [serviceCategories, setServiceCategories] = useState([]);
 
   useEffect(() => { loadProfile(); }, []);
 
@@ -93,6 +96,22 @@ function StorefrontSetup() {
           });
         }
         if (sf.packages?.length) setPackages(sf.packages);
+      } catch {}
+      // Load services
+      try {
+        const svcRes = await get(`/services/${data.id}`);
+        setServices((svcRes.data || svcRes) || []);
+      } catch {}
+      // Load categories for service dropdown
+      try {
+        const catRes = await get('/categories');
+        const cats = catRes.data || catRes || [];
+        const flat = [];
+        cats.forEach(c => {
+          flat.push({ id: c.id, name: c.name });
+          if (c.children) c.children.forEach(ch => flat.push({ id: ch.id, name: `${c.name} > ${ch.name}` }));
+        });
+        setServiceCategories(flat);
       } catch {}
     } catch { showToast('error', 'Failed to load profile data'); }
     finally { setLoading(false); }
@@ -158,8 +177,35 @@ function StorefrontSetup() {
     } catch { showToast('error', 'Failed to remove package'); }
   }
 
+  async function addServiceHandler() {
+    if (!newService.name.trim() || !professionalId) return;
+    try {
+      const body = {
+        name: newService.name.trim(),
+        description: newService.description.trim() || undefined,
+        price_min: newService.price_min ? parseFloat(newService.price_min) : undefined,
+        price_max: newService.price_max ? parseFloat(newService.price_max) : undefined,
+        duration_minutes: newService.duration_minutes ? parseInt(newService.duration_minutes) : undefined,
+        category_id: newService.category_id ? parseInt(newService.category_id) : undefined,
+      };
+      const res = await post(`/services/${professionalId}`, body);
+      setServices(prev => [...prev, res.data || res]);
+      setNewService({ name: '', description: '', price_min: '', price_max: '', duration_minutes: '', category_id: '' });
+      showToast('success', 'Service added! 🛠️');
+    } catch (err) { showToast('error', err.message || 'Failed to add service'); }
+  }
+
+  async function removeService(serviceId) {
+    try {
+      await del(`/services/item/${serviceId}`);
+      setServices(prev => prev.filter(s => s.id !== serviceId));
+      showToast('success', 'Service removed');
+    } catch { showToast('error', 'Failed to remove service'); }
+  }
+
   const tabs = [
     { key: 'basic', label: '📝 Basic Info' },
+    { key: 'services', label: '🛠️ Services' },
     { key: 'theme', label: '🎨 Theme' },
     { key: 'packages', label: '📦 Packages' },
     { key: 'social', label: '🔗 Social' },
@@ -249,6 +295,73 @@ function StorefrontSetup() {
             </div>
             <div className="form-group checkbox-group">
               <label><input type="checkbox" name="show_rating" checked={form.show_rating} onChange={handleChange} /><span className="checkbox-label">Show Rating on Storefront</span></label>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'services' && (
+          <div role="tabpanel" className="setup-panel">
+            <h3 style={{ marginBottom: '0.5rem' }}>Your Services</h3>
+            <p className="form-hint" style={{ marginBottom: '1rem' }}>Add specific services you offer with pricing and estimated duration. Customers will see these on your storefront and can book directly.</p>
+
+            {services.length > 0 && (
+              <div className="packages-list" style={{ marginBottom: '1.5rem' }}>
+                {services.map(svc => (
+                  <div key={svc.id} className="package-card">
+                    <div className="package-header">
+                      <h4>{svc.name}</h4>
+                      <button type="button" onClick={() => removeService(svc.id)} className="btn btn-sm btn-outline" aria-label={`Remove ${svc.name}`}>
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                    {svc.description && <p className="form-hint">{svc.description}</p>}
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary, #666)' }}>
+                      {(svc.price_min || svc.price_max) && (
+                        <span>💰 ₹{svc.price_min || '—'} – ₹{svc.price_max || '—'}</span>
+                      )}
+                      {svc.duration_minutes && <span>⏱️ {svc.duration_minutes} min</span>}
+                      {svc.category_name && <span>📂 {svc.category_name}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="new-package-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className="form-group">
+                <label htmlFor="svc_name">Service Name *</label>
+                <input id="svc_name" type="text" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} placeholder="e.g. AC Repair, Full Home Cleaning" maxLength={200} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="svc_desc">Description</label>
+                <input id="svc_desc" type="text" value={newService.description} onChange={e => setNewService(p => ({ ...p, description: e.target.value }))} placeholder="Brief description of what's included" maxLength={500} />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="svc_price_min">Min Price (₹)</label>
+                  <input id="svc_price_min" type="number" min="0" step="0.01" value={newService.price_min} onChange={e => setNewService(p => ({ ...p, price_min: e.target.value }))} placeholder="e.g. 200" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="svc_price_max">Max Price (₹)</label>
+                  <input id="svc_price_max" type="number" min="0" step="0.01" value={newService.price_max} onChange={e => setNewService(p => ({ ...p, price_max: e.target.value }))} placeholder="e.g. 500" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="svc_duration">Duration (minutes)</label>
+                  <input id="svc_duration" type="number" min="1" value={newService.duration_minutes} onChange={e => setNewService(p => ({ ...p, duration_minutes: e.target.value }))} placeholder="e.g. 60" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="svc_category">Category</label>
+                  <select id="svc_category" value={newService.category_id} onChange={e => setNewService(p => ({ ...p, category_id: e.target.value }))}>
+                    <option value="">Select category</option>
+                    {serviceCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <button type="button" className="btn btn-primary" onClick={addServiceHandler} disabled={!newService.name.trim()}>
+                <FiPlus size={16} /> Add Service
+              </button>
             </div>
           </div>
         )}
