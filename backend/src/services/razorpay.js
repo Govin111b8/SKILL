@@ -8,6 +8,7 @@
 
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const { withRetry } = require('../utils/retry');
 
 const KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
@@ -21,27 +22,34 @@ function getAuthHeader() {
 }
 
 async function apiRequest(method, endpoint, body = null) {
-  const url = `${BASE_URL}${endpoint}`;
-  const options = {
-    method,
-    headers: {
-      'Authorization': getAuthHeader(),
-      'Content-Type': 'application/json',
-    },
-  };
-  if (body) options.body = JSON.stringify(body);
+  return withRetry(async () => {
+    const url = `${BASE_URL}${endpoint}`;
+    const options = {
+      method,
+      headers: {
+        'Authorization': getAuthHeader(),
+        'Content-Type': 'application/json',
+      },
+    };
+    if (body) options.body = JSON.stringify(body);
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+    const response = await fetch(url, options);
+    const data = await response.json();
 
-  if (!response.ok) {
-    logger.error({ status: response.status, data, endpoint }, 'Razorpay API error');
-    const err = new Error(data.error?.description || 'Razorpay API error');
-    err.statusCode = response.status;
-    err.razorpayError = data.error;
-    throw err;
-  }
-  return data;
+    if (!response.ok) {
+      logger.error({ status: response.status, data, endpoint }, 'Razorpay API error');
+      const err = new Error(data.error?.description || 'Razorpay API error');
+      err.statusCode = response.status;
+      err.razorpayError = data.error;
+      throw err;
+    }
+    return data;
+  }, {
+    maxRetries: 2,
+    baseDelay: 1000,
+    serviceName: 'razorpay',
+    shouldRetry: (err) => !err.statusCode || err.statusCode >= 500,
+  });
 }
 
 /**
