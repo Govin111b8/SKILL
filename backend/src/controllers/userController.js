@@ -47,6 +47,16 @@ const changePassword = async (req, res, next) => {
     const userId = req.user.id;
     const { current_password, new_password } = req.body;
 
+    if (!new_password || new_password.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters.' });
+    }
+    if (!/[A-Z]/.test(new_password)) {
+      return res.status(400).json({ success: false, message: 'New password must contain at least one uppercase letter.' });
+    }
+    if (!/\d/.test(new_password)) {
+      return res.status(400).json({ success: false, message: 'New password must contain at least one number.' });
+    }
+
     const userResult = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found.' });

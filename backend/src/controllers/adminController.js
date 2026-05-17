@@ -45,25 +45,26 @@ exports.getDashboard = async (req, res, next) => {
 exports.getAnalytics = async (req, res, next) => {
   try {
     const { period = '30d' } = req.query;
-    const interval = period === '7d' ? '7 days' : period === '90d' ? '90 days' : '30 days';
+    const intervalMap = { '7d': '7 days', '90d': '90 days' };
+    const interval = intervalMap[period] || '30 days';
 
     const [revenue, bookings, userGrowth] = await Promise.all([
       pool.query(`
         SELECT DATE_TRUNC('day', created_at) as date, 
                SUM(amount) as total, SUM(platform_fee) as fees, COUNT(*) as count
-        FROM payments WHERE status IN ('released', 'held_in_escrow') AND created_at >= NOW() - INTERVAL '${interval}'
+        FROM payments WHERE status IN ('released', 'held_in_escrow') AND created_at >= NOW() - $1::interval
         GROUP BY DATE_TRUNC('day', created_at) ORDER BY date
-      `),
+      `, [interval]),
       pool.query(`
         SELECT DATE_TRUNC('day', created_at) as date, status, COUNT(*) as count
-        FROM bookings WHERE created_at >= NOW() - INTERVAL '${interval}'
+        FROM bookings WHERE created_at >= NOW() - $1::interval
         GROUP BY DATE_TRUNC('day', created_at), status ORDER BY date
-      `),
+      `, [interval]),
       pool.query(`
         SELECT DATE_TRUNC('day', created_at) as date, role, COUNT(*) as count
-        FROM users WHERE created_at >= NOW() - INTERVAL '${interval}'
+        FROM users WHERE created_at >= NOW() - $1::interval
         GROUP BY DATE_TRUNC('day', created_at), role ORDER BY date
-      `),
+      `, [interval]),
     ]);
 
     res.json({

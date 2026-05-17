@@ -51,7 +51,7 @@ export default function Disputes() {
     try {
       const res = await get('/bookings');
       setBookings((res.data || res) || []);
-    } catch { /* ignore */ }
+    } catch (err) { console.error('Failed to load bookings:', err.message); }
   }
 
   function openForm() {

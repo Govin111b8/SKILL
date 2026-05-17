@@ -89,7 +89,9 @@ const getCategoryProfessionals = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { sort_by = 'rating', limit = 20, page = 1, availability } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
 
     // Include pros from this category AND any subcategories
     let orderClause;
@@ -101,7 +103,7 @@ const getCategoryProfessionals = async (req, res, next) => {
       default:           orderClause = 'COALESCE(AVG(r.rating),0) DESC, p.completed_jobs DESC';
     }
 
-    const params = [parseInt(id), parseInt(limit), offset];
+    const params = [parseInt(id), limitNum, offset];
     let availFilter = '';
     if (availability) {
       availFilter = `AND p.availability_status = $${params.length + 1}`;
@@ -140,7 +142,7 @@ const getCategoryProfessionals = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: rows.rows,
-      pagination: { total: countRow.rows[0].total, page: parseInt(page), limit: parseInt(limit) },
+      pagination: { total: countRow.rows[0].total, page: pageNum, limit: limitNum },
     });
   } catch (error) {
     next(error);

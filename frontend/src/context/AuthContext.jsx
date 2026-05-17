@@ -81,6 +81,11 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    // Call backend logout endpoint to invalidate token (best-effort)
+    const currentToken = localStorage.getItem('token');
+    if (currentToken) {
+      post('/auth/logout', {}).catch(() => {});
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     setToken(null);

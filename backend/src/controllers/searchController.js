@@ -29,7 +29,9 @@ const search = async (req, res, next) => {
       radius_km,
       availability,
       provider_type,
-      service,               // service-level search filter
+      service,               // service-level search filter (name)
+      service_id,            // specific service ID filter
+      category,              // category name filter (for sidebar)
       verified_only = 'true', // PRD default: show only verified profiles
       sort_by = 'reputation',
       page = 1,
@@ -44,8 +46,8 @@ const search = async (req, res, next) => {
       ).catch((err) => logger.error({ err, userId: req.user.id }, 'Failed to save search history'));
     }
 
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
     const offset = (pageNum - 1) * limitNum;
     const params = [];
     const conditions = [];
@@ -179,6 +181,21 @@ const search = async (req, res, next) => {
       paramIndex++;
     }
 
+    // Service ID filter (precise match)
+    if (service_id) {
+      conditions.push(`ps.id = $${paramIndex}`);
+      params.push(service_id);
+      paramIndex++;
+    }
+
+    // Category name filter (from SearchResults sidebar)
+    if (category && !category_id) {
+      fromClause += ` JOIN professional_categories pc2 ON p.id = pc2.professional_id JOIN categories cat ON pc2.category_id = cat.id`;
+      conditions.push(`cat.name ILIKE $${paramIndex}`);
+      params.push(`%${category.trim()}%`);
+      paramIndex++;
+    }
+
     // Max price filter
     if (max_price) {
       conditions.push(`p.pricing_estimate <= $${paramIndex}`);
@@ -269,6 +286,15 @@ const search = async (req, res, next) => {
         limit: limitNum,
         total,
         pages: Math.ceil(total / limitNum),
+      },
+      filters_applied: {
+        q: q || undefined,
+        category: category || undefined,
+        category_id: category_id || undefined,
+        service: service || undefined,
+        service_id: service_id || undefined,
+        availability: availability || undefined,
+        provider_type: provider_type || undefined,
       },
     });
   } catch (error) {

@@ -246,7 +246,7 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
     try {
       await put('/professionals/me/availability', { availability_status: next });
       setAvailability(next);
-    } catch { /* swallow */ }
+    } catch (err) { console.error('Availability toggle failed:', err.message); }
   }
 
   async function handleProfileSave(e) {
@@ -256,12 +256,12 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
       await put(`/professionals/${profile.id}`, profileForm);
       setEditMode(false);
       refresh();
-    } catch { /* swallow */ }
+    } catch (err) { console.error('Profile save failed:', err.message); }
     setSaving(false);
   }
 
   async function handleContactAction(contactId, status) {
-    try { await put(`/contacts/${contactId}/status`, { status }); refresh(); } catch { /* swallow */ }
+    try { await put(`/contacts/${contactId}/status`, { status }); refresh(); } catch (err) { console.error('Contact action failed:', err.message); }
   }
 
   async function handleAddPortfolio(e) {
@@ -271,11 +271,11 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
       setPortfolioForm({ title: '', description: '', media_type: 'image', media_url: '' });
       setShowPortfolioForm(false);
       refresh();
-    } catch { /* swallow */ }
+    } catch (err) { console.error('Add portfolio failed:', err.message); }
   }
 
   async function handleDeletePortfolio(id) {
-    try { await del(`/portfolio/${id}`); refresh(); } catch { /* swallow */ }
+    try { await del(`/portfolio/${id}`); refresh(); } catch (err) { console.error('Delete portfolio failed:', err.message); }
   }
 
   if (needsProfile) {

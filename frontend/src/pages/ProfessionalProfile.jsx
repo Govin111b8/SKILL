@@ -32,7 +32,7 @@ function ProfessionalProfile() {
     if (isAuthenticated) {
       get(`/favorites/check/${id}`).then(res => {
         setSaved(res.favorited || false);
-      }).catch(() => {});
+      }).catch((err) => console.error('Favorites check failed:', err.message));
     }
   }, [id, isAuthenticated]);
 
@@ -41,7 +41,7 @@ function ProfessionalProfile() {
     try {
       const res = await post('/favorites/toggle', { professional_id: id });
       setSaved(res.favorited);
-    } catch { /* swallow */ }
+    } catch (err) { console.error('Favorite toggle failed:', err.message); }
   }
 
   async function fetchProfessional() {

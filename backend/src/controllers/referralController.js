@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const crypto = require('crypto');
+const logger = require('../config/logger');
 
 // Generate referral code for user
 async function generateCode(req, res, next) {
@@ -112,7 +113,7 @@ async function completeReferral(userId) {
       );
     }
   } catch (err) {
-    console.error('Error completing referral:', err);
+    logger.error({ err }, 'Error completing referral');
   }
 }
 

@@ -14,7 +14,7 @@ export default function SaveToCollectionModal({ itemType, itemId, onClose }) {
   useEffect(() => {
     get('/collections')
       .then(res => setCollections(res.data || []))
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load collections:', err.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,7 +23,7 @@ export default function SaveToCollectionModal({ itemType, itemId, onClose }) {
     try {
       await post(`/collections/${collectionId}/items`, { item_type: itemType, item_id: itemId });
       setSaved(collectionId);
-    } catch {}
+    } catch (err) { console.error('Failed to save to collection:', err.message); }
     setSaving(null);
   }
 
@@ -38,7 +38,7 @@ export default function SaveToCollectionModal({ itemType, itemId, onClose }) {
       setNewName('');
       // Auto-save to new collection
       if (newCol?.id) await handleSave(newCol.id);
-    } catch {}
+    } catch (err) { console.error('Failed to create collection:', err.message); }
     setCreating(false);
   }
 

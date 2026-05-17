@@ -110,7 +110,7 @@ function CategoryDetail() {
           const unique = [...new Map(svcs.map(s => [s.name.toLowerCase(), s])).values()];
           setCategoryServices(unique);
         })
-        .catch(() => {});
+        .catch((err) => console.error('Failed to load category services:', err.message));
     }
   }, [category?.name]);
 
@@ -149,9 +149,22 @@ function CategoryDetail() {
     });
   }, [professionals, onlineUsers]);
 
+  // Filter by selected service, then sort
+  const filteredPros = useMemo(() => {
+    if (!selectedService) return prosWithPresence;
+    return prosWithPresence.filter(p => {
+      // Match against services array or services_offered text
+      const svcNames = (p.services || []).map(s => (typeof s === 'string' ? s : s.name || '').toLowerCase());
+      const offeredNames = (p.services_offered || []).map(s => s.toLowerCase());
+      const combined = [...svcNames, ...offeredNames];
+      const target = selectedService.toLowerCase();
+      return combined.some(n => n.includes(target) || target.includes(n));
+    });
+  }, [prosWithPresence, selectedService]);
+
   const sortedPros = useMemo(
-    () => sortProfessionals(prosWithPresence, sortBy),
-    [prosWithPresence, sortBy]
+    () => sortProfessionals(filteredPros, sortBy),
+    [filteredPros, sortBy]
   );
 
   if (!category) {
@@ -280,15 +293,17 @@ function CategoryDetail() {
           <div className="cd-pros-header">
             <div>
               <h2 className="cd-section-title">
-                {selectedSub
+                {selectedService
+                  ? `"${selectedService}" Professionals`
+                  : selectedSub
                   ? `${selectedSub.name} Experts`
                   : `All ${category.name} Professionals`}
               </h2>
               {!loading && searched && (
                 <p className="cd-pros-count">
-                  {professionals.length === 0
+                  {sortedPros.length === 0
                     ? 'No professionals found'
-                    : `${professionals.length} professional${professionals.length !== 1 ? 's' : ''} found`}
+                    : `${sortedPros.length} professional${sortedPros.length !== 1 ? 's' : ''} found`}
                 </p>
               )}
             </div>
@@ -340,7 +355,7 @@ function CategoryDetail() {
                       </span>
                     )}
                     <Link
-                      to={`/bookings/create?professional_id=${pro.id}&professional_name=${encodeURIComponent(pro.name || '')}`}
+                      to={`/bookings/create?professional_id=${pro.id}&professional_name=${encodeURIComponent(pro.name || '')}${selectedService ? `&service=${encodeURIComponent(selectedService)}` : ''}`}
                       className="btn btn-primary btn-sm cd-book-btn"
                     >
                       Book Now
@@ -354,11 +369,18 @@ function CategoryDetail() {
               <FiSearch size={44} />
               <h3>No professionals found</h3>
               <p>
-                {selectedSub
+                {selectedService
+                  ? `No one offers "${selectedService}" yet. Try another service or clear the filter.`
+                  : selectedSub
                   ? `No one listed under "${selectedSub.name}" yet. Try a different sub-service.`
                   : `No professionals found for ${category.name} yet.`}
               </p>
               <div className="cd-empty-actions">
+                {selectedService && (
+                  <button className="btn btn-outline btn-sm" onClick={() => setSelectedService(null)}>
+                    Clear Service Filter
+                  </button>
+                )}
                 {selectedSub && (
                   <button className="btn btn-outline btn-sm" onClick={() => { setSelectedSub(null); fetchPros(null); }}>
                     Show All {category.name}

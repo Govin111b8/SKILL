@@ -48,8 +48,8 @@ function Storefront() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      get(`/favorites/check/${id}`).then(res => setSaved(res.favorited || false)).catch(() => {});
-      get(`/social/check/${id}`).then(res => setFollowing(res.following || false)).catch(() => {});
+      get(`/favorites/check/${id}`).then(res => setSaved(res.favorited || false)).catch((err) => console.error('Favorites check failed:', err.message));
+      get(`/social/check/${id}`).then(res => setFollowing(res.following || false)).catch((err) => console.error('Follow check failed:', err.message));
     }
   }, [id, isAuthenticated]);
 
@@ -61,9 +61,9 @@ function Storefront() {
       try {
         const svcRes = await get(`/services/${id}`);
         setProServices((svcRes.data || svcRes) || []);
-      } catch {}
+      } catch (err) { console.error('Failed to load services:', err.message); }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load storefront:', err.message);
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ function Storefront() {
     try {
       const res = await post('/favorites/toggle', { professional_id: id });
       setSaved(res.favorited);
-    } catch {}
+    } catch (err) { console.error('Favorite toggle failed:', err.message); }
   }
 
   async function toggleFollow() {
@@ -87,7 +87,7 @@ function Storefront() {
         await post(`/social/follow/${id}`);
         setFollowing(true);
       }
-    } catch {}
+    } catch (err) { console.error('Follow toggle failed:', err.message); }
   }
 
   async function loadTrustExplanation() {
@@ -95,7 +95,7 @@ function Storefront() {
       const res = await get(`/trust/${id}/explain`);
       setTrustData(res.data || res);
       setShowTrustModal(true);
-    } catch {}
+    } catch (err) { console.error('Failed to load trust data:', err.message); }
   }
 
   function handleShare() {

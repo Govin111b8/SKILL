@@ -124,11 +124,13 @@ const getContacts = async (req, res, next) => {
     const userId = req.user.id;
     const role = req.user.role;
     const { page = 1, limit = 20 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
 
     let contactQuery;
     let countQuery;
-    const params = [userId, parseInt(limit), offset];
+    const params = [userId, limitNum, offset];
 
     if (role === 'professional') {
       // Get professional id first
@@ -176,10 +178,10 @@ const getContacts = async (req, res, next) => {
       success: true,
       data: result.rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {

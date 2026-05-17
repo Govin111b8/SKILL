@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const logger = require('../config/logger');
 
 // Badge definitions with criteria
 const BADGE_DEFINITIONS = {
@@ -61,8 +62,34 @@ const getBadges = async (req, res, next) => {
 
     const stats = statsResult.rows[0];
     stats.average_rating = parseFloat(stats.average_rating);
-    // TODO: Implement category-level percentile calculation for top_rated badge
-    stats.is_top_rated = false;
+
+    // Category-level percentile calculation for top_rated badge
+    try {
+      const categoryRow = await query(
+        'SELECT category_id FROM professional_categories WHERE professional_id = $1 LIMIT 1',
+        [professionalId]
+      );
+      if (categoryRow.rows.length > 0) {
+        const catId = categoryRow.rows[0].category_id;
+        const percentileResult = await query(
+          `SELECT COUNT(*) FILTER (WHERE avg_rating <= $2)::float / NULLIF(COUNT(*), 0) AS percentile
+           FROM (
+             SELECT pc.professional_id, COALESCE(AVG(r.rating), 0) as avg_rating
+             FROM professional_categories pc
+             LEFT JOIN reviews r ON r.professional_id = pc.professional_id
+             WHERE pc.category_id = $1
+             GROUP BY pc.professional_id
+           ) sub`,
+          [catId, stats.average_rating]
+        );
+        stats.is_top_rated = percentileResult.rows[0]?.percentile >= 0.9;
+      } else {
+        stats.is_top_rated = false;
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, professionalId }, 'Top rated percentile calculation failed');
+      stats.is_top_rated = false;
+    }
 
     // Get earned badges from DB
     let earnedBadges = [];
@@ -72,7 +99,7 @@ const getBadges = async (req, res, next) => {
         [professionalId]
       );
       earnedBadges = badgeResult.rows;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, professionalId }, 'Badge query failed (table may not exist yet)'); }
 
     const earnedTypes = new Set(earnedBadges.map((b) => b.badge_type));
 
@@ -186,7 +213,7 @@ const getTimeline = async (req, res, next) => {
         [professionalId]
       );
       earnedBadges = badgeResult.rows;
-    } catch { /* table may not exist yet */ }
+    } catch (err) { logger.warn({ err: err.message, professionalId }, 'Timeline badge query failed (table may not exist yet)'); }
 
     for (const badge of earnedBadges) {
       const def = BADGE_DEFINITIONS[badge.badge_type];

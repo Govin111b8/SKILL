@@ -36,9 +36,9 @@ function Emergency() {
         get('/categories')
       ]);
       setEmergencies((emergRes.data || emergRes).emergencies || []);
-      setCategories((catRes.data || catRes).categories || catRes || []);
+      setCategories(Array.isArray(catRes.data) ? catRes.data : (catRes.data?.categories || catRes.categories || []));
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load emergency data:', err.message);
     } finally {
       setLoading(false);
     }

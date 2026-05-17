@@ -3,6 +3,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const { createPayment, verifyPayment, releaseEscrow, refundPayment, getPayments, getEarnings } = require('../controllers/paymentController');
 const { pool } = require('../config/database');
 const storage = require('../services/storage');
+const logger = require('../config/logger');
 
 const router = Router();
 
@@ -40,7 +41,7 @@ router.get('/invoices', authorize('professional'), async (req, res, next) => {
           // Generate 15-min signed URL for S3 objects
           const key = inv.pdf_url.split('/invoices/')[1];
           if (key) downloadUrl = await storage.getSignedUrl(`invoices/${key}`, 900);
-        } catch (_) {}
+        } catch (err) { logger.warn({ err: err.message }, 'Failed to generate signed URL for invoice'); }
       }
       return { ...inv, download_url: downloadUrl };
     }));
@@ -66,7 +67,7 @@ router.get('/invoices/:id', authorize('professional'), async (req, res, next) =>
     try {
       const key = inv.rows[0].pdf_url?.split('/invoices/')[1];
       if (key) downloadUrl = await storage.getSignedUrl(`invoices/${key}`, 900);
-    } catch (_) {}
+    } catch (err) { logger.warn({ err: err.message, invoiceId: req.params.id }, 'Failed to generate signed URL for invoice'); }
 
     res.json({ success: true, data: { ...inv.rows[0], download_url: downloadUrl } });
   } catch (err) { next(err); }

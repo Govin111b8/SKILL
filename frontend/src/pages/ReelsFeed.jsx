@@ -58,7 +58,16 @@ export default function ReelsFeed() {
     );
   }
 
-  const reel = reels[current];
+  const reel = reels[current] || reels[0];
+  if (!reel) {
+    return (
+      <div className="reels-empty">
+        <FiPlay size={48} />
+        <h3>No Reels Available</h3>
+        <p>Check back later for new content.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="reels-feed" ref={containerRef} tabIndex={0} onKeyDown={handleKeyDown}>

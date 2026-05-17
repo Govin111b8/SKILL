@@ -44,7 +44,7 @@ export default function CommunityFeed() {
             : p
         )
       );
-    } catch {}
+    } catch (err) { console.error('Failed to toggle like:', err.message); }
   }
 
   function formatDate(d) {

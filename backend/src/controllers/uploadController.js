@@ -38,7 +38,8 @@ exports.uploadFile = (req, res, next) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file provided' });
 
     try {
-      const folder = req.query.folder || 'uploads';
+      const ALLOWED_FOLDERS = ['uploads', 'avatars', 'kyc', 'portfolio', 'storefront', 'media', 'documents'];
+      const folder = ALLOWED_FOLDERS.includes(req.query.folder) ? req.query.folder : 'uploads';
       const { url, key } = await storage.uploadFile(
         req.file.buffer,
         req.file.originalname,

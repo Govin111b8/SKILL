@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { config } = require('../config');
 const { query } = require('../config/database');
+const logger = require('../config/logger');
 
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -30,8 +31,9 @@ const authenticate = async (req, res, next) => {
         if (userRes.rows.length > 0) {
           decoded.is_admin = userRes.rows[0].is_admin;
         }
-      } catch (_) {
+      } catch (dbErr) {
         // DB lookup failed — continue without admin flag (non-critical)
+        logger.warn({ err: dbErr.message, userId: decoded.id }, 'Admin flag lookup failed');
         decoded.is_admin = false;
       }
     }
