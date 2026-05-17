@@ -55,10 +55,12 @@
 
 | 📦 Components | 📊 Metrics | 🧪 Quality |
 |:---:|:---:|:---:|
-| 3 platforms (Web + Mobile + API) | 300+ source files | 50%+ test coverage |
-| 37 backend controllers | 100+ API endpoints | ESLint + Flutter Lints |
-| 40+ frontend pages | 30+ database tables | 16 backend test suites (150 tests) |
-| 22+ mobile screens | 38 route files | Conventional Commits |
+| 3 platforms (Web + Mobile + API) | 400+ source files | 50%+ test coverage |
+| 39 backend controllers | 100+ API endpoints | ESLint + Flutter Lints |
+| 52 frontend pages (+ 10 admin) | 74+ database tables | 16 backend test suites (150 tests) |
+| 40+ mobile screens | 39 route files | Conventional Commits |
+| 23 reusable React components | 17 database migrations | 13 automated cron jobs |
+| 19 Flutter services | 6 config files | 4 Prometheus alert rules |
 
 **📋 Implementation Status (Post Phase 7 — May 2026)**
 
@@ -147,6 +149,16 @@
 - [FAQ](#-frequently-asked-questions)
 - [Project Master Audit Document](#-project-master-audit-document)
 - [Acknowledgments & Inspiration](#-acknowledgments--inspiration)
+
+**🆕 Rebuild-from-Scratch Reference**
+- [Complete Rebuild Guide](#-complete-rebuild-guide--step-by-step)
+- [Complete Backend Reference](#-complete-backend-reference)
+- [Complete Frontend Reference](#-complete-frontend-reference)
+- [Complete Database Reference](#-complete-database-reference)
+- [Complete Mobile Reference](#-complete-mobile-reference)
+- [Complete Infrastructure Reference](#-complete-infrastructure-reference)
+- [Complete Environment Variables Reference](#-complete-environment-variables-reference)
+- [Booking State Machine (Complete FSM)](#-booking-state-machine-complete-fsm)
 - [License](#-license)
 
 **Implementation Analysis**
@@ -3210,127 +3222,368 @@ GET /api/download/apk → Downloads SkillConnect.apk
 
 ```
 SKILL/
-├── 📄 README.md                          # This file
-├── 📄 docker-compose.yml                 # Multi-service orchestration
-├── 📄 build.sh                           # Build automation script
+├── 📄 README.md                          # This file — comprehensive project documentation
+├── 📄 ARCHITECTURE.md                    # System architecture documentation
+├── 📄 RUNBOOKS.md                        # Operational runbooks for incidents
+├── 📄 INCIDENT_RESPONSE.md              # Incident response procedures
+├── 📄 THREAT_MODEL.md                    # Security threat model
+├── 📄 SECRETS.md                         # Secret management guide
+├── 📄 PLATFORM_CHANGE_RECORD.md         # Change history log
+├── 📄 claude.md                          # AI assistant context (implementation plan)
+├── 📄 ready.md                           # Production readiness checklist
+├── 📄 docker-compose.yml                 # 7-service local orchestration
+├── 📄 build.sh                           # 7-stage build automation script
 ├── 📄 .gitignore                         # Git ignore rules
 ├── 📄 SkillConnect_PRD_v1.0.docx         # Product Requirements Document
 ├── 📄 SkillConnect_Technical_Supplement_v1.0.docx  # Technical Specs
 │
-├── 🖥️ backend/                            # Node.js API Server
+├── 🖥️ backend/                            # Node.js Express 5 API Server
 │   ├── src/
-│   │   ├── app.js                        # Express app config + routes
-│   │   ├── server.js                     # HTTP + WebSocket server
+│   │   ├── app.js                        # Express app: 39 route mounts, 6 rate limiters, middleware stack
+│   │   ├── server.js                     # HTTP + WebSocket server, graceful shutdown
 │   │   ├── config/
-│   │   │   ├── database.js              # PostgreSQL connection pool
-│   │   │   ├── index.js                 # Centralized config
-│   │   │   └── logger.js               # Pino structured logging
-│   │   ├── middleware/
-│   │   │   ├── auth.js                  # JWT verification
-│   │   │   ├── validate.js             # Input validation
-│   │   │   ├── errorHandler.js         # Global error handler
-│   │   │   ├── fraudPrevention.js      # Bot/fraud detection
-│   │   │   ├── cache.js                # Response caching
-│   │   │   ├── httpLogger.js           # Request logging
-│   │   │   └── requestId.js           # Correlation IDs
-│   │   ├── controllers/                 # 25 controllers
-│   │   │   ├── authController.js       # Register, login, refresh
-│   │   │   ├── bookingController.js    # FSM engine + transitions
-│   │   │   ├── messageController.js    # Chat threads + messages
-│   │   │   ├── paymentController.js    # Razorpay integration
-│   │   │   ├── searchController.js     # Geo + text search
-│   │   │   ├── scheduleController.js   # Availability management
-│   │   │   ├── disputeController.js    # Dispute resolution
-│   │   │   ├── warrantyController.js   # Warranty claims
-│   │   │   ├── emergencyController.js  # Emergency dispatch
-│   │   │   ├── analyticsController.js  # Event tracking
-│   │   │   ├── kycController.js        # KYC document flow
-│   │   │   ├── referralController.js   # Referral program
-│   │   │   └── ... (13 more)
-│   │   ├── routes/                      # 25 route modules
-│   │   ├── services/
-│   │   │   ├── razorpay.js             # Payment gateway
-│   │   │   ├── sms.js                  # OTP/SMS delivery
-│   │   │   ├── email.js                # Email notifications
-│   │   │   ├── pushNotification.js     # FCM push
-│   │   │   ├── storage.js             # File storage (cloud)
-│   │   │   └── jobQueue.js            # Async job processing
+│   │   │   ├── database.js              # PostgreSQL connection pool (pg)
+│   │   │   ├── index.js                 # Centralized config from env vars
+│   │   │   ├── logger.js               # Pino structured logging
+│   │   │   ├── metrics.js              # Prometheus prom-client metrics
+│   │   │   ├── redis.js                # ioredis connection
+│   │   │   └── sentry.js              # Sentry error tracking
+│   │   ├── middleware/                   # 8 middleware modules
+│   │   │   ├── auth.js                  # JWT verification + role extraction
+│   │   │   ├── validate.js             # express-validator input validation
+│   │   │   ├── errorHandler.js         # Global error handler with Sentry
+│   │   │   ├── fraudPrevention.js      # Bot/fraud/velocity detection
+│   │   │   ├── cache.js                # Redis response caching
+│   │   │   ├── httpLogger.js           # Pino HTTP request logging
+│   │   │   ├── requestId.js           # UUID correlation IDs
+│   │   │   └── featureFlags.js        # Feature flag gate middleware
+│   │   ├── controllers/                 # 39 controllers
+│   │   │   ├── adminController.js       # Admin operations (KYC, users, analytics)
+│   │   │   ├── agentController.js       # Agent system (onboarding, commission, wallet)
+│   │   │   ├── aiController.js          # AI features (search intent, recommendations, chatbot)
+│   │   │   ├── analyticsController.js   # Platform analytics (funnels, retention)
+│   │   │   ├── analyticsEventsController.js # Event ingestion pipeline
+│   │   │   ├── authController.js        # Register, login, refresh, logout, password reset
+│   │   │   ├── bookingController.js     # FSM engine + state transitions
+│   │   │   ├── categoryController.js    # Category CRUD + hierarchy
+│   │   │   ├── collectionsController.js # Pinterest-style save collections
+│   │   │   ├── communityController.js   # Community posts, tips, likes
+│   │   │   ├── complaintController.js   # Complaint management
+│   │   │   ├── contactController.js     # Contact requests + pro replies
+│   │   │   ├── dashboardController.js   # Pro dashboard (earnings, funnel)
+│   │   │   ├── discoverController.js    # Trending/new/responsive discovery
+│   │   │   ├── disputeController.js     # Dispute resolution workflow
+│   │   │   ├── emergencyController.js   # Emergency dispatch (priority queue)
+│   │   │   ├── favoriteController.js    # Favorites/bookmarks
+│   │   │   ├── growthController.js      # Waitlist, newsletter, promo codes
+│   │   │   ├── kycController.js         # KYC document upload + admin review
+│   │   │   ├── matchingController.js    # AI professional matching
+│   │   │   ├── messageController.js     # Chat threads + messages + voice
+│   │   │   ├── notificationController.js # Push/email/SMS notifications
+│   │   │   ├── paymentController.js     # Razorpay integration + escrow
+│   │   │   ├── portfolioController.js   # Portfolio CRUD (tier-limited)
+│   │   │   ├── professionalController.js # Professional profile management
+│   │   │   ├── reelsController.js       # Short video feed
+│   │   │   ├── referralController.js    # Referral codes + rewards
+│   │   │   ├── reviewController.js      # Reviews (timing window, velocity, helpful)
+│   │   │   ├── scheduleController.js    # Availability slots + blocked dates
+│   │   │   ├── searchController.js      # Geo + text + service-level search
+│   │   │   ├── serviceController.js     # Professional service catalog CRUD
+│   │   │   ├── socialController.js      # Follow/unfollow + activity feed
+│   │   │   ├── storefrontController.js  # Storefront themes, media, packages
+│   │   │   ├── storyController.js       # 24h ephemeral stories
+│   │   │   ├── trustController.js       # Trust Index, badges, timeline
+│   │   │   ├── uploadController.js      # File upload (multer, path-safe)
+│   │   │   ├── userController.js        # User profile, preferences, DPDPA export
+│   │   │   └── warrantyController.js    # Warranty claims + re-booking
+│   │   ├── routes/                      # 39 route modules (1:1 with controllers)
+│   │   │   ├── admin.js, agents.js, ai.js, analytics.js, auth.js
+│   │   │   ├── bookings.js, categories.js, collections.js, community.js
+│   │   │   ├── complaints.js, contacts.js, dashboard.js, discover.js
+│   │   │   ├── disputes.js, emergency.js, favorites.js, growth.js
+│   │   │   ├── kyc.js, matching.js, messages.js, notifications.js
+│   │   │   ├── payments.js, portfolio.js, professionals.js, reels.js
+│   │   │   ├── referrals.js, reviews.js, schedule.js, search.js
+│   │   │   ├── seo.js, services.js, social.js, storefront.js
+│   │   │   ├── stories.js, trust.js, uploads.js, users.js
+│   │   │   ├── warranties.js, webhooks.js
+│   │   │   └── (Total: 39 route files)
+│   │   ├── services/                    # 9 external service integrations
+│   │   │   ├── ai.js                    # OpenAI GPT-4o / Gemini / rule-based fallback
+│   │   │   ├── email.js                 # SendGrid email (exports sendEmail())
+│   │   │   ├── faceMatch.js            # Face verification (HyperVerge/Rekognition/mock)
+│   │   │   ├── gstInvoice.js           # GST-compliant PDF invoice generation (PDFKit)
+│   │   │   ├── jobQueue.js             # In-memory async job queue with retry
+│   │   │   ├── pushNotification.js     # FCM push (exports sendPushNotification())
+│   │   │   ├── razorpay.js             # Razorpay payment gateway
+│   │   │   ├── sms.js                  # MSG91/Twilio SMS (exports sendSMS())
+│   │   │   └── storage.js             # S3/R2/local file storage
 │   │   ├── realtime/
-│   │   │   └── hub.js                  # WebSocket event hub
-│   │   └── utils/
-│   │       ├── reputationScore.js      # Weighted reputation algo
-│   │       ├── kycValidators.js        # Document validation
-│   │       └── notifier.js            # Notification dispatch
-│   ├── tests/                           # 10 test files
-│   ├── public/                          # Static assets (app/, pro/)
-│   ├── Dockerfile                       # Production container
-│   ├── .env.example                     # Environment template
-│   ├── .eslintrc.json                   # Lint rules
-│   └── package.json
+│   │   │   └── hub.js                  # WebSocket hub (presence, typing, read receipts)
+│   │   ├── utils/
+│   │   │   ├── encryption.js           # AES-256-GCM PII encryption
+│   │   │   ├── kycValidators.js        # Document format validation (Aadhaar, PAN, etc.)
+│   │   │   ├── notifier.js            # Multi-channel notification dispatch
+│   │   │   ├── reputationScore.js      # 7-factor weighted Trust Index algorithm
+│   │   │   └── retry.js               # Exponential backoff retry utility
+│   │   └── workers/
+│   │       └── cron.js                 # 13 scheduled cron jobs
+│   ├── tests/                           # 16 test suites (150+ tests)
+│   │   ├── setup.js                    # Test environment setup
+│   │   ├── auth.test.js               # Authentication endpoints
+│   │   ├── bookings.test.js           # Booking FSM state transitions
+│   │   ├── messages.test.js           # Chat & messaging
+│   │   ├── categories.test.js         # Category hierarchy
+│   │   ├── dashboard.test.js          # Professional dashboard
+│   │   ├── search.test.js            # Geo + availability search
+│   │   ├── reviews.test.js           # Review system
+│   │   ├── disputes.test.js          # Dispute resolution
+│   │   ├── agents.test.js            # Agent system
+│   │   ├── analytics.test.js         # Analytics
+│   │   ├── kyc.test.js               # KYC validators
+│   │   ├── referrals.test.js         # Referral logic
+│   │   ├── schedule.test.js          # Schedule management
+│   │   ├── storefront.test.js        # Storefront API
+│   │   ├── warranties.test.js        # Warranty system
+│   │   └── emergency.test.js         # Emergency dispatch
+│   ├── public/                          # Static assets (Flutter web app, APK)
+│   ├── Dockerfile                       # Multi-stage Alpine Node 20 container
+│   ├── .env.example                     # 60+ environment variables template
+│   ├── .eslintrc.json                   # ESLint config (ES2022, no-console, eqeqeq)
+│   ├── tsconfig.json                    # TypeScript config (path aliases)
+│   └── package.json                     # 22 production deps, 4 dev deps
 │
-├── 🌐 frontend/                           # React Web Application
+├── 🌐 frontend/                           # React 19 + Vite 8 Web Application
 │   ├── src/
-│   │   ├── App.jsx                      # Root + React Router config
-│   │   ├── main.jsx                     # Entry point
-│   │   ├── api/client.js               # Axios-like API client
-│   │   ├── context/AuthContext.jsx     # Global auth state (Provider)
-│   │   ├── pages/                       # 30+ page components
-│   │   │   ├── Home.jsx                # Landing + category grid
-│   │   │   ├── SearchResults.jsx       # Search with filters
-│   │   │   ├── Bookings.jsx           # Booking management
-│   │   │   ├── Chat.jsx               # Real-time messaging
-│   │   │   ├── Dashboard.jsx          # Pro dashboard
-│   │   │   ├── Schedule.jsx           # Availability editor
-│   │   │   ├── Earnings.jsx           # Revenue tracker
-│   │   │   ├── Emergency.jsx          # Emergency requests
+│   │   ├── App.jsx                      # Root: 70+ routes (27 public, 24 protected, 10 admin)
+│   │   ├── main.jsx                     # Entry: HelmetProvider → ErrorBoundary → BrowserRouter → AuthProvider → WebSocketProvider
+│   │   ├── App.css                      # Global styles
+│   │   ├── index.css                    # CSS reset + variables
+│   │   ├── api/
+│   │   │   └── client.js               # Fetch-based API client (30s timeout, 2 retries, exponential backoff)
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx          # Auth state, token refresh, role helpers (isAdmin/isProfessional/isAgent)
+│   │   │   └── WebSocketContext.jsx     # WebSocket connection + presence tracking
+│   │   ├── data/
+│   │   │   └── categories.js            # 12 service categories with 60 subcategories
+│   │   ├── pages/                       # 52 page components
+│   │   │   ├── Home.jsx                # Landing: city selector, trending, stories, reels, geolocation near-you
+│   │   │   ├── Login.jsx               # Role selection landing
+│   │   │   ├── CustomerLogin.jsx       # Customer login with demo button
+│   │   │   ├── ProfessionalLogin.jsx   # Professional login
+│   │   │   ├── AgentLogin.jsx          # Agent login
+│   │   │   ├── AdminLogin.jsx          # Admin login
+│   │   │   ├── Register.jsx            # Registration hub
+│   │   │   ├── CustomerRegister.jsx    # Customer registration
+│   │   │   ├── ProfessionalRegister.jsx # Professional registration
+│   │   │   ├── AgentRegister.jsx       # Agent registration
+│   │   │   ├── SearchResults.jsx       # Search with dynamic category filters, ₹ currency
+│   │   │   ├── Categories.jsx          # All categories grid
+│   │   │   ├── CategoryDetail.jsx      # Sub-services, professionals list, service chip filtering
+│   │   │   ├── ProfessionalProfile.jsx # Full pro profile view
+│   │   │   ├── Storefront.jsx          # Branded storefront (8 themes, hero, packages, media)
+│   │   │   ├── StorefrontSetup.jsx     # Storefront editor (theme, services, packages)
+│   │   │   ├── ProfessionalOnboarding.jsx # 6-step wizard (type→details→services→portfolio→schedule→review)
+│   │   │   ├── Dashboard.jsx           # Pro/customer dashboard (quick actions, calendar, insights)
+│   │   │   ├── Bookings.jsx            # Booking list with calendar toggle view
+│   │   │   ├── CreateBooking.jsx       # 4-step wizard (What→When→Where→Confirm) + service selection
+│   │   │   ├── BookingDetail.jsx       # Humanized booking timeline with emoji status
+│   │   │   ├── Chat.jsx               # Real-time chat with typing indicators
+│   │   │   ├── Messages.jsx           # Thread list
 │   │   │   ├── Payment.jsx            # Razorpay checkout
-│   │   │   └── admin/                 # Admin panel pages
+│   │   │   ├── Schedule.jsx           # Weekly availability editor
+│   │   │   ├── Earnings.jsx           # Revenue tracker
+│   │   │   ├── Analytics.jsx          # Platform analytics
+│   │   │   ├── Settings.jsx           # User preferences
+│   │   │   ├── Favorites.jsx          # Saved professionals
+│   │   │   ├── Collections.jsx        # Pinterest-style save boards
+│   │   │   ├── Notifications.jsx      # Notification center
+│   │   │   ├── Disputes.jsx           # Dispute management
+│   │   │   ├── Warranties.jsx         # Warranty claims
+│   │   │   ├── Emergency.jsx          # Emergency requests
+│   │   │   ├── Referrals.jsx          # Referral program
+│   │   │   ├── CommunityFeed.jsx      # Community tips & posts
+│   │   │   ├── ReelsFeed.jsx          # Short video discovery
+│   │   │   ├── RoleLogin.jsx          # Generic role login
+│   │   │   ├── NotFound.jsx           # 404 page
+│   │   │   ├── AgentDashboard.jsx     # Agent overview
+│   │   │   ├── AgentOnboard.jsx       # Agent onboarding
+│   │   │   ├── AgentWallet.jsx        # Agent earnings
+│   │   │   ├── AgentLeaderboard.jsx   # Agent rankings
+│   │   │   ├── TermsOfService.jsx     # Legal: Terms of Service
+│   │   │   ├── PrivacyPolicy.jsx      # Legal: Privacy Policy (DPDPA)
+│   │   │   ├── RefundPolicy.jsx       # Legal: Refund Policy
+│   │   │   ├── CookiePolicy.jsx       # Legal: Cookie Policy
+│   │   │   ├── ProfessionalTerms.jsx  # Legal: Professional Terms
+│   │   │   ├── ContentModerationPolicy.jsx # Legal: Moderation Policy
+│   │   │   └── admin/                 # Admin panel (10 pages)
+│   │   │       ├── AdminDashboard.jsx # Platform analytics & KPIs
+│   │   │       ├── AdminUsers.jsx     # User management
+│   │   │       ├── AdminKYC.jsx       # KYC document review queue
+│   │   │       ├── AdminDisputes.jsx  # Dispute resolution
+│   │   │       ├── AdminComplaints.jsx # Complaint management
+│   │   │       ├── AdminAppeals.jsx   # Ban appeal reviews
+│   │   │       ├── AdminCategoryRequests.jsx # Category request approvals
+│   │   │       ├── AdminFeaturedSlots.jsx    # Featured placement management
+│   │   │       ├── AdminAuditLog.jsx  # Audit trail viewer
+│   │   │       └── Admin.css          # Admin panel styles
 │   │   ├── components/                  # 23 reusable components
-│   │   │   ├── Navbar.jsx             # Navigation header
-│   │   │   ├── BottomNav.jsx          # Mobile tab bar
-│   │   │   ├── SearchBar.jsx          # Search with suggestions
-│   │   │   ├── ProfessionalCard.jsx   # Provider card
-│   │   │   ├── StarRating.jsx         # Rating input/display
-│   │   │   ├── Toast.jsx              # Notification toasts
-│   │   │   ├── Skeleton.jsx           # Loading shimmer
-│   │   │   └── ErrorBoundary.jsx      # Error recovery
-│   │   ├── data/                        # Static data/configs
-│   │   └── tests/                       # Component tests
-│   ├── index.html                       # SPA entry
-│   ├── vite.config.js                   # Vite configuration
-│   ├── vitest.config.js                 # Test configuration
-│   ├── nginx.conf                       # Production NGINX config
-│   ├── Dockerfile                       # Production container
-│   └── package.json
+│   │   │   ├── Navbar.jsx (+ CSS)       # Navigation header with auth
+│   │   │   ├── BottomNav.jsx (+ CSS)    # Mobile tab bar
+│   │   │   ├── SearchBar.jsx (+ CSS)    # Search with autocomplete
+│   │   │   ├── ProfessionalCard.jsx (+ CSS) # Pro card with service chips
+│   │   │   ├── CategoryCard.jsx (+ CSS) # Category display card
+│   │   │   ├── ReviewCard.jsx (+ CSS)   # Review display
+│   │   │   ├── StarRating.jsx (+ CSS)   # Rating input/display
+│   │   │   ├── Toast.jsx (+ CSS)        # Notification toasts
+│   │   │   ├── Skeleton.jsx             # Loading shimmers (Page/Stats/Card/Profile variants)
+│   │   │   ├── ErrorBoundary.jsx (+ CSS) # Error recovery with styled fallback
+│   │   │   ├── ProtectedRoute.jsx       # RBAC route guard (allowedRoles prop)
+│   │   │   ├── SEOMeta.jsx              # react-helmet-async SEO
+│   │   │   ├── Footer.jsx (+ CSS)       # Site footer
+│   │   │   ├── LoadingSpinner.jsx       # Loading indicator
+│   │   │   ├── ShareButton.jsx (+ CSS)  # Social sharing
+│   │   │   ├── OnlineIndicator.jsx (+ CSS) # Presence dot
+│   │   │   ├── TrustSection.jsx (+ CSS) # Trust score display
+│   │   │   ├── TrustTimeline.jsx (+ CSS) # Trust milestone timeline
+│   │   │   ├── InviteEarn.jsx (+ CSS)   # Referral promotion
+│   │   │   ├── AnnouncementBar.jsx (+ CSS) # Top announcement banner
+│   │   │   ├── AppInstallBanner.jsx (+ CSS) # PWA install prompt
+│   │   │   ├── CookieConsent.jsx (+ CSS) # GDPR cookie banner
+│   │   │   └── SaveToCollectionModal.jsx (+ CSS) # Collection save dialog
+│   │   └── tests/                       # Frontend tests (vitest)
+│   ├── index.html                       # SPA entry (PWA meta, JSON-LD, Open Graph)
+│   ├── vite.config.js                   # Vite 8 config (base: /react/, proxy: /api → localhost:8000)
+│   ├── vitest.config.js                 # Test config (jsdom)
+│   ├── nginx.conf                       # Production nginx (security headers, CSP, gzip, SPA fallback)
+│   ├── Dockerfile                       # Multi-stage: node:20-alpine → nginx:alpine
+│   └── package.json                     # React 19.2.5, Router 7.14, Vite 8.0.10
 │
-├── 📱 mobile/skillconnect/               # Flutter Mobile Application
+├── 📱 mobile/skillconnect/               # Flutter 3.8 Mobile Application
 │   ├── lib/
-│   │   ├── main.dart                    # App entry, theme, routing
-│   │   ├── models/models.dart          # Data models
-│   │   ├── services/                    # 15+ service classes
-│   │   ├── screens/                     # 22+ screen modules
-│   │   ├── widgets/                     # 10+ custom widgets
-│   │   └── l10n/                       # Localization (EN/HI/TE)
-│   ├── assets/l10n/                     # ARB translation files
-│   ├── android/                         # Android platform config
-│   ├── ios/                             # iOS platform config
-│   ├── web/                             # Web platform config
-│   ├── test/                            # Widget tests
-│   ├── pubspec.yaml                     # Dependencies
-│   └── analysis_options.yaml           # Lint rules
+│   │   ├── main.dart                    # App entry: MultiProvider, Material 3 theme, role-based navigation
+│   │   ├── models/
+│   │   │   └── models.dart              # All data models (User, Professional, Booking, etc.)
+│   │   ├── data/
+│   │   │   ├── services_catalog.dart    # 50+ services across 5 hubs
+│   │   │   └── kyc_catalog.dart         # KYC document types with validation
+│   │   ├── services/                    # 19 service classes
+│   │   │   ├── api_service.dart         # HTTP client with auth token + offline queue
+│   │   │   ├── api_config.dart          # API base URLs (web vs android)
+│   │   │   ├── auth_service.dart        # Login/register, token mgmt, role detection
+│   │   │   ├── booking_service.dart     # Booking CRUD + MessagingService + NotificationsService
+│   │   │   ├── realtime_service.dart    # WebSocket connection + real-time streams
+│   │   │   ├── theme_service.dart       # Dark/light mode persistence
+│   │   │   ├── smart_location_service.dart # Geolocation with caching
+│   │   │   ├── analytics_service.dart   # Event tracking + crash reporting
+│   │   │   ├── performance_monitor.dart # Cold start + perf metrics
+│   │   │   ├── push_notification_service.dart # FCM push handling
+│   │   │   ├── storefront_service.dart  # Storefront management
+│   │   │   ├── upload_service.dart      # Multipart file upload
+│   │   │   ├── mobile_client.dart       # Mobile HTTP config
+│   │   │   ├── web_client.dart          # Web HTTP config
+│   │   │   ├── network_simulator.dart   # Mock network for testing
+│   │   │   └── offline/                 # Offline-first services
+│   │   │       ├── connectivity_service.dart  # Network status monitoring
+│   │   │       ├── local_cache_service.dart   # Hive local database
+│   │   │       ├── offline_queue_service.dart  # Request queueing + auto-retry
+│   │   │       └── offline_services.dart      # Aggregated offline functionality
+│   │   ├── screens/                     # 40+ screen modules
+│   │   │   ├── auth/                    # WelcomeScreen, LoginScreen, RegisterScreen
+│   │   │   ├── home/                    # HomeScreen, ProHomeScreen, AgentHomeScreen, AdminHomeScreen
+│   │   │   │                            # CategoriesScreen, CategoryDetailScreen, DashboardScreen, ServiceHubScreen
+│   │   │   ├── bookings/               # BookingsListScreen, BookingDetailScreen, BookingCalendarScreen
+│   │   │   │                            # ServiceHistoryScreen, RebookingSheet
+│   │   │   ├── messages/               # ChatScreen, ThreadsScreen
+│   │   │   ├── notifications/          # NotificationsScreen, NotificationPreferencesScreen
+│   │   │   ├── search/                 # SearchScreen, InstantQuoteScreen
+│   │   │   ├── profile/               # ProfessionalProfileScreen, EditProfessionalProfileScreen
+│   │   │   ├── storefront/            # StorefrontScreen, StorefrontSetupScreen + 8 widgets
+│   │   │   ├── portfolio/             # PortfolioScreen
+│   │   │   ├── earnings/              # EarningsScreen + PaymentScreen
+│   │   │   ├── schedule/              # ScheduleManagementScreen
+│   │   │   ├── kyc/                   # KycScreen
+│   │   │   ├── tracking/             # LiveTrackingScreen
+│   │   │   ├── disputes/             # DisputeScreen, ReportScreen
+│   │   │   ├── emergency/            # EmergencyBookingScreen
+│   │   │   ├── warranty/             # WarrantyScreen
+│   │   │   ├── contacts/             # MyContactsScreen
+│   │   │   ├── favorites/            # FavoritesScreen
+│   │   │   ├── reviews/              # WriteReviewScreen
+│   │   │   └── splash_screen.dart    # Launch/auth check
+│   │   └── l10n/                      # Internationalization (EN/HI/TE)
+│   │       └── generated/
+│   │           ├── app_localizations.dart      # Base class
+│   │           ├── app_localizations_en.dart   # English
+│   │           ├── app_localizations_hi.dart   # Hindi
+│   │           └── app_localizations_te.dart   # Telugu
+│   ├── pubspec.yaml                     # 20+ dependencies (provider, hive, geolocator, speech_to_text)
+│   ├── analysis_options.yaml           # Flutter lints
+│   ├── l10n.yaml                       # Localization config
+│   ├── android/                        # Android platform config
+│   ├── ios/                            # iOS platform config
+│   └── web/                            # Web platform config
 │
-└── 🗄️ database/                           # Database Scripts
-    ├── schema.sql                       # Core schema (8 tables)
-    ├── seed.sql                         # Category seed data
-    └── migrations/                      # 8 incremental migrations
-        ├── 001_kyc.sql
-        ├── 002_bookings_chat.sql
-        ├── 003_review_by_booking.sql
-        ├── 004_seed_geo.sql
-        ├── 005_reputation_trigger.sql
-        ├── 006_phase1_features.sql
-        ├── 007_auth_admin_services.sql
-        └── 008_analytics_and_chat_images.sql
+├── 🗄️ database/                           # PostgreSQL 16 Database Scripts
+│   ├── schema.sql                       # Base schema: 8 tables, 4 ENUMs, 12 indexes
+│   ├── seed.sql                         # Seed data: 5 parent + 42 sub-categories, demo users
+│   └── migrations/                      # 17 incremental migrations
+│       ├── 001_kyc.sql                  # KYC tables + verifications + audit
+│       ├── 002_bookings_chat.sql        # Bookings, messages, notifications, favorites
+│       ├── 003_review_by_booking.sql    # Reviews by booking support
+│       ├── 004_seed_geo.sql             # Demo geo coordinates (Hyderabad)
+│       ├── 005_reputation_trigger.sql   # Auto reputation score triggers
+│       ├── 006_phase1_features.sql      # Payments, disputes, warranties, referrals, emergency
+│       ├── 006b_storefront_fields.sql   # Storefront profile fields
+│       ├── 007_auth_admin_services.sql  # Auth hardening, admin audit, service packages
+│       ├── 007b_provider_type.sql       # Individual/organization support
+│       ├── 008_analytics_and_chat_images.sql # Analytics events, chat images
+│       ├── 009_agent_system.sql         # Agent rewards, wallet, zones
+│       ├── 010_growth_acquisition.sql   # Waitlist, newsletter, promo codes
+│       ├── 011_warranty_enhancements.sql # Warranty status extension
+│       ├── 012_schema_completion.sql    # Subscriptions, certifications, materialized search index
+│       ├── 013_gaps_completion.sql      # Featured slots, appeals, consent, A/B experiments
+│       ├── 014_phase4_storefront_social_trust.sql # Storefront media, follows, stories, badges
+│       ├── 015_collections_points.sql   # Collections, user points
+│       ├── 016_constraints_indexes.sql  # CHECK constraints + performance indexes
+│       └── 017_professional_services.sql # Professional service catalog table
+│
+├── ☸️ k8s/                                # Kubernetes Manifests
+│   ├── base/                            # Base resources (10 files)
+│   │   ├── namespace.yaml              # skillconnect namespace
+│   │   ├── configmap.yaml              # Non-secret env vars
+│   │   ├── secret-template.yaml        # Secrets template (22 keys)
+│   │   ├── backend-deployment.yaml     # 2 replicas, PgBouncer sidecar, health probes
+│   │   ├── frontend-deployment.yaml    # 2 replicas, nginx serving
+│   │   ├── statefulsets.yaml           # Postgres (50Gi) + Redis (5Gi) StatefulSets
+│   │   ├── ingress.yaml               # 3 hosts, Let's Encrypt TLS auto-provision
+│   │   ├── hpa.yaml                   # Backend HPA 2-10, Frontend HPA 2-6 + PDBs
+│   │   ├── backup-cronjob.yaml        # Postgres backup every 6h + Redis backup hourly
+│   │   └── kustomization.yaml         # Kustomize resource list
+│   └── monitoring/                     # Monitoring stack
+│       ├── prometheus.yaml            # Prometheus deployment + RBAC + 20Gi PVC
+│       └── grafana.yaml               # Grafana deployment + provisioned dashboards
+│
+├── 📊 monitoring/                         # Local monitoring config
+│   ├── prometheus.yml                   # Scrape config (backend + self)
+│   ├── alerts.yml                      # 4 alert rules (error rate, latency, down, heap)
+│   └── grafana/                        # Grafana provisioning
+│       └── provisioning/              # Datasources + dashboards
+│
+├── 🌐 nginx/                              # Production nginx config
+│   └── skillconnect.conf               # HTTPS/H2, CSP, HSTS, SPA routing, WebSocket proxy
+│
+├── 🧪 tests/                              # Integration/load tests
+│   └── load/                           # k6 load test scenarios
+│
+├── 📋 plans/                              # PRD implementation analysis docs
+│   ├── 00_MASTER_ANALYSIS.md
+│   ├── PRD_SEC01_Registration.md through PRD_SEC20_Roadmap.md
+│   └── TECH_A_DatabaseGaps.md through TECH_J_DisasterRecovery.md
+│
+└── 🔄 .github/
+    └── workflows/
+        └── ci.yml                      # 7-stage CI/CD pipeline
 ```
 
 ---
@@ -5334,6 +5587,668 @@ This audit document serves as:
 #### **Overall Platform Score: 9.3 / 10** ✅
 
 **Verdict:** Production-grade hyperlocal services marketplace. Ready for real-world deployment with minimal remaining gaps (BullMQ queue, OpenTelemetry, ClamAV). Competitive with funded startups while being fully open-source.
+
+---
+
+## 🔄 Complete Rebuild Guide — Step by Step
+
+> **This section contains everything needed to rebuild the entire SkillConnect platform from scratch.** Follow these steps in order.
+
+### Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| **Node.js** | 22+ (LTS) | Backend + Frontend build |
+| **npm** | 10+ | Package management |
+| **PostgreSQL** | 16+ | Primary database |
+| **Redis** | 7+ | Caching, rate limiting, pub/sub |
+| **Docker** | 24+ | Container builds |
+| **Docker Compose** | v2+ | Local orchestration |
+| **Flutter** | 3.8+ | Mobile app (optional) |
+| **Git** | 2.40+ | Version control |
+
+### Step 1: Clone and Setup
+
+```bash
+git clone https://github.com/Govin111b8/SKILL.git
+cd SKILL
+```
+
+### Step 2: Database Setup
+
+```bash
+# Option A: Docker (recommended)
+docker compose up -d db redis
+
+# Option B: Manual PostgreSQL
+createdb skillconnect
+psql -U postgres -d skillconnect -f database/schema.sql
+psql -U postgres -d skillconnect -f database/seed.sql
+
+# Apply all 17 migrations in order
+for f in database/migrations/*.sql; do
+  echo "Applying $f..."
+  psql -U postgres -d skillconnect -f "$f"
+done
+```
+
+### Step 3: Backend Setup
+
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with your credentials (see Environment Variables section below)
+npm install
+npm run dev          # Development (nodemon)
+# OR
+npm start            # Production (node)
+```
+
+**Verify backend:** `curl http://localhost:5000/api/health`
+
+### Step 4: Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev          # Development (Vite HMR on port 3000)
+# OR
+npm run build        # Production build → dist/
+```
+
+**Verify frontend:** Open `http://localhost:3000`
+
+### Step 5: Mobile Setup (Optional)
+
+```bash
+cd mobile/skillconnect
+flutter pub get
+flutter run -d chrome    # Web
+flutter run -d android   # Android emulator
+flutter build apk --debug  # Debug APK
+```
+
+### Step 6: Full Stack with Docker Compose
+
+```bash
+# From project root — starts all 7 services
+docker compose up --build
+
+# Services available:
+# Frontend:    http://localhost:3000
+# Backend API: http://localhost:5000/api/health
+# Prometheus:  http://localhost:9090
+# Grafana:     http://localhost:3001 (admin/skillconnect_local)
+# PgBouncer:   localhost:6432
+```
+
+### Step 7: Verify Everything
+
+```bash
+# Backend tests (16 suites, 150+ tests)
+cd backend && npx jest --forceExit --detectOpenHandles
+
+# Frontend build
+cd frontend && npm run build
+
+# Backend syntax check
+cd backend && node -c src/app.js
+
+# Backend lint
+cd backend && npm run lint
+```
+
+---
+
+## 📖 Complete Backend Reference
+
+### API Route Mounts (39 endpoints from app.js)
+
+| Mount Path | Route File | Controller | Rate Limit | Feature Flag |
+|:---|:---|:---|:---|:---|
+| `/api/auth` | auth.js | authController | 30/15min | — |
+| `/api/professionals` | professionals.js | professionalController | 200/15min | — |
+| `/api/categories` | categories.js | categoryController | 200/15min | — |
+| `/api/search` | search.js | searchController | 200/15min | — |
+| `/api/portfolio` | portfolio.js | portfolioController | 200/15min | — |
+| `/api/reviews` | reviews.js | reviewController | 200/15min | — |
+| `/api/contacts` | contacts.js | contactController | 200/15min | — |
+| `/api/complaints` | complaints.js | complaintController | 200/15min | — |
+| `/api/dashboard` | dashboard.js | dashboardController | 200/15min | — |
+| `/api/users` | users.js | userController | 200/15min | — |
+| `/api/kyc` | kyc.js | kycController | 10/hr | — |
+| `/api/bookings` | bookings.js | bookingController | 200/15min | BOOKINGS |
+| `/api/messages` | messages.js | messageController | 200/15min | CHAT |
+| `/api/notifications` | notifications.js | notificationController | 200/15min | — |
+| `/api/upload` | uploads.js | uploadController | 50/hr | — |
+| `/api/favorites` | favorites.js | favoriteController | 200/15min | — |
+| `/api/analytics` | analytics.js | analyticsController / analyticsEventsController | 200/15min | — |
+| `/api/payments` | payments.js | paymentController | 10/min | — |
+| `/api/schedule` | schedule.js | scheduleController | 200/15min | — |
+| `/api/disputes` | disputes.js | disputeController | 200/15min | DISPUTES |
+| `/api/warranties` | warranties.js | warrantyController | 200/15min | WARRANTIES |
+| `/api/emergency` | emergency.js | emergencyController | 200/15min | EMERGENCIES |
+| `/api/referrals` | referrals.js | referralController | 200/15min | — |
+| `/api/admin` | admin.js | adminController | 30/min | — |
+| `/api/webhooks` | webhooks.js | (inline handlers) | — | — |
+| `/api/storefront` | storefront.js | storefrontController | 200/15min | — |
+| `/api/agents` | agents.js | agentController | 200/15min | AGENTS |
+| `/api/match` | matching.js | matchingController | 200/15min | — |
+| `/api/social` | social.js | socialController | 200/15min | — |
+| `/api/stories` | stories.js | storyController | 200/15min | — |
+| `/api/trust` | trust.js | trustController | 200/15min | — |
+| `/api/discover` | discover.js | discoverController | 200/15min | — |
+| `/api/collections` | collections.js | collectionsController | 200/15min | — |
+| `/api/community` | community.js | communityController | 200/15min | — |
+| `/api/reels` | reels.js | reelsController | 200/15min | — |
+| `/api/services` | services.js | serviceController | 200/15min | — |
+| `/api/growth` | growth.js | growthController | 200/15min | — |
+| `/api/ai` | ai.js | aiController | 200/15min | — |
+| `/sitemap.xml` `/robots.txt` `/api/seo` | seo.js | (inline) | — | — |
+
+**Special Endpoints:**
+- `GET /metrics` — Prometheus metrics (localhost-only in production)
+- `GET /api/health` — Health check (DB + Redis + cache stats)
+- `GET /api/download/apk` — APK download
+- `GET /uploads/*` — Static file serving (7-day cache)
+- `GET /app/*` — Flutter web app (1-hour cache)
+
+### Middleware Stack (execution order in app.js)
+
+| Order | Middleware | Purpose |
+|:---:|:---|:---|
+| 1 | `requestId` | UUID correlation ID on every request |
+| 2 | `metricsMiddleware` | Prometheus HTTP metrics collection |
+| 3 | `helmet()` | Security headers (CSP, HSTS, X-Frame-Options) |
+| 4 | `compression()` | Gzip/Brotli response compression |
+| 5 | `cors()` | CORS with credential support + *.app.github.dev |
+| 6 | `httpLogger` | Pino structured request logging |
+| 7 | `express.json({limit: '1mb'})` | Body parser |
+| 8 | `authLimiter` | 30 req/15min on /api/auth |
+| 9 | `apiLimiter` | 200 req/15min on /api/* |
+
+### All 13 Cron Jobs (workers/cron.js)
+
+| Job | Schedule (UTC) | IST | Purpose |
+|:---|:---|:---|:---|
+| reputation_score_recalc | `30 20 * * *` | 02:00 IST nightly | Recalculate Trust Index 0-100 for all professionals |
+| subscription_expiry_checker | `30 3 * * *` | 09:00 IST daily | Send 7/3/1 day renewal reminders |
+| subscription_grace_enforcer | `35 18 * * *` | 00:05 IST daily | Downgrade expired subscriptions (>3d grace) |
+| inactive_profile_checker | `30 21 * * 6` | 03:00 IST Sun | 60d warning + 90d auto-deactivate |
+| review_velocity_detector | `*/5 * * * *` | Every 5 min | Flag >5 reviews in 24h for moderation |
+| stale_device_token_cleaner | `30 22 * * 0` | 04:00 IST Mon | Delete device tokens unused >90d |
+| updateResponseRates | `30 21 * * *` | 03:00 IST nightly | Calculate response rate (30-day window) |
+| purgeExpiredKycDocuments | `0 0 * * 0` | 05:30 IST Sun | Clear KYC docs 12 months post-verification |
+| recalcBadges | `30 22 * * 6` | 04:00 IST Sun | Auto-award/revoke trust badges |
+| cleanExpiredTokenBlacklist | `30 23 * * *` | 05:00 IST daily | Remove expired blacklisted tokens |
+| cleanupOldBookings | `0 23 * * 6` | 04:30 IST Sun | Archive bookings >90 days old |
+| escalateStaleComplaints | `30 0 * * *` | 06:00 IST daily | Auto-escalate complaints >30 days |
+| escalateStaleDisputes | `0 1 * * *` | 06:30 IST daily | Auto-escalate disputes >14 days |
+
+### Trust Badge Criteria (from recalcBadges cron)
+
+| Badge | Requirements |
+|:---|:---|
+| 🌱 **Rising Pro** | Government ID verified AND ≥5 completed jobs |
+| ⚡ **Fast Responder** | Average response time < 30 minutes |
+| ⭐ **Customer Favorite** | Average rating ≥ 4.8 AND ≥20 reviews |
+| 🏆 **Top Rated** | Top 10% in category by reputation score |
+| 💎 **Elite Professional** | ≥100 completed jobs AND ≥4.9 avg rating AND ≥50% repeat customer rate |
+
+### Backend Service Integrations (9 services)
+
+| Service File | Integration | Key Export |
+|:---|:---|:---|
+| `email.js` | SendGrid | `sendEmail(to, subject, html)` |
+| `sms.js` | MSG91 / Twilio | `sendSMS(phone, message)` |
+| `pushNotification.js` | Firebase FCM | `sendPushNotification(token, title, body)` |
+| `razorpay.js` | Razorpay | Order creation, payment capture, refunds |
+| `storage.js` | AWS S3 / Cloudflare R2 / Local | File upload, signed URLs |
+| `faceMatch.js` | HyperVerge / Rekognition / Mock | Face similarity score |
+| `gstInvoice.js` | PDFKit | GST-compliant PDF invoice generation |
+| `ai.js` | OpenAI GPT-4o / Google Gemini | Intent parsing, recommendations, chatbot |
+| `jobQueue.js` | In-memory queue | Async job processing with retry |
+
+### WebSocket Protocol (realtime/hub.js)
+
+**Connection:** `ws://host:5000/ws?token=JWT_TOKEN`
+
+| Message Type | Direction | Payload | Purpose |
+|:---|:---|:---|:---|
+| `hello` | Server→Client | `{type, userId}` | Connection confirmed |
+| `ping` | Client→Server | `{type: 'ping'}` | Keep-alive |
+| `pong` | Server→Client | `{type: 'pong'}` | Keep-alive response |
+| `typing` | Client→Server | `{type, threadId, to, typing}` | Typing indicator |
+| `read_receipt` | Client→Server | `{type, threadId}` | Mark messages read |
+| `presence` | Client→Server | `{type, status}` | online/away/offline |
+| `broadcast` | Server→Client | `{type, data}` | Admin broadcast |
+
+---
+
+## 📖 Complete Frontend Reference
+
+### All Frontend Routes (70+ from App.jsx)
+
+<details>
+<summary><strong>Public Routes (27 routes)</strong></summary>
+
+| Path | Component | Description |
+|:---|:---|:---|
+| `/` | Home | Landing with categories, stories, trending, geolocation |
+| `/login` | Login | Role selection (Customer/Professional/Agent/Admin) |
+| `/login/customer` | CustomerLogin | Customer login with demo button |
+| `/login/professional` | ProfessionalLogin | Professional login |
+| `/login/agent` | AgentLogin | Agent login |
+| `/login/admin` | AdminLogin | Admin login |
+| `/register` | Register | Registration hub |
+| `/register/customer` | CustomerRegister | Customer signup |
+| `/register/professional` | ProfessionalRegister | Professional signup |
+| `/register/agent` | AgentRegister | Agent signup |
+| `/search` | SearchResults | Search with dynamic filters, ₹ currency |
+| `/professionals/:id` | ProfessionalProfile | Full professional profile |
+| `/professionals/:id/storefront` | Storefront | Branded storefront (8 themes) |
+| `/categories` | Categories | All categories grid |
+| `/categories/:slug` | CategoryDetail | Sub-services + service chip filtering |
+| `/community` | CommunityFeed | Community tips & posts |
+| `/reels` | ReelsFeed | Short video discovery feed |
+| `/terms` | TermsOfService | Terms of Service |
+| `/privacy` | PrivacyPolicy | Privacy Policy (DPDPA) |
+| `/refund-policy` | RefundPolicy | Refund Policy |
+| `/cookie-policy` | CookiePolicy | Cookie Policy |
+| `/professional-terms` | ProfessionalTerms | Professional Terms |
+| `/content-moderation` | ContentModerationPolicy | Content Moderation Policy |
+| `*` | NotFound | 404 page |
+
+</details>
+
+<details>
+<summary><strong>Protected Routes (24 routes — require authentication)</strong></summary>
+
+| Path | Component | Allowed Roles |
+|:---|:---|:---|
+| `/dashboard` | Dashboard | Any authenticated |
+| `/dashboard/storefront` | StorefrontSetup | Any authenticated |
+| `/onboarding/professional` | ProfessionalOnboarding | professional only |
+| `/settings` | Settings | Any authenticated |
+| `/bookings` | Bookings | Any authenticated |
+| `/bookings/create` | CreateBooking | Any authenticated |
+| `/bookings/:id` | BookingDetail | Any authenticated |
+| `/bookings/:id/pay` | Payment | Any authenticated |
+| `/messages` | Messages | Any authenticated |
+| `/messages/:threadId` | Chat | Any authenticated |
+| `/notifications` | Notifications | Any authenticated |
+| `/favorites` | Favorites | Any authenticated |
+| `/earnings` | Earnings | Any authenticated |
+| `/schedule` | Schedule | Any authenticated |
+| `/emergency` | Emergency | Any authenticated |
+| `/referrals` | Referrals | Any authenticated |
+| `/disputes` | Disputes | Any authenticated |
+| `/warranties` | Warranties | Any authenticated |
+| `/analytics` | Analytics | Any authenticated |
+| `/collections` | Collections | Any authenticated |
+| `/agent/dashboard` | AgentDashboard | Any authenticated |
+| `/agent/onboard/:type` | AgentOnboard | Any authenticated |
+| `/agent/wallet` | AgentWallet | Any authenticated |
+| `/agent/leaderboard` | AgentLeaderboard | Any authenticated |
+
+</details>
+
+<details>
+<summary><strong>Admin Routes (10 routes — admin role only)</strong></summary>
+
+| Path | Component |
+|:---|:---|
+| `/admin` | AdminDashboard |
+| `/admin/users` | AdminUsers |
+| `/admin/kyc` | AdminKYC |
+| `/admin/disputes` | AdminDisputes |
+| `/admin/complaints` | AdminComplaints |
+| `/admin/category-requests` | AdminCategoryRequests |
+| `/admin/categories` | AdminCategoryRequests |
+| `/admin/featured-slots` | AdminFeaturedSlots |
+| `/admin/appeals` | AdminAppeals |
+| `/admin/audit-log` | AdminAuditLog |
+
+</details>
+
+### Provider Stack (from main.jsx, outermost → innermost)
+
+```
+React.StrictMode
+  └── HelmetProvider (react-helmet-async — SEO meta tags)
+      └── ErrorBoundary (styled fallback UI)
+          └── BrowserRouter (react-router-dom v7)
+              └── AuthProvider (AuthContext — JWT tokens, role helpers)
+                  └── WebSocketProvider (WebSocketContext — real-time connection)
+                      └── App (routes + layout)
+```
+
+### API Client (api/client.js)
+
+| Config | Value |
+|:---|:---|
+| Base URL | `VITE_API_URL` env var or `/api` |
+| Timeout | 30,000 ms |
+| Max Retries | 2 |
+| Retry Delay | 1s → 2s (exponential backoff) |
+| Auth | Bearer token from localStorage |
+| Retries on | 5xx, 408, 429 |
+| No retry on | 4xx client errors (except 408/429) |
+
+### Frontend Dependencies
+
+| Package | Version | Purpose |
+|:---|:---|:---|
+| react | 19.2.5 | UI framework |
+| react-dom | 19.2.5 | DOM rendering |
+| react-router-dom | 7.14.2 | Client-side routing |
+| react-helmet-async | 3.0.0 | SEO meta tags |
+| react-icons | 5.6.0 | Icon library (Feather icons) |
+| prop-types | 15.8.1 | Runtime type checking |
+
+---
+
+## 📖 Complete Database Reference
+
+### Base Schema Tables (schema.sql — 8 tables, 4 ENUMs)
+
+**ENUMs:**
+- `user_role`: customer, professional, admin, agent
+- `provider_type`: individual, organization
+- `availability_status`: available, busy, offline
+- `subscription_plan`: basic, premium, featured
+
+**Tables:** users, categories, professionals, professional_categories, portfolio_items, contacts, reviews, complaints
+
+### Complete Migration Changelog (17 migrations)
+
+| Migration | Tables Created | Key Changes |
+|:---|:---|:---|
+| **001_kyc.sql** | verifications, verification_audit | KYC document types (22 types), status tracking, audit trail |
+| **002_bookings_chat.sql** | bookings, booking_status_log, message_threads, messages, notifications, favorites, device_tokens, search_history | Booking FSM (9 states), real-time chat, push notification tokens |
+| **003_review_by_booking.sql** | — | Reviews linked to bookings (not just contacts) |
+| **004_seed_geo.sql** | — | Demo professional coordinates around Hyderabad |
+| **005_reputation_trigger.sql** | — | Auto-calculate reputation on review insert/update |
+| **006_phase1_features.sql** | payments, worker_schedule, time_slots, worker_blocked_dates, disputes, service_warranties, referral_codes, referrals, loyalty_points, emergency_requests, safety_alerts, payouts | Payment methods, escrow, disputes, warranties, referrals, emergency dispatch |
+| **006b_storefront_fields.sql** | — | Add storefront fields (announcement, WhatsApp, Instagram, cover image, accent color) |
+| **007_auth_admin_services.sql** | email_verifications, password_resets, refresh_token_blacklist, admin_audit_log, service_packages, review_replies, invoices | Auth hardening, admin audit trail, service packages, GST invoices |
+| **007b_provider_type.sql** | — | Individual vs organization support, company fields |
+| **008_analytics_and_chat_images.sql** | analytics_events, analytics_sessions, performance_metrics | Event tracking pipeline, chat image support |
+| **009_agent_system.sql** | agents, agent_rewards, agent_wallet_transactions, agent_onboarded_users, reward_config, zones | Agent commission system, wallet, reward tiers, geo zones |
+| **010_growth_acquisition.sql** | newsletter_subscribers, waitlist, growth_events, promo_codes, promo_usage, push_subscriptions | Growth engine, promo codes, waitlist, newsletter |
+| **011_warranty_enhancements.sql** | — | Add 'resolved' warranty status |
+| **012_schema_completion.sql** | service_areas, certifications, subscriptions, payout_log, gst_invoices, professional_hours, device_tokens (v2), search_index (materialized view) | Subscriptions, certifications, GST invoices, full-text search index |
+| **013_gaps_completion.sql** | blocked_users, featured_slots, category_requests, professional_languages, soft_deletes_log, ab_experiments, waitlist (v2), appeals, banned_phones, banned_govt_ids, consent_records, audit_log, otp_log, supported_cities | Admin panel tables, compliance (consent, soft delete), A/B testing, ban lists |
+| **014_phase4_storefront_social_trust.sql** | storefront_media, storefront_themes, service_packages (v2), follows, stories, community_posts, community_post_likes, professional_badges, user_interactions | Storefront customization, social features, trust badges, user engagement tracking |
+| **015_collections_points.sql** | collections, collection_items, user_points | Pinterest-style collections, loyalty points |
+| **016_constraints_indexes.sql** | — | CHECK constraints (role, rating, points), performance indexes |
+| **017_professional_services.sql** | professional_services | Service catalog per professional (name, price range, duration) |
+
+### Seed Data (seed.sql)
+
+**5 Parent Categories:**
+1. Home Services, 2. Event Services, 3. Personal Services, 4. Technical Services, 5. Creative Services
+
+**42 Sub-Categories:** Plumbing, Electrical, Carpentry, Painting, Cleaning, Landscaping, Pest Control, HVAC, Roofing, Appliance Repair, Catering, Photography, Videography, DJ & Music, Event Planning, Decoration, MC & Hosting, Florists, Salon & Spa, Fitness Training, Yoga, Physiotherapy, Dietitian, Nursing, Childcare, Elder Care, Laundry, Tailoring, Computer Repair, Mobile Repair, Networking, Web Design, Data Recovery, Graphic Design, Interior Design, Content Writing, Music Teaching, Dance Tutor, Language Tutor, Math Tutor, Handicrafts
+
+**Demo Users (from seed.sql + migration 004):** 10 demo professionals with Hyderabad coordinates, 10 demo customers, pre-populated reviews and bookings.
+
+---
+
+## 📖 Complete Mobile Reference
+
+### Role-Based Navigation (MainShell in main.dart)
+
+| Role | Tab 1 | Tab 2 | Tab 3 | Tab 4 | Tab 5 |
+|:---|:---|:---|:---|:---|:---|
+| **Customer** | Home (discover) | Services (5 hubs) | Bookings | Chats | Profile |
+| **Professional** | Dashboard | Bookings | Chats | Profile | — |
+| **Agent** | Overview | Referrals | Chats | Profile | — |
+| **Admin** | Dashboard | Users | Reports | Settings | — |
+
+### 5 Service Hubs (ServiceHubScreen)
+
+| Hub | Icon | Services |
+|:---|:---|:---|
+| 🏠 Home Services | Wrench | Plumbing, Electrical, Carpentry, Painting, Cleaning, HVAC, Pest Control |
+| 🎉 Event Services | Party | Catering, Photography, Videography, DJ, Event Planning, Decoration |
+| 💆 Personal Services | Heart | Salon, Fitness, Yoga, Physiotherapy, Nursing, Childcare, Elder Care |
+| 💻 Technical Services | Computer | Computer Repair, Mobile Repair, Networking, Web Design, Data Recovery |
+| 🎨 Creative Services | Palette | Graphic Design, Interior Design, Content Writing, Music/Dance Teaching |
+
+### Mobile Dependencies (pubspec.yaml)
+
+| Category | Packages |
+|:---|:---|
+| **Networking** | http, web_socket_channel, url_launcher |
+| **State** | provider |
+| **Storage** | shared_preferences, hive, hive_flutter, path_provider |
+| **Location** | geolocator, smart_location_service |
+| **Media** | image_picker, record, audioplayers, flutter_rating_bar |
+| **Voice** | speech_to_text (Hindi/Telugu/English) |
+| **Offline** | connectivity_plus, hive (local DB) |
+| **Sharing** | share_plus |
+| **Calendar** | table_calendar |
+| **i18n** | intl, flutter_localizations |
+| **Caching** | cached_network_image |
+
+### Screen Count by Module
+
+| Module | Screens | Key Features |
+|:---|:---|:---|
+| Auth | 3 | Role selection, login, register |
+| Home/Discovery | 8 | Home, Pro Home, Agent Home, Admin Home, Categories, Category Detail, Dashboard, Service Hub |
+| Bookings | 5 | List, Detail (FSM), Calendar, History, Rebooking |
+| Messages | 2 | Threads list, Chat (real-time) |
+| Notifications | 2 | List, Preferences |
+| Search | 2 | Search, Instant Quote |
+| Profile | 2 | View, Edit |
+| Storefront | 2 + 8 widgets | View, Setup + Hero/About/Services/Portfolio/Reviews/Trust/Contact/Announcement |
+| Financial | 2 | Earnings, Payment |
+| Schedule | 1 | Calendar availability management |
+| KYC | 1 | Document upload + verification |
+| Tracking | 1 | Live GPS tracking |
+| Disputes | 2 | Dispute, Report |
+| Other | 6 | Splash, Emergency, Warranty, Contacts, Favorites, Write Review |
+| **Total** | **40+** | |
+
+---
+
+## 📖 Complete Infrastructure Reference
+
+### Docker Compose Services (7 containers)
+
+| Service | Image | Port | Health Check | Volumes |
+|:---|:---|:---|:---|:---|
+| **db** | postgres:16-alpine | 5432 | `pg_isready` | pgdata + schema.sql + seed.sql |
+| **redis** | redis:7-alpine | 6379 | `redis-cli ping` | redisdata |
+| **backend** | ./backend (custom) | 5000 | HTTP /api/health | uploads |
+| **frontend** | ./frontend (custom) | 3000→80 | curl localhost:80 | — |
+| **pgbouncer** | bitnami/pgbouncer:1.22.1 | 6432 | `pg_isready -p 6432` | — |
+| **prometheus** | prom/prometheus:v2.51.2 | 9090 | — | prometheusdata |
+| **grafana** | grafana/grafana:10.4.2 | 3001 | — | grafanadata |
+
+### Kubernetes Resources (k8s/base/)
+
+| Resource | Spec | Details |
+|:---|:---|:---|
+| Namespace | skillconnect | Isolated namespace |
+| Backend Deployment | 2 replicas | PgBouncer sidecar, CPU: 250m-1000m, Mem: 256Mi-512Mi |
+| Frontend Deployment | 2 replicas | nginx, CPU: 100m-500m, Mem: 64Mi-128Mi |
+| Postgres StatefulSet | 1 replica | 50Gi gp3 PVC |
+| Redis StatefulSet | 1 replica | 5Gi gp3 PVC |
+| Backend HPA | 2-10 replicas | CPU: 60%, Memory: 75% |
+| Frontend HPA | 2-6 replicas | CPU: 70% |
+| Backend PDB | minAvailable: 1 | Disruption budget |
+| Frontend PDB | minAvailable: 1 | Disruption budget |
+| Ingress | 3 hosts | skillconnect.in, www, api — Let's Encrypt TLS |
+| Postgres Backup CronJob | Every 6 hours | pg_dump → S3 |
+| Redis Backup CronJob | Hourly at :30 | BGSAVE → S3 |
+| Prometheus | 1 replica | 20Gi PVC, 30d retention |
+| Grafana | 1 replica | 5Gi PVC, 7 dashboard panels |
+
+### CI/CD Pipeline (7 stages in .github/workflows/ci.yml)
+
+| Stage | Trigger | Services | Key Steps |
+|:---|:---|:---|:---|
+| 1. **lint** | push/PR | — | ESLint backend + frontend, tsc |
+| 2. **unit-tests** | after lint | postgres:16, redis:7 | Schema + migrations, Jest with coverage |
+| 3. **frontend** | after lint | — | npm test, npm run build, upload artifact |
+| 4. **security** | push | — | npm audit, gitleaks, semgrep SAST |
+| 5. **docker** | after 2+3+4 | — | Build & push to ghcr.io (backend + frontend) |
+| 6. **trivy-scan** | after 5 | — | Container vulnerability scan → SARIF |
+| 7. **deploy** | main only | — | Staging → Production (placeholder) |
+
+### Prometheus Alert Rules (monitoring/alerts.yml)
+
+| Alert | Expression | Duration | Severity |
+|:---|:---|:---|:---|
+| HighErrorRate | HTTP 5xx rate > 5% | 2 min | critical |
+| SlowP95Latency | P95 response > 2s | 5 min | warning |
+| BackendDown | up == 0 | 1 min | critical |
+| HighHeapUsage | heap > 85% | 5 min | warning |
+
+---
+
+## 📖 Complete Environment Variables Reference
+
+<details>
+<summary><strong>All 60+ environment variables (from backend/.env.example)</strong></summary>
+
+### Core Application
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `NODE_ENV` | development | ✅ | Environment (development/production/test) |
+| `PORT` | 5000 | ✅ | Backend server port |
+
+### Database (PostgreSQL)
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `DB_HOST` | localhost | ✅ | PostgreSQL host |
+| `DB_PORT` | 5432 | ✅ | PostgreSQL port |
+| `DB_NAME` | skillconnect | ✅ | Database name |
+| `DB_USER` | postgres | ✅ | Database user |
+| `DB_PASSWORD` | password | ✅ | Database password |
+| `DB_MAX_CONNECTIONS` | 20 | | Connection pool max |
+| `DB_IDLE_TIMEOUT` | 30000 | | Idle connection timeout (ms) |
+| `DB_CONNECTION_TIMEOUT` | 5000 | | Connection timeout (ms) |
+
+### Authentication (JWT)
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `JWT_SECRET` | — | ✅ | JWT signing secret (min 32 chars) |
+| `JWT_EXPIRES_IN` | 15m | ✅ | Access token TTL |
+| `JWT_REFRESH_EXPIRES_IN` | 7d | ✅ | Refresh token TTL |
+
+### CORS & Security
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `CORS_ORIGINS` | — | ✅ | Comma-separated allowed origins |
+| `RATE_LIMIT_AUTH_MAX` | 30 | | Auth rate limit per 15min |
+| `RATE_LIMIT_API_MAX` | 200 | | API rate limit per 15min |
+| `MAX_LOGIN_ATTEMPTS` | 5 | | Account lockout threshold |
+| `LOCKOUT_DURATION_MIN` | 15 | | Lockout duration in minutes |
+| `ENCRYPTION_KEY` | — | | AES-256 PII encryption key (64 hex chars) |
+
+### Redis
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `REDIS_HOST` | localhost | ✅ | Redis host |
+| `REDIS_PORT` | 6379 | ✅ | Redis port |
+| `REDIS_PASSWORD` | — | | Redis password (production) |
+| `REDIS_TLS` | false | | Enable TLS for Redis |
+
+### External Services
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `STORAGE_PROVIDER` | local | | Storage: 's3', 'r2', or 'local' |
+| `AWS_ACCESS_KEY_ID` | — | | AWS S3 access key |
+| `AWS_SECRET_ACCESS_KEY` | — | | AWS S3 secret |
+| `AWS_REGION` | ap-south-1 | | AWS region |
+| `S3_BUCKET` | — | | S3 bucket name |
+| `SMS_PROVIDER` | none | | SMS: 'msg91', 'twilio', or 'none' |
+| `MSG91_AUTH_KEY` | — | | MSG91 API key |
+| `TWILIO_ACCOUNT_SID` | — | | Twilio SID |
+| `TWILIO_AUTH_TOKEN` | — | | Twilio auth token |
+| `FACE_MATCH_PROVIDER` | mock | | Face match: 'hyperverge', 'rekognition', 'mock' |
+| `FACE_MATCH_MOCK_SCORE` | 92 | | Mock face match score |
+| `KYC_AUTO_VERIFY` | false | | Auto-verify KYC (dev only) |
+| `SENDGRID_API_KEY` | — | | SendGrid email API key |
+| `EMAIL_FROM` | noreply@skillconnect.in | | Sender email address |
+| `APP_URL` | http://localhost:3000 | | Frontend URL for email links |
+| `RAZORPAY_KEY_ID` | — | | Razorpay public key |
+| `RAZORPAY_KEY_SECRET` | — | | Razorpay secret |
+| `RAZORPAY_WEBHOOK_SECRET` | — | | Razorpay webhook signature |
+| `FCM_SERVER_KEY` | — | | Firebase Cloud Messaging key |
+
+### Feature Flags
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `FEATURE_BOOKINGS` | true | | Enable booking system |
+| `FEATURE_CHAT` | true | | Enable real-time chat |
+| `FEATURE_DISPUTES` | true | | Enable dispute resolution |
+| `FEATURE_EMERGENCIES` | false | | Enable emergency dispatch |
+| `FEATURE_WARRANTIES` | false | | Enable warranty claims |
+| `FEATURE_AGENTS` | false | | Enable agent system |
+
+### GST / Invoicing
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `PLATFORM_GSTIN` | — | | Platform GST number |
+| `PLATFORM_STATE_CODE` | — | | State code for GST |
+| `PLATFORM_LEGAL_NAME` | — | | Legal entity name |
+| `PLATFORM_ADDRESS` | — | | Registered address |
+
+### Background Jobs
+| Variable | Default | Required | Description |
+|:---|:---|:---|:---|
+| `ENABLE_CRON` | true | | Enable 13 cron jobs |
+| `LOG_LEVEL` | debug | | Pino log level |
+
+</details>
+
+---
+
+## 📖 Booking State Machine (Complete FSM)
+
+```
+                    ┌──────────────┐
+                    │   REQUESTED  │ ← Customer creates booking
+                    └──────┬───────┘
+                           │ Professional sends quote
+                    ┌──────▼───────┐
+                    │    QUOTED    │
+                    └──────┬───────┘
+                           │ Customer accepts quote
+                    ┌──────▼───────┐
+                    │   ACCEPTED   │
+                    └──────┬───────┘
+                           │ Scheduled date/time set
+                    ┌──────▼───────┐
+                    │  SCHEDULED   │
+                    └──────┬───────┘
+                           │ Professional starts work
+                    ┌──────▼───────┐
+                    │ IN_PROGRESS  │
+                    └──────┬───────┘
+                           │ Work finished
+                    ┌──────▼───────┐
+                    │  COMPLETED   │ → Payment released, review window opens
+                    └──────────────┘
+
+    ┌──────────────┐                    ┌──────────────┐
+    │  CANCELLED   │ ← Any pre-start   │   DISPUTED   │ ← Either party post-start
+    └──────────────┘   state can cancel └──────────────┘
+                                        ┌──────────────┐
+                                        │   REFUNDED   │ ← Admin resolves dispute
+                                        └──────────────┘
+```
+
+**Allowed Transitions:**
+- `requested` → `quoted` (professional) → `accepted` (customer) → `scheduled` (professional) → `in_progress` (professional) → `completed` (professional)
+- Any pre-start state → `cancelled` (either party)
+- `in_progress` or `completed` → `disputed` (either party)
+- `disputed` → `refunded` (admin)
 
 ---
 
