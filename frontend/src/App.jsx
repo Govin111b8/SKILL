@@ -59,6 +59,9 @@ import ProfessionalOnboarding from './pages/ProfessionalOnboarding';
 import Collections from './pages/Collections';
 import CommunityFeed from './pages/CommunityFeed';
 import ReelsFeed from './pages/ReelsFeed';
+import Subscriptions from './pages/Subscriptions';
+import FamilyAccount from './pages/FamilyAccount';
+import Marketplace from './pages/Marketplace';
 import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
@@ -341,6 +344,16 @@ function App() {
           />
           <Route path="/community" element={<CommunityFeed />} />
           <Route path="/reels" element={<ReelsFeed />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route
+            path="/family"
+            element={
+              <ProtectedRoute>
+                <FamilyAccount />
+              </ProtectedRoute>
+            }
+          />
           {/* Agent Routes */}
           <Route
             path="/agent/dashboard"

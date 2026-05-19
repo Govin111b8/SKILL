@@ -52,6 +52,10 @@ const collectionsRoutes = require('./routes/collections');
 const communityRoutes = require('./routes/community');
 const reelsRoutes = require('./routes/reels');
 const serviceRoutes = require('./routes/services');
+const subscriptionRoutes = require('./routes/subscriptions');
+const householdRoutes = require('./routes/households');
+const countryRoutes = require('./routes/countries');
+const marketplaceRoutes = require('./routes/marketplace');
 
 const app = express();
 
@@ -190,6 +194,10 @@ app.use('/api/collections', collectionsRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/reels', reelsRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/households', householdRoutes);
+app.use('/api/countries', countryRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });
