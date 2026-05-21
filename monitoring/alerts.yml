@@ -38,3 +38,134 @@ groups:
           severity: warning
         annotations:
           summary: "Node.js heap > 85%"
+
+      # ── Disk Space ──────────────────────────────────────────
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space < 15% available on /"
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space critically low (< 5%) on /"
+
+      # ── Memory ──────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "System memory usage > 85%"
+
+      - alert: MemoryCritical
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "System memory usage > 95% — OOM risk"
+
+      # ── PostgreSQL ───────────────────────────────────────────
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+
+      - alert: PostgresConnectionPoolExhausted
+        expr: |
+          pg_stat_activity_count{state="active"} > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL active connections > 90"
+
+      - alert: PostgresSlowQueries
+        expr: |
+          rate(pg_stat_database_tup_fetched[5m]) > 100000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PostgreSQL tuple fetch rate — possible slow queries"
+
+      # ── Redis ────────────────────────────────────────────────
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+
+      - alert: RedisMemoryHigh
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage > 85%"
+
+      - alert: RedisCacheHitRateLow
+        expr: |
+          rate(redis_keyspace_hits_total[5m])
+          / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) < 0.7
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis cache hit ratio < 70%"
+
+      # ── Pod Restarts ─────────────────────────────────────────
+      - alert: PodRestartingFrequently
+        expr: |
+          increase(kube_pod_container_status_restarts_total{namespace="skillconnect"}[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod restarting frequently (>5 restarts/hour)"
+
+      - alert: PodCrashLooping
+        expr: |
+          kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace="skillconnect"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod is in CrashLoopBackOff"
+
+      # ── Application Errors ───────────────────────────────────
+      - alert: HighBookingFailureRate
+        expr: |
+          rate(skillconnect_http_requests_total{route=~"/api/bookings.*", status_code=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Booking endpoint failure rate elevated"
+
+      - alert: PaymentFailureRate
+        expr: |
+          rate(skillconnect_http_requests_total{route=~"/api/payments.*", status_code=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment endpoint failure rate > 5%"

@@ -96,9 +96,10 @@ jobs:
       - name: Apply database schema + migrations
         run: |
           PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/schema.sql
-          PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/seed.sql 2>/dev/null || true
-          for f in database/migrations/*.sql; do
-            PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f "$f" 2>/dev/null || true
+          PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f database/seed.sql
+          for f in $(ls database/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            PGPASSWORD=password psql -h localhost -U postgres -d skillconnect_test -f "$f"
           done
 
       - name: Run backend tests with coverage
