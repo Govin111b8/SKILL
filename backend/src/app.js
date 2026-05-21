@@ -103,6 +103,10 @@ app.use(httpLogger);
 
 app.use(express.json({ limit: '1mb' }));
 
+// XSS sanitization — strip HTML/script tags from all text body fields
+const sanitize = require('./middleware/sanitize');
+app.use(sanitize);
+
 // Rate limiting — protect auth endpoints from brute force
 const authLimiter = rateLimit({
   windowMs: config.rateLimit.auth.windowMs,

@@ -181,4 +181,6 @@ ProfessionalCard.propTypes = {
   }).isRequired,
 };
 
-export default ProfessionalCard;
+import { memo } from 'react';
+
+export default memo(ProfessionalCard);

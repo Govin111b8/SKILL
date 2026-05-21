@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiMapPin, FiX } from 'react-icons/fi';
 import './SearchBar.css';
@@ -8,14 +8,35 @@ function SearchBar({ initialQuery = '', initialLocation = '', variant = 'default
   const [query, setQuery] = useState(initialQuery);
   const [location, setLocation] = useState(initialLocation);
   const navigate = useNavigate();
+  const debounceRef = useRef(null);
 
   function handleSubmit(e) {
     e.preventDefault();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    doSearch();
+  }
+
+  function doSearch() {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (location) params.set('location', location);
     navigate(`/search?${params.toString()}`);
   }
+
+  const handleQueryChange = useCallback((e) => {
+    const val = e.target.value;
+    setQuery(val);
+    // Debounce auto-search on typing (300ms)
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (val.length >= 3) {
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams();
+        params.set('q', val);
+        if (location) params.set('location', location);
+        navigate(`/search?${params.toString()}`);
+      }, 300);
+    }
+  }, [location, navigate]);
 
   return (
     <form className={`search-bar search-bar--${variant}`} onSubmit={handleSubmit}>
@@ -26,7 +47,7 @@ function SearchBar({ initialQuery = '', initialLocation = '', variant = 'default
             type="text"
             placeholder="What service are you looking for?"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={handleQueryChange}
             aria-label="Search services"
           />
           {query && (

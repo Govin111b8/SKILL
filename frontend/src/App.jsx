@@ -1,75 +1,79 @@
 import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
-import CustomerLogin from './pages/CustomerLogin';
-import ProfessionalLogin from './pages/ProfessionalLogin';
-import AgentLogin from './pages/AgentLogin';
-import AdminLogin from './pages/AdminLogin';
-import CustomerRegister from './pages/CustomerRegister';
-import ProfessionalRegister from './pages/ProfessionalRegister';
-import AgentRegister from './pages/AgentRegister';
-import SearchResults from './pages/SearchResults';
-import ProfessionalProfile from './pages/ProfessionalProfile';
-import Categories from './pages/Categories';
-import CategoryDetail from './pages/CategoryDetail';
-import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
-import Bookings from './pages/Bookings';
-import BookingDetail from './pages/BookingDetail';
-import CreateBooking from './pages/CreateBooking';
-import Messages from './pages/Messages';
-import Chat from './pages/Chat';
-import Notifications from './pages/Notifications';
-import Payment from './pages/Payment';
-import Favorites from './pages/Favorites';
-import Earnings from './pages/Earnings';
-import Schedule from './pages/Schedule';
-import Emergency from './pages/Emergency';
-import Referrals from './pages/Referrals';
-import Disputes from './pages/Disputes';
-import Warranties from './pages/Warranties';
-import Analytics from './pages/Analytics';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminKYC from './pages/admin/AdminKYC';
-import AdminDisputes from './pages/admin/AdminDisputes';
-import AdminCategoryRequests from './pages/admin/AdminCategoryRequests';
-import AdminFeaturedSlots from './pages/admin/AdminFeaturedSlots';
-import AdminAppeals from './pages/admin/AdminAppeals';
-import AdminComplaints from './pages/admin/AdminComplaints';
-import AdminAuditLog from './pages/admin/AdminAuditLog';
-import AdminCountries from './pages/admin/AdminCountries';
-import Storefront from './pages/Storefront';
-import StorefrontSetup from './pages/StorefrontSetup';
-import AgentDashboard from './pages/AgentDashboard';
-import AgentOnboard from './pages/AgentOnboard';
-import AgentWallet from './pages/AgentWallet';
-import AgentLeaderboard from './pages/AgentLeaderboard';
-import TermsOfService from './pages/TermsOfService';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import RefundPolicy from './pages/RefundPolicy';
-import CookiePolicy from './pages/CookiePolicy';
-import ProfessionalTerms from './pages/ProfessionalTerms';
-import ContentModerationPolicy from './pages/ContentModerationPolicy';
-import ProfessionalOnboarding from './pages/ProfessionalOnboarding';
-import Collections from './pages/Collections';
-import CommunityFeed from './pages/CommunityFeed';
-import ReelsFeed from './pages/ReelsFeed';
-import Subscriptions from './pages/Subscriptions';
-import FamilyAccount from './pages/FamilyAccount';
-import Marketplace from './pages/Marketplace';
-import NotFound from './pages/NotFound';
 import Toast from './components/Toast';
 import AnnouncementBar from './components/AnnouncementBar';
 import CookieConsent from './components/CookieConsent';
 import AppInstallBanner from './components/AppInstallBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
+
+// Code-split pages with React.lazy
+const Register = lazy(() => import('./pages/Register'));
+const CustomerLogin = lazy(() => import('./pages/CustomerLogin'));
+const ProfessionalLogin = lazy(() => import('./pages/ProfessionalLogin'));
+const AgentLogin = lazy(() => import('./pages/AgentLogin'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const CustomerRegister = lazy(() => import('./pages/CustomerRegister'));
+const ProfessionalRegister = lazy(() => import('./pages/ProfessionalRegister'));
+const AgentRegister = lazy(() => import('./pages/AgentRegister'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const ProfessionalProfile = lazy(() => import('./pages/ProfessionalProfile'));
+const Categories = lazy(() => import('./pages/Categories'));
+const CategoryDetail = lazy(() => import('./pages/CategoryDetail'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Bookings = lazy(() => import('./pages/Bookings'));
+const BookingDetail = lazy(() => import('./pages/BookingDetail'));
+const CreateBooking = lazy(() => import('./pages/CreateBooking'));
+const Messages = lazy(() => import('./pages/Messages'));
+const Chat = lazy(() => import('./pages/Chat'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Payment = lazy(() => import('./pages/Payment'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Earnings = lazy(() => import('./pages/Earnings'));
+const Schedule = lazy(() => import('./pages/Schedule'));
+const Emergency = lazy(() => import('./pages/Emergency'));
+const Referrals = lazy(() => import('./pages/Referrals'));
+const Disputes = lazy(() => import('./pages/Disputes'));
+const Warranties = lazy(() => import('./pages/Warranties'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminKYC = lazy(() => import('./pages/admin/AdminKYC'));
+const AdminDisputes = lazy(() => import('./pages/admin/AdminDisputes'));
+const AdminCategoryRequests = lazy(() => import('./pages/admin/AdminCategoryRequests'));
+const AdminFeaturedSlots = lazy(() => import('./pages/admin/AdminFeaturedSlots'));
+const AdminAppeals = lazy(() => import('./pages/admin/AdminAppeals'));
+const AdminComplaints = lazy(() => import('./pages/admin/AdminComplaints'));
+const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
+const AdminCountries = lazy(() => import('./pages/admin/AdminCountries'));
+const Storefront = lazy(() => import('./pages/Storefront'));
+const StorefrontSetup = lazy(() => import('./pages/StorefrontSetup'));
+const AgentDashboard = lazy(() => import('./pages/AgentDashboard'));
+const AgentOnboard = lazy(() => import('./pages/AgentOnboard'));
+const AgentWallet = lazy(() => import('./pages/AgentWallet'));
+const AgentLeaderboard = lazy(() => import('./pages/AgentLeaderboard'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const ProfessionalTerms = lazy(() => import('./pages/ProfessionalTerms'));
+const ContentModerationPolicy = lazy(() => import('./pages/ContentModerationPolicy'));
+const ProfessionalOnboarding = lazy(() => import('./pages/ProfessionalOnboarding'));
+const Collections = lazy(() => import('./pages/Collections'));
+const CommunityFeed = lazy(() => import('./pages/CommunityFeed'));
+const ReelsFeed = lazy(() => import('./pages/ReelsFeed'));
+const Subscriptions = lazy(() => import('./pages/Subscriptions'));
+const FamilyAccount = lazy(() => import('./pages/FamilyAccount'));
+const Marketplace = lazy(() => import('./pages/Marketplace'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   return (
@@ -78,6 +82,7 @@ function App() {
       <Navbar />
       <main className="app-main">
         <ErrorBoundary>
+        <Suspense fallback={<div className="page-loading"><LoadingSpinner /></div>}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -398,6 +403,7 @@ function App() {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
         </ErrorBoundary>
       </main>
       <Footer />
