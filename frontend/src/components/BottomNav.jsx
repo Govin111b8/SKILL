@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiHome, FiGrid, FiSearch, FiUser, FiLogIn } from 'react-icons/fi';
+import { FiHome, FiGrid, FiSearch, FiUser, FiLogIn, FiRepeat } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import './BottomNav.css';
 
 const navItems = [
   { to: '/', icon: FiHome, label: 'Home' },
   { to: '/categories', icon: FiGrid, label: 'Services' },
+  { to: '/subscriptions', icon: FiRepeat, label: 'Subscribe' },
   { to: '/search', icon: FiSearch, label: 'Explore' },
 ];
 

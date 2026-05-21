@@ -57,6 +57,7 @@ export default function AdminDashboard() {
         <button onClick={() => navigate('/admin/disputes')} className="admin-nav-btn">⚠️ Disputes</button>
         <button onClick={() => navigate('/admin/complaints')} className="admin-nav-btn">🚨 Complaints</button>
         <button onClick={() => navigate('/admin/categories')} className="admin-nav-btn">📂 Categories</button>
+        <button onClick={() => navigate('/admin/countries')} className="admin-nav-btn">🌍 Countries</button>
         <button onClick={() => navigate('/admin/audit-log')} className="admin-nav-btn">📜 Audit Log</button>
       </div>
     </div>

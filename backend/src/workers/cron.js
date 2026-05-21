@@ -369,7 +369,13 @@ function startCronJobs() {
   // Dispute auto-escalation — auto-escalate unresolved disputes >14 days — daily 06:30 IST = 01:00 UTC
   cron.schedule('0 1 * * *', escalateStaleDisputes, { timezone: 'UTC' });
 
-  logger.info('All 13 cron jobs scheduled');
+  // Subscription auto-scheduler — advance next_occurrence for active subscriptions — daily 07:00 IST = 01:30 UTC
+  cron.schedule('30 1 * * *', advanceSubscriptionOccurrences, { timezone: 'UTC' });
+
+  // Provider CRM updater — sync booking data into provider_customers — weekly Monday 05:00 IST = Sunday 23:30 UTC
+  cron.schedule('30 23 * * 0', syncProviderCRM, { timezone: 'UTC' });
+
+  logger.info('All 15 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -513,6 +519,8 @@ module.exports = {
   cleanupOldBookings,
   escalateStaleComplaints,
   escalateStaleDisputes,
+  advanceSubscriptionOccurrences,
+  syncProviderCRM,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -608,6 +616,104 @@ async function escalateStaleDisputes() {
   } catch (err) {
     if (!err.message?.includes('does not exist')) {
       logger.error({ err }, 'CRON: dispute_escalation failed');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 14. Subscription Auto-Scheduler — daily 07:00 IST (01:30 UTC)
+// Advances next_occurrence for active subscriptions past their current date
+// ─────────────────────────────────────────────────────────────────────────────
+async function advanceSubscriptionOccurrences() {
+  logger.info('CRON: subscription_auto_scheduler — start');
+  try {
+    // For each active subscription whose next_occurrence <= today, advance it
+    const result = await query(`
+      UPDATE service_subscriptions SET
+        next_occurrence = CASE frequency
+          WHEN 'daily' THEN next_occurrence + INTERVAL '1 day'
+          WHEN 'weekly' THEN next_occurrence + INTERVAL '7 days'
+          WHEN 'biweekly' THEN next_occurrence + INTERVAL '14 days'
+          WHEN 'monthly' THEN next_occurrence + INTERVAL '1 month'
+          WHEN 'quarterly' THEN next_occurrence + INTERVAL '3 months'
+        END,
+        updated_at = NOW()
+      WHERE status = 'active'
+        AND next_occurrence <= CURRENT_DATE
+      RETURNING id
+    `);
+    logger.info({ advanced: result.rowCount }, 'CRON: subscription_auto_scheduler — done');
+
+    // Auto-resume paused subscriptions with a resume_date that has passed
+    const resumed = await query(`
+      UPDATE service_subscriptions SET
+        status = 'active',
+        pause_reason = NULL,
+        paused_at = NULL,
+        resume_date = NULL,
+        next_occurrence = CURRENT_DATE,
+        updated_at = NOW()
+      WHERE status = 'paused'
+        AND resume_date IS NOT NULL
+        AND resume_date <= CURRENT_DATE
+      RETURNING id
+    `);
+    if (resumed.rowCount > 0) {
+      logger.info({ resumed: resumed.rowCount }, 'CRON: subscription_auto_scheduler — auto-resumed paused subscriptions');
+    }
+
+    // Expire subscriptions past their expiry date
+    const expired = await query(`
+      UPDATE service_subscriptions SET
+        status = 'expired',
+        updated_at = NOW()
+      WHERE status = 'active'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+      RETURNING id
+    `);
+    if (expired.rowCount > 0) {
+      logger.info({ expired: expired.rowCount }, 'CRON: subscription_auto_scheduler — expired subscriptions');
+    }
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: subscription_auto_scheduler failed');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 15. Provider CRM Sync — weekly Monday 05:00 IST (Sunday 23:30 UTC)
+// Syncs booking data into provider_customers CRM table
+// ─────────────────────────────────────────────────────────────────────────────
+async function syncProviderCRM() {
+  logger.info('CRON: provider_crm_sync — start');
+  try {
+    // Upsert customer records from bookings
+    const result = await query(`
+      INSERT INTO provider_customers (professional_id, customer_id, first_booking_date, last_booking_date, total_bookings, total_revenue)
+      SELECT 
+        b.professional_id,
+        b.customer_id,
+        MIN(b.created_at)::DATE as first_booking_date,
+        MAX(b.created_at)::DATE as last_booking_date,
+        COUNT(*) as total_bookings,
+        COALESCE(SUM(b.final_amount), 0) as total_revenue
+      FROM bookings b
+      WHERE b.professional_id IS NOT NULL AND b.customer_id IS NOT NULL
+      GROUP BY b.professional_id, b.customer_id
+      ON CONFLICT (professional_id, customer_id) DO UPDATE SET
+        first_booking_date = LEAST(provider_customers.first_booking_date, EXCLUDED.first_booking_date),
+        last_booking_date = GREATEST(provider_customers.last_booking_date, EXCLUDED.last_booking_date),
+        total_bookings = EXCLUDED.total_bookings,
+        total_revenue = EXCLUDED.total_revenue,
+        updated_at = NOW()
+      RETURNING id
+    `);
+    logger.info({ synced: result.rowCount }, 'CRON: provider_crm_sync — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: provider_crm_sync failed');
     }
   }
 }

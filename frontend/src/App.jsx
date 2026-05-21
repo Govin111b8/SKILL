@@ -43,6 +43,7 @@ import AdminFeaturedSlots from './pages/admin/AdminFeaturedSlots';
 import AdminAppeals from './pages/admin/AdminAppeals';
 import AdminComplaints from './pages/admin/AdminComplaints';
 import AdminAuditLog from './pages/admin/AdminAuditLog';
+import AdminCountries from './pages/admin/AdminCountries';
 import Storefront from './pages/Storefront';
 import StorefrontSetup from './pages/StorefrontSetup';
 import AgentDashboard from './pages/AgentDashboard';
@@ -323,6 +324,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminAuditLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/countries"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminCountries />
               </ProtectedRoute>
             }
           />

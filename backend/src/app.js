@@ -56,6 +56,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 const householdRoutes = require('./routes/households');
 const countryRoutes = require('./routes/countries');
 const marketplaceRoutes = require('./routes/marketplace');
+const providerBusinessRoutes = require('./routes/providerBusiness');
 
 const app = express();
 
@@ -198,6 +199,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/households', householdRoutes);
 app.use('/api/countries', countryRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/provider-business', providerBusinessRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

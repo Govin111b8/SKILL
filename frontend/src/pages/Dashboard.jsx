@@ -6,7 +6,7 @@ import {
   FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
   FiDollarSign, FiCalendar, FiPieChart, FiActivity, FiAward,
   FiHeart, FiShoppingBag, FiBookOpen, FiZap, FiArrowUp, FiArrowDown,
-  FiTarget, FiBell,
+  FiTarget, FiBell, FiRepeat,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
@@ -104,6 +104,12 @@ function CustomerDashboard({ data }) {
         </Link>
         <Link to="/referrals" className="quick-action-btn">
           <FiAward /> Referrals
+        </Link>
+        <Link to="/subscriptions" className="quick-action-btn">
+          <FiRepeat /> Subscriptions
+        </Link>
+        <Link to="/family" className="quick-action-btn">
+          <FiUsers /> Family
         </Link>
       </div>
 
