@@ -25,7 +25,7 @@
 
 ## 🔴 CRITICAL PRODUCTION-READINESS GAP ANALYSIS (2026-05-16)
 
-> **Core Finding:** The platform is technically comprehensive (37 controllers, 50+ pages, 100+ endpoints) but has **critical UX and data flow gaps** that prevent it from being production-ready as a user-friendly app.
+> **Core Finding:** The platform is technically comprehensive (42 controllers, 60+ pages, 120+ endpoints) but has **critical UX and data flow gaps** that prevent it from being production-ready as a user-friendly app.
 
 ### GAP 1: Service & Sub-Service Hierarchy (🔴 CRITICAL)
 
@@ -687,8 +687,8 @@ The long-term competitive advantage is the **Professional Graph + Trust Graph**:
 
 ## Current State (What's Built)
 
-- **Frontend:** 50+ pages, React 19, Vite, responsive, WebSocket chat, 40+ components — `frontend/src/pages/`
-- **Backend:** 100+ endpoints, Express 5, 37 controllers, 38 route files, 16 test suites (150 tests), fraud middleware — `backend/src/`
+- **Frontend:** 60+ pages, React 19, Vite, responsive, WebSocket chat, 40+ components — `frontend/src/pages/`
+- **Backend:** 120+ endpoints, Express 5, 42 controllers, 43 route files, 16 test suites (150 tests), fraud middleware — `backend/src/`
 - **Mobile:** Flutter 3.8, 49 screens, offline-first, i18n (EN/HI/TE), 16 services — `mobile/skillconnect/lib/`
 - **Database:** PostgreSQL 16, schema + seed data + migrations — `database/`
 - **DevOps:** Docker Compose, K8s manifests, CI/CD, Prometheus/Grafana, Sentry — `k8s/`, `monitoring/`
@@ -1216,7 +1216,7 @@ SKILL/
 │   ├── utils/retry.js       # Exponential backoff utility
 │   ├── realtime/hub.js      # WebSocket server
 │   ├── config/              # DB, logger, metrics, sentry
-│   └── workers/cron.js      # 10 cron jobs
+│   └── workers/cron.js      # 15 cron jobs (incl. subscription scheduler, CRM sync)
 ├── mobile/skillconnect/lib/
 │   ├── screens/             # 49 screens across 4 roles
 │   │   └── storefront/      # Storefront viewer + setup
@@ -1226,7 +1226,7 @@ SKILL/
 ├── database/
 │   ├── schema.sql           # Base 8 tables
 │   ├── seed.sql             # Demo data (not idempotent)
-│   └── migrations/          # 18 migrations (001-017 + 006b/007b)
+│   └── migrations/          # 19 migrations (001-019 + 006b/007b)
 ├── k8s/base/                # Kubernetes manifests (StatefulSet, Deploy, Ingress)
 ├── monitoring/              # Prometheus + Grafana + alerts
 ├── .github/workflows/ci.yml # 7-stage CI/CD pipeline
@@ -1253,7 +1253,37 @@ SKILL/
 14. **6 remaining backend silent catches** — in hub.js, auth.js, payments.js, pushNotification.js
 15. **22 remaining frontend silent catches** — across Home, Dashboard, Storefront, Notifications, etc.
 16. **Deep Audit v2 found 79 new issues** — See Sprint 5-7 for prioritized fix plan
+17. **Global Ecosystem implemented** — 3-engine architecture (Booking/Subscription/Marketplace), multi-tenant country system, family/household accounts, provider business OS (inventory + CRM), 9 country tenants seeded, subscription auto-scheduler cron, admin country management page
 
 ---
 
-*Priority order: Sprint 5 (Security Fixes) → Sprint 6 (Performance & Quality) → Sprint 7 (Infrastructure) → Phase 8-12 (iterate)*
+## GLOBAL TRUSTED SERVICES ECOSYSTEM — Implementation Status
+
+### ✅ Implemented (Migration 018 + 019)
+
+| Component | Status | Key Files |
+|-----------|--------|-----------|
+| **3-Engine Architecture** | ✅ Complete | Home.jsx engine cards, categories.js engine metadata |
+| **Subscription Engine** | ✅ Complete | subscriptionController.js (CRUD, pause/resume/cancel), Subscriptions.jsx, cron auto-scheduler |
+| **Marketplace Engine** | ✅ Complete | marketplaceController.js (proposals, quotes, FSM), Marketplace.jsx |
+| **Multi-Tenant Countries** | ✅ Complete | countryController.js (CRUD, config), AdminCountries.jsx, 9 countries seeded |
+| **Family/Household System** | ✅ Complete | householdController.js (CRUD, members), FamilyAccount.jsx |
+| **Provider Business OS** | ✅ Complete | providerBusinessController.js (inventory + CRM), Provider CRM sync cron |
+| **Navigation Updates** | ✅ Complete | Navbar (5 links), BottomNav (Subscribe), Dashboard quick actions |
+
+### 🔲 Not Yet Implemented (Future Phases)
+
+- **AI modules** (voice booking, recommendations, pricing suggestions, fraud detection)
+- **WhatsApp integration** (booking reminders, re-engagement)
+- **Map view** for discovery
+- **Video-first trust** (provider intro videos as primary trust signal)
+- **Country partner dashboard** (dedicated dashboard for franchise operators)
+- **Subscription billing** (Razorpay recurring payments integration)
+- **Emergency services** (controlled rollout after operational stability)
+- **Meilisearch** (typo-tolerant search replacing SQL)
+- **Category-specific UX** (Beauty vs Home Services vs Fitness)
+- **Mobile screens** (7 missing: Collections, Community, Followers, Stories, Points, Referral, Admin)
+
+---
+
+*Priority order: Sprint 5 (Security Fixes) → Sprint 6 (Performance & Quality) → Sprint 7 (Infrastructure) → Global Ecosystem Phases → Phase 8-12 (iterate)*
