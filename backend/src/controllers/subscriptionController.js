@@ -379,3 +379,158 @@ exports.listProviderSubscriptions = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Set vacation mode — pauses ALL active subscriptions for a date range
+ */
+exports.setVacationMode = async (req, res, next) => {
+  try {
+    const { start_date, end_date, household_id } = req.body;
+
+    if (!start_date || !end_date) {
+      return res.status(400).json({ success: false, message: 'start_date and end_date are required' });
+    }
+
+    if (new Date(start_date) >= new Date(end_date)) {
+      return res.status(400).json({ success: false, message: 'end_date must be after start_date' });
+    }
+
+    const daysDiff = (new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24);
+    if (daysDiff > 90) {
+      return res.status(400).json({ success: false, message: 'Vacation mode max 90 days' });
+    }
+
+    let whereClause = 'customer_id = $1 AND status = \'active\'';
+    const params = [req.user.id];
+    let idx = 2;
+
+    if (household_id) {
+      whereClause += ` AND household_id = $${idx}`;
+      params.push(household_id);
+      idx++;
+    }
+
+    params.push(end_date);
+
+    const result = await query(
+      `UPDATE service_subscriptions 
+       SET status = 'paused', 
+           pause_reason = 'Vacation mode',
+           paused_at = NOW(), 
+           resume_date = $${idx},
+           updated_at = NOW()
+       WHERE ${whereClause}
+       RETURNING id, title, status, resume_date`,
+      params
+    );
+
+    res.json({
+      success: true,
+      data: {
+        paused_count: result.rows.length,
+        subscriptions: result.rows,
+        vacation: { start_date, end_date, days: daysDiff },
+      },
+      message: `${result.rows.length} subscription(s) paused until ${end_date}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Request provider replacement for a subscription
+ */
+exports.requestReplacement = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason, preferred_professional_id } = req.body;
+
+    const sub = await query(
+      `SELECT s.*, c.name as category_name
+       FROM service_subscriptions s
+       LEFT JOIN categories c ON s.category_id = c.id
+       WHERE s.id = $1 AND s.customer_id = $2 AND s.status IN ('active', 'paused')`,
+      [id, req.user.id]
+    );
+
+    if (!sub.rows[0]) {
+      return res.status(404).json({ success: false, message: 'Subscription not found' });
+    }
+
+    const subscription = sub.rows[0];
+    const previousProId = subscription.professional_id;
+
+    if (preferred_professional_id) {
+      await query(
+        `UPDATE service_subscriptions 
+         SET professional_id = $1, notes = COALESCE(notes, '') || ' | Provider replaced: ' || $2, updated_at = NOW()
+         WHERE id = $3`,
+        [preferred_professional_id, reason || 'Customer request', id]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Provider replaced',
+        data: { subscription_id: id, previous_provider: previousProId, new_provider: preferred_professional_id },
+      });
+    }
+
+    // Auto-assign: find best available provider in same category/locality
+    let newProvider = null;
+    if (subscription.category_id && subscription.service_lat && subscription.service_lng) {
+      const nearby = await query(
+        `SELECT p.id, u.name,
+                COALESCE(AVG(r.rating), 0) as avg_rating,
+                (6371 * acos(LEAST(1.0, cos(radians($1)) * cos(radians(p.latitude))
+                  * cos(radians(p.longitude) - radians($2))
+                  + sin(radians($1)) * sin(radians(p.latitude))))) AS distance
+         FROM professionals p
+         JOIN users u ON p.user_id = u.id
+         JOIN professional_categories pc ON p.id = pc.professional_id
+         LEFT JOIN reviews r ON r.professional_id = p.id
+         WHERE pc.category_id = $3
+           AND p.id != COALESCE($4, '00000000-0000-0000-0000-000000000000'::uuid)
+           AND p.availability_status = 'available'
+         GROUP BY p.id, u.name, p.latitude, p.longitude
+         HAVING (6371 * acos(LEAST(1.0, cos(radians($1)) * cos(radians(p.latitude))
+                  * cos(radians(p.longitude) - radians($2))
+                  + sin(radians($1)) * sin(radians(p.latitude))))) <= 15
+         ORDER BY avg_rating DESC, distance ASC
+         LIMIT 1`,
+        [subscription.service_lat, subscription.service_lng, subscription.category_id, previousProId]
+      );
+      newProvider = nearby.rows[0] || null;
+    }
+
+    if (newProvider) {
+      await query(
+        `UPDATE service_subscriptions 
+         SET professional_id = $1, notes = COALESCE(notes, '') || ' | Auto-replaced: ' || $2, updated_at = NOW()
+         WHERE id = $3`,
+        [newProvider.id, reason || 'Auto-replacement', id]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Provider auto-replaced',
+        data: { subscription_id: id, previous_provider: previousProId, new_provider: newProvider.id, new_provider_name: newProvider.name },
+      });
+    }
+
+    await query(
+      `UPDATE service_subscriptions 
+       SET notes = COALESCE(notes, '') || ' | Replacement requested: ' || $1, updated_at = NOW()
+       WHERE id = $2`,
+      [reason || 'Replacement needed', id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Replacement request submitted. We will assign a new provider shortly.',
+      data: { subscription_id: id, status: 'pending_replacement' },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -329,9 +329,211 @@ const explainTrust = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/trust/:professionalId/level
+ * Public — get provider's trust level (Bronze/Silver/Gold/Platinum) with score breakdown.
+ */
+const getTrustLevel = async (req, res, next) => {
+  try {
+    const { professionalId } = req.params;
+
+    const result = await query(
+      `SELECT p.id, p.completed_jobs, p.response_time_hours, p.repeat_customer_rate,
+              p.total_customers, p.cancellation_rate, p.trust_level, p.trust_score,
+              u.government_id_verified, u.selfie_verified,
+              COALESCE(AVG(r.rating), 0) as average_rating,
+              COUNT(r.id)::int as review_count
+       FROM professionals p
+       JOIN users u ON p.user_id = u.id
+       LEFT JOIN reviews r ON r.professional_id = p.id
+       WHERE p.id = $1
+       GROUP BY p.id, u.government_id_verified, u.selfie_verified`,
+      [professionalId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Professional not found.' });
+    }
+
+    const pro = result.rows[0];
+    const avgRating = parseFloat(pro.average_rating);
+    const repeatRate = parseFloat(pro.repeat_customer_rate || 0);
+    const cancellationRate = parseFloat(pro.cancellation_rate || 0);
+
+    // Calculate trust score (0-100)
+    const factors = {
+      verification: (pro.government_id_verified ? 15 : 0) + (pro.selfie_verified ? 10 : 0),
+      experience: Math.min(20, (pro.completed_jobs || 0) * 0.2),
+      rating: Math.min(25, avgRating * 5),
+      repeat_customers: Math.min(15, repeatRate * 0.3),
+      responsiveness: pro.response_time_hours && pro.response_time_hours < 1 ? 10 : pro.response_time_hours < 4 ? 5 : 0,
+      reliability: Math.max(0, 5 - cancellationRate * 0.5),
+    };
+    const calculatedScore = Object.values(factors).reduce((sum, v) => sum + v, 0);
+
+    // Determine trust level
+    let level = 'bronze';
+    if (calculatedScore >= 85 && pro.completed_jobs >= 100 && avgRating >= 4.7 && repeatRate >= 50 && cancellationRate <= 5) {
+      level = 'platinum';
+    } else if (calculatedScore >= 60 && pro.completed_jobs >= 50 && avgRating >= 4.2 && repeatRate >= 30 && cancellationRate <= 15) {
+      level = 'gold';
+    } else if (calculatedScore >= 30 && pro.completed_jobs >= 10 && avgRating >= 3.5 && repeatRate >= 10 && cancellationRate <= 30) {
+      level = 'silver';
+    }
+
+    // Get level config for benefits
+    let levelConfig = null;
+    try {
+      const configResult = await query('SELECT * FROM trust_level_config WHERE level = $1', [level]);
+      levelConfig = configResult.rows[0] || null;
+    } catch (err) { /* table may not exist yet */ }
+
+    // Next level requirements
+    const levels = ['bronze', 'silver', 'gold', 'platinum'];
+    const currentIdx = levels.indexOf(level);
+    let nextLevelRequirements = null;
+    if (currentIdx < levels.length - 1) {
+      const nextLevel = levels[currentIdx + 1];
+      try {
+        const nextConfig = await query('SELECT * FROM trust_level_config WHERE level = $1', [nextLevel]);
+        if (nextConfig.rows[0]) {
+          const nc = nextConfig.rows[0];
+          nextLevelRequirements = {
+            level: nextLevel,
+            min_score: parseFloat(nc.min_score),
+            min_completed_jobs: nc.min_completed_jobs,
+            min_rating: parseFloat(nc.min_rating),
+            min_repeat_rate: parseFloat(nc.min_repeat_rate),
+            max_cancellation_rate: parseFloat(nc.max_cancellation_rate),
+            progress: {
+              score: Math.min(100, Math.round((calculatedScore / parseFloat(nc.min_score)) * 100)),
+              jobs: Math.min(100, Math.round((pro.completed_jobs / nc.min_completed_jobs) * 100)),
+              rating: Math.min(100, Math.round((avgRating / parseFloat(nc.min_rating)) * 100)),
+              repeat_rate: Math.min(100, Math.round((repeatRate / parseFloat(nc.min_repeat_rate)) * 100)),
+            },
+          };
+        }
+      } catch (err) { /* table may not exist */ }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        trust_level: level,
+        trust_score: Math.round(calculatedScore * 100) / 100,
+        score_breakdown: factors,
+        badge_color: levelConfig?.badge_color || '#CD7F32',
+        benefits: levelConfig?.benefits || { verified_badge: true },
+        next_level: nextLevelRequirements,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/trust/:professionalId/neighborhood
+ * Public — get neighborhood trust scores for a provider.
+ */
+const getNeighborhoodTrust = async (req, res, next) => {
+  try {
+    const { professionalId } = req.params;
+    const { city, locality } = req.query;
+
+    let whereClause = 'WHERE nt.professional_id = $1';
+    const params = [professionalId];
+    let idx = 2;
+
+    if (city) {
+      whereClause += ` AND nt.city ILIKE $${idx}`;
+      params.push(`%${city}%`);
+      idx++;
+    }
+    if (locality) {
+      whereClause += ` AND nt.locality ILIKE $${idx}`;
+      params.push(`%${locality}%`);
+      idx++;
+    }
+
+    const result = await query(
+      `SELECT nt.*, 
+              RANK() OVER (PARTITION BY nt.city ORDER BY nt.neighborhood_score DESC) as city_rank
+       FROM neighborhood_trust nt
+       ${whereClause}
+       ORDER BY nt.neighborhood_score DESC
+       LIMIT 20`,
+      params
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result.rows.map((row) => ({
+        ...row,
+        neighborhood_score: parseFloat(row.neighborhood_score),
+        average_rating: parseFloat(row.average_rating || 0),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/trust/neighborhood/top
+ * Public — get top-trusted providers in a locality.
+ */
+const getTopInNeighborhood = async (req, res, next) => {
+  try {
+    const { city, locality, limit: queryLimit } = req.query;
+
+    if (!city) {
+      return res.status(400).json({ success: false, message: 'city query parameter is required' });
+    }
+
+    const limitNum = Math.min(50, Math.max(1, parseInt(queryLimit, 10) || 10));
+    let whereClause = 'WHERE nt.city ILIKE $1';
+    const params = [`%${city}%`];
+    let idx = 2;
+
+    if (locality) {
+      whereClause += ` AND nt.locality ILIKE $${idx}`;
+      params.push(`%${locality}%`);
+      idx++;
+    }
+
+    params.push(limitNum);
+
+    const result = await query(
+      `SELECT nt.*, p.headline, u.name as professional_name, u.avatar_url
+       FROM neighborhood_trust nt
+       JOIN professionals p ON nt.professional_id = p.id
+       JOIN users u ON p.user_id = u.id
+       ${whereClause}
+       ORDER BY nt.neighborhood_score DESC
+       LIMIT $${idx}`,
+      params
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result.rows.map((row) => ({
+        ...row,
+        neighborhood_score: parseFloat(row.neighborhood_score),
+        average_rating: parseFloat(row.average_rating || 0),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getBadges,
   getTimeline,
   explainTrust,
+  getTrustLevel,
+  getNeighborhoodTrust,
+  getTopInNeighborhood,
   BADGE_DEFINITIONS,
 };

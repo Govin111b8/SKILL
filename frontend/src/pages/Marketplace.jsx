@@ -146,6 +146,19 @@ function Marketplace() {
                     </div>
                     <div className="project-card-footer">
                       <span className="project-date">{new Date(p.created_at).toLocaleDateString('en-IN')}</span>
+                      {p.milestones && p.milestones.length > 0 && (
+                        <div className="project-milestones">
+                          <span className="milestone-progress">
+                            📊 {p.milestones.filter(m => m.status === 'completed' || m.status === 'paid').length}/{p.milestones.length} milestones
+                          </span>
+                          <div className="milestone-bar">
+                            <div
+                              className="milestone-bar-fill"
+                              style={{ width: `${Math.round((p.milestones.filter(m => m.status === 'completed' || m.status === 'paid').length / p.milestones.length) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

@@ -264,3 +264,143 @@ exports.getProposal = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Add milestone to a proposal (professional)
+ */
+exports.addMilestone = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, description, amount, due_date } = req.body;
+
+    if (!title || !amount) {
+      return res.status(400).json({ success: false, message: 'title and amount are required' });
+    }
+
+    const pro = await query(`SELECT id FROM professionals WHERE user_id = $1`, [req.user.id]);
+    if (!pro.rows[0]) {
+      return res.status(404).json({ success: false, message: 'Professional profile not found' });
+    }
+
+    const proposal = await query(
+      `SELECT * FROM marketplace_proposals WHERE id = $1 AND professional_id = $2 AND status IN ('quoted', 'negotiating', 'accepted', 'in_progress')`,
+      [id, pro.rows[0].id]
+    );
+
+    if (!proposal.rows[0]) {
+      return res.status(404).json({ success: false, message: 'Proposal not found or not in valid state' });
+    }
+
+    const currentMilestones = proposal.rows[0].milestones || [];
+    const newMilestone = {
+      id: `ms_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      title,
+      description: description || null,
+      amount: parseFloat(amount),
+      due_date: due_date || null,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    };
+    currentMilestones.push(newMilestone);
+
+    const updated = await query(
+      `UPDATE marketplace_proposals SET milestones = $1::jsonb, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [JSON.stringify(currentMilestones), id]
+    );
+
+    res.status(201).json({ success: true, data: { proposal: updated.rows[0], milestone: newMilestone } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Update milestone status
+ */
+exports.updateMilestone = async (req, res, next) => {
+  try {
+    const { id, milestoneId } = req.params;
+    const { status, notes } = req.body;
+
+    const validStatuses = ['pending', 'in_progress', 'completed', 'paid'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: `status must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    const proposal = await query(
+      `SELECT mp.* FROM marketplace_proposals mp
+       LEFT JOIN professionals p ON mp.professional_id = p.id
+       WHERE mp.id = $1 AND (mp.customer_id = $2 OR p.user_id = $2)`,
+      [id, req.user.id]
+    );
+
+    if (!proposal.rows[0]) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    const milestones = proposal.rows[0].milestones || [];
+    const msIndex = milestones.findIndex((m) => m.id === milestoneId);
+    if (msIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Milestone not found' });
+    }
+
+    milestones[msIndex].status = status;
+    if (notes) milestones[msIndex].notes = notes;
+    if (status === 'completed') milestones[msIndex].completed_at = new Date().toISOString();
+    if (status === 'paid') milestones[msIndex].paid_at = new Date().toISOString();
+
+    const updated = await query(
+      `UPDATE marketplace_proposals SET milestones = $1::jsonb, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [JSON.stringify(milestones), id]
+    );
+
+    res.json({ success: true, data: { proposal: updated.rows[0], milestone: milestones[msIndex] } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get milestone progress summary
+ */
+exports.getMilestones = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const proposal = await query(
+      `SELECT mp.milestones, mp.quoted_amount, mp.status as proposal_status
+       FROM marketplace_proposals mp
+       LEFT JOIN professionals p ON mp.professional_id = p.id
+       WHERE mp.id = $1 AND (mp.customer_id = $2 OR p.user_id = $2)`,
+      [id, req.user.id]
+    );
+
+    if (!proposal.rows[0]) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    const milestones = proposal.rows[0].milestones || [];
+    const totalAmount = milestones.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
+    const paidAmount = milestones.filter((m) => m.status === 'paid').reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
+    const completedCount = milestones.filter((m) => m.status === 'completed' || m.status === 'paid').length;
+
+    res.json({
+      success: true,
+      data: {
+        milestones,
+        summary: {
+          total_milestones: milestones.length,
+          completed: completedCount,
+          pending: milestones.filter((m) => m.status === 'pending').length,
+          in_progress: milestones.filter((m) => m.status === 'in_progress').length,
+          total_amount: totalAmount,
+          paid_amount: paidAmount,
+          remaining_amount: totalAmount - paidAmount,
+          progress_percent: milestones.length > 0 ? Math.round((completedCount / milestones.length) * 100) : 0,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

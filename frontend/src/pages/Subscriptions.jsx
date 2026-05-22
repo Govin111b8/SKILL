@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   FiCalendar, FiClock, FiPause, FiPlay, FiX, FiPlus,
   FiRepeat, FiHome, FiDroplet, FiStar, FiTruck, FiCheck,
+  FiSunrise, FiRefreshCw,
 } from 'react-icons/fi';
 import { get, post } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -92,6 +93,33 @@ function Subscriptions() {
     }
   }
 
+  async function handleVacationMode() {
+    const startDate = prompt('Vacation start date (YYYY-MM-DD):');
+    if (!startDate) return;
+    const endDate = prompt('Vacation end date (YYYY-MM-DD):');
+    if (!endDate) return;
+    try {
+      const res = await post('/subscriptions/vacation', { start_date: startDate, end_date: endDate });
+      alert(res.message || 'Vacation mode activated!');
+      fetchSubscriptions();
+    } catch (err) {
+      console.error('Failed to set vacation mode:', err);
+      alert('Failed to set vacation mode. Check dates and try again.');
+    }
+  }
+
+  async function handleReplaceProvider(id) {
+    const reason = prompt('Why do you want to replace the provider? (optional)');
+    try {
+      const res = await post(`/subscriptions/${id}/replace-provider`, { reason: reason || 'Customer request' });
+      alert(res.message || 'Provider replacement requested.');
+      fetchSubscriptions();
+    } catch (err) {
+      console.error('Failed to replace provider:', err);
+      alert('Failed to request replacement. Please try again.');
+    }
+  }
+
   return (
     <div className="subscriptions-page">
       <SEOMeta title="Subscriptions — SkillConnect" description="Manage your recurring household services" />
@@ -136,16 +164,21 @@ function Subscriptions() {
         <section className="my-subscriptions">
           <div className="my-sub-header">
             <h2>📅 My Subscriptions</h2>
-            <div className="sub-filters">
-              {['all', 'active', 'paused', 'cancelled'].map((f) => (
-                <button
-                  key={f}
-                  className={`sub-filter-btn ${filter === f ? 'active' : ''}`}
-                  onClick={() => setFilter(f)}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+            <div className="sub-header-actions">
+              <button onClick={handleVacationMode} className="vacation-btn" title="Pause all subscriptions during vacation">
+                <FiSunrise /> Vacation Mode
+              </button>
+              <div className="sub-filters">
+                {['all', 'active', 'paused', 'cancelled'].map((f) => (
+                  <button
+                    key={f}
+                    className={`sub-filter-btn ${filter === f ? 'active' : ''}`}
+                    onClick={() => setFilter(f)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -192,6 +225,11 @@ function Subscriptions() {
                     {sub.status === 'paused' && (
                       <button onClick={() => handleResume(sub.id)} className="sub-action-btn resume">
                         <FiPlay /> Resume
+                      </button>
+                    )}
+                    {sub.status === 'active' && sub.professional_id && (
+                      <button onClick={() => handleReplaceProvider(sub.id)} className="sub-action-btn replace">
+                        <FiRefreshCw /> Replace Provider
                       </button>
                     )}
                     {sub.status !== 'cancelled' && (
