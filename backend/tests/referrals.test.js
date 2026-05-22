@@ -75,9 +75,10 @@ describe('Referral Controller', () => {
     });
 
     it('applies code successfully and creates referral record', async () => {
-      pool.query.mockResolvedValueOnce({ rows: [] }); // no existing referral
-      pool.query.mockResolvedValueOnce({ rows: [{ id: 'rc1', user_id: 'referrer-1', reward_amount: 200 }] });
-      pool.query.mockResolvedValueOnce({ rows: [{ id: 'ref1', referrer_id: 'referrer-1', referred_id: 'user-1' }] });
+      pool.query.mockResolvedValueOnce({ rows: [] }); // no existing referral for this user
+      pool.query.mockResolvedValueOnce({ rows: [{ id: 'rc1', user_id: 'referrer-1', reward_amount: 200 }] }); // valid code
+      pool.query.mockResolvedValueOnce({ rows: [] }); // no duplicate pair
+      pool.query.mockResolvedValueOnce({ rows: [{ id: 'ref1', referrer_id: 'referrer-1', referred_id: 'user-1' }] }); // insert referral
       pool.query.mockResolvedValueOnce({ rows: [] }); // update uses_count
       pool.query.mockResolvedValueOnce({ rows: [] }); // update users.referred_by
       const req = mockReq({ body: { code: 'SKOTHER1' } });

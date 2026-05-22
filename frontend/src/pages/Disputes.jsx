@@ -31,6 +31,7 @@ export default function Disputes() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [evidenceForm, setEvidenceForm] = useState({ id: null, urls: '' });
+  const [addingEvidence, setAddingEvidence] = useState(false);
 
   useEffect(() => {
     fetchDisputes();
@@ -83,6 +84,7 @@ export default function Disputes() {
   async function handleAddEvidence(e) {
     e.preventDefault();
     if (!evidenceForm.urls.trim()) return;
+    setAddingEvidence(true);
     try {
       const urls = evidenceForm.urls.split(',').map(u => u.trim()).filter(Boolean);
       await post(`/disputes/${evidenceForm.id}/evidence`, { urls });
@@ -91,6 +93,8 @@ export default function Disputes() {
       fetchDisputes();
     } catch (err) {
       setMessage('Error: ' + (err.data?.error || err.message));
+    } finally {
+      setAddingEvidence(false);
     }
   }
 
@@ -187,7 +191,7 @@ export default function Disputes() {
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-outline" onClick={() => setEvidenceForm({ id: null, urls: '' })}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Add Evidence</button>
+                <button type="submit" className="btn btn-primary" disabled={addingEvidence}>{addingEvidence ? 'Adding...' : 'Add Evidence'}</button>
               </div>
             </form>
           </div>

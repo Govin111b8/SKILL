@@ -10,6 +10,8 @@ function Login() {
   const navigate = useNavigate();
   const [demoLoading, setDemoLoading] = useState('');
 
+  const showDemo = import.meta.env.VITE_SHOW_DEMO_LOGIN !== 'false';
+
   async function handleDemoLogin(role) {
     const credentials = {
       customer: { email: 'customer@demo.com', redirect: '/dashboard' },
@@ -85,6 +87,7 @@ function Login() {
                 onClick={() => handleDemoLogin('customer')}
                 disabled={!!demoLoading}
                 aria-label="Demo login as Customer"
+                style={showDemo ? {} : { display: 'none' }}
               >
                 {demoLoading === 'customer' ? '⏳' : '🚀'} Try Demo
               </button>
@@ -105,6 +108,7 @@ function Login() {
                 onClick={() => handleDemoLogin('professional')}
                 disabled={!!demoLoading}
                 aria-label="Demo login as Professional"
+                style={showDemo ? {} : { display: 'none' }}
               >
                 {demoLoading === 'professional' ? '⏳' : '🔧'} Try Demo
               </button>
@@ -125,6 +129,7 @@ function Login() {
                 onClick={() => handleDemoLogin('agent')}
                 disabled={!!demoLoading}
                 aria-label="Demo login as Agent"
+                style={showDemo ? {} : { display: 'none' }}
               >
                 {demoLoading === 'agent' ? '⏳' : '🤝'} Try Demo
               </button>
@@ -145,6 +150,7 @@ function Login() {
                 onClick={() => handleDemoLogin('admin')}
                 disabled={!!demoLoading}
                 aria-label="Demo login as Admin"
+                style={showDemo ? {} : { display: 'none' }}
               >
                 {demoLoading === 'admin' ? '⏳' : '🛡️'} Try Demo
               </button>

@@ -17,6 +17,8 @@ function FamilyAccount() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newHousehold, setNewHousehold] = useState({ name: '', address: '', city: '', property_type: 'apartment' });
   const [newMember, setNewMember] = useState({ name: '', role: 'adult', phone: '', email: '' });
+  const [creatingHousehold, setCreatingHousehold] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) fetchHouseholds();
@@ -48,6 +50,7 @@ function FamilyAccount() {
 
   async function handleCreateHousehold(e) {
     e.preventDefault();
+    setCreatingHousehold(true);
     try {
       const res = await post('/households', newHousehold);
       setShowCreate(false);
@@ -56,12 +59,15 @@ function FamilyAccount() {
       if (res.data) fetchHouseholdDetail(res.data.id);
     } catch (err) {
       console.error('Failed to create household:', err);
+    } finally {
+      setCreatingHousehold(false);
     }
   }
 
   async function handleAddMember(e) {
     e.preventDefault();
     if (!selectedHousehold) return;
+    setAddingMember(true);
     try {
       await post(`/households/${selectedHousehold.id}/members`, newMember);
       setShowAddMember(false);
@@ -69,6 +75,8 @@ function FamilyAccount() {
       fetchHouseholdDetail(selectedHousehold.id);
     } catch (err) {
       console.error('Failed to add member:', err);
+    } finally {
+      setAddingMember(false);
     }
   }
 
@@ -162,7 +170,7 @@ function FamilyAccount() {
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Create</button>
+                <button type="submit" className="btn-primary" disabled={creatingHousehold}>{creatingHousehold ? 'Creating...' : 'Create'}</button>
               </div>
             </form>
           </div>
@@ -270,7 +278,7 @@ function FamilyAccount() {
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowAddMember(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Add Member</button>
+                <button type="submit" className="btn-primary" disabled={addingMember}>{addingMember ? 'Adding...' : 'Add Member'}</button>
               </div>
             </form>
           </div>

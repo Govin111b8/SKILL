@@ -34,7 +34,15 @@ async function apiRequest(method, endpoint, body = null) {
     if (body) options.body = JSON.stringify(body);
 
     const response = await fetch(url, options);
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      logger.error({ status: response.status, endpoint, parseErr: parseErr.message }, 'Razorpay non-JSON response');
+      const err = new Error(`Razorpay returned non-JSON response (HTTP ${response.status})`);
+      err.statusCode = response.status;
+      throw err;
+    }
 
     if (!response.ok) {
       logger.error({ status: response.status, data, endpoint }, 'Razorpay API error');
