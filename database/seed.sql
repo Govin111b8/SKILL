@@ -1,5 +1,6 @@
 -- SkillConnect Platform Seed Data
 -- Service Categories
+-- All INSERTs use ON CONFLICT DO NOTHING for idempotency (safe to re-run)
 
 -- ============================================================
 -- TOP-LEVEL CATEGORIES
@@ -10,7 +11,8 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('Event Services', NULL, 'Services for planning and executing events', 'event'),
 ('Personal Services', NULL, 'Personal care and lifestyle services', 'person'),
 ('Technical Services', NULL, 'Technology and technical support services', 'technical'),
-('Creative Services', NULL, 'Creative, design, and artistic services', 'creative');
+('Creative Services', NULL, 'Creative, design, and artistic services', 'creative')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- SUB-CATEGORIES: Home Services
@@ -26,7 +28,8 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('Pest Control', (SELECT id FROM categories WHERE name = 'Home Services'), 'Pest removal and prevention services', 'pest_control'),
 ('HVAC', (SELECT id FROM categories WHERE name = 'Home Services'), 'Heating, ventilation, and air conditioning', 'hvac'),
 ('Roofing', (SELECT id FROM categories WHERE name = 'Home Services'), 'Roof repair, replacement, and maintenance', 'roofing'),
-('Appliance Repair', (SELECT id FROM categories WHERE name = 'Home Services'), 'Repair of home appliances', 'appliance');
+('Appliance Repair', (SELECT id FROM categories WHERE name = 'Home Services'), 'Repair of home appliances', 'appliance')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- SUB-CATEGORIES: Event Services
@@ -40,7 +43,8 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('Event Planning', (SELECT id FROM categories WHERE name = 'Event Services'), 'Full event coordination and planning', 'event_planning'),
 ('Decoration', (SELECT id FROM categories WHERE name = 'Event Services'), 'Event decoration and styling', 'decoration'),
 ('MC & Hosting', (SELECT id FROM categories WHERE name = 'Event Services'), 'Master of ceremonies and event hosting', 'mc'),
-('Venue Rental', (SELECT id FROM categories WHERE name = 'Event Services'), 'Venue sourcing and rental coordination', 'venue');
+('Venue Rental', (SELECT id FROM categories WHERE name = 'Event Services'), 'Venue sourcing and rental coordination', 'venue')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- SUB-CATEGORIES: Personal Services
@@ -54,7 +58,8 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('Massage Therapy', (SELECT id FROM categories WHERE name = 'Personal Services'), 'Therapeutic and relaxation massage', 'massage'),
 ('Nutrition & Diet', (SELECT id FROM categories WHERE name = 'Personal Services'), 'Nutrition planning and dietary advice', 'nutrition'),
 ('Life Coaching', (SELECT id FROM categories WHERE name = 'Personal Services'), 'Personal development and life coaching', 'coaching'),
-('Pet Care', (SELECT id FROM categories WHERE name = 'Personal Services'), 'Pet sitting, grooming, and walking', 'pet_care');
+('Pet Care', (SELECT id FROM categories WHERE name = 'Personal Services'), 'Pet sitting, grooming, and walking', 'pet_care')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- SUB-CATEGORIES: Technical Services
@@ -68,7 +73,8 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('CCTV & Security', (SELECT id FROM categories WHERE name = 'Technical Services'), 'Security camera installation and setup', 'security'),
 ('Phone Repair', (SELECT id FROM categories WHERE name = 'Technical Services'), 'Smartphone and tablet repair', 'phone_repair'),
 ('Networking', (SELECT id FROM categories WHERE name = 'Technical Services'), 'Network setup and configuration', 'networking'),
-('Software Training', (SELECT id FROM categories WHERE name = 'Technical Services'), 'Software usage training and workshops', 'training');
+('Software Training', (SELECT id FROM categories WHERE name = 'Technical Services'), 'Software usage training and workshops', 'training')
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- SUB-CATEGORIES: Creative Services
@@ -82,4 +88,5 @@ INSERT INTO categories (name, parent_id, description, icon) VALUES
 ('Animation', (SELECT id FROM categories WHERE name = 'Creative Services'), '2D and 3D animation services', 'animation'),
 ('Music Production', (SELECT id FROM categories WHERE name = 'Creative Services'), 'Music composition and production', 'music_production'),
 ('Voice Over', (SELECT id FROM categories WHERE name = 'Creative Services'), 'Professional voice-over recording', 'voice_over'),
-('Illustration', (SELECT id FROM categories WHERE name = 'Creative Services'), 'Custom illustrations and artwork', 'illustration');
+('Illustration', (SELECT id FROM categories WHERE name = 'Creative Services'), 'Custom illustrations and artwork', 'illustration')
+ON CONFLICT (name) DO NOTHING;

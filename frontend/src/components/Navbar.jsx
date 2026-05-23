@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell, FiRepeat, FiBriefcase } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import './Navbar.css';
@@ -60,7 +60,13 @@ function Navbar() {
               <FiHome size={16} /> Home
             </Link>
             <Link to="/categories" className={`nav-link ${location.pathname === '/categories' ? 'active' : ''}`}>
-              <FiGrid size={16} /> Categories
+              <FiGrid size={16} /> Services
+            </Link>
+            <Link to="/subscriptions" className={`nav-link ${location.pathname === '/subscriptions' ? 'active' : ''}`}>
+              <FiRepeat size={16} /> Subscribe
+            </Link>
+            <Link to="/marketplace" className={`nav-link ${location.pathname === '/marketplace' ? 'active' : ''}`}>
+              <FiBriefcase size={16} /> Projects
             </Link>
             <Link to="/search" className={`nav-link ${location.pathname === '/search' ? 'active' : ''}`}>
               <FiSearch size={16} /> Explore
@@ -137,7 +143,9 @@ function Navbar() {
       <div className={`navbar-drawer ${menuOpen ? 'open' : ''}`}>
         <div className="drawer-links">
           <Link to="/"><FiHome /> Home</Link>
-          <Link to="/categories"><FiGrid /> Categories</Link>
+          <Link to="/categories"><FiGrid /> Services</Link>
+          <Link to="/subscriptions"><FiRepeat /> Subscriptions</Link>
+          <Link to="/marketplace"><FiBriefcase /> Marketplace</Link>
           <Link to="/search"><FiSearch /> Explore</Link>
           {isAuthenticated ? (
             <>

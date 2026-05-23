@@ -31,6 +31,8 @@ export function WebSocketProvider({ children }) {
   const mountedRef = useRef(true);
 
   // ── Toast helpers ──────────────────────────────────────────────
+  const toastTimersRef = useRef(new Set());
+
   const addToast = useCallback((message, variant = 'info') => {
     const id = `toast-${Date.now()}-${++toastIdCounter}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
@@ -38,7 +40,9 @@ export function WebSocketProvider({ children }) {
       if (mountedRef.current) {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }
+      toastTimersRef.current.delete(timer);
     }, 5000);
+    toastTimersRef.current.add(timer);
     return timer;
   }, []);
 
@@ -261,6 +265,17 @@ export function WebSocketProvider({ children }) {
     return () => {
       mountedRef.current = false;
       window.removeEventListener('storage', onStorage);
+      // Clean up all timers to prevent memory leaks
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
+      toastTimersRef.current.forEach((timer) => clearTimeout(timer));
+      toastTimersRef.current.clear();
       disconnect();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

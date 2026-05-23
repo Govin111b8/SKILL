@@ -52,6 +52,11 @@ const collectionsRoutes = require('./routes/collections');
 const communityRoutes = require('./routes/community');
 const reelsRoutes = require('./routes/reels');
 const serviceRoutes = require('./routes/services');
+const subscriptionRoutes = require('./routes/subscriptions');
+const householdRoutes = require('./routes/households');
+const countryRoutes = require('./routes/countries');
+const marketplaceRoutes = require('./routes/marketplace');
+const providerBusinessRoutes = require('./routes/providerBusiness');
 
 const app = express();
 
@@ -97,6 +102,10 @@ app.use(cors({
 app.use(httpLogger);
 
 app.use(express.json({ limit: '1mb' }));
+
+// XSS sanitization — strip HTML/script tags from all text body fields
+const sanitize = require('./middleware/sanitize');
+app.use(sanitize);
 
 // Rate limiting — protect auth endpoints from brute force
 const authLimiter = rateLimit({
@@ -190,6 +199,11 @@ app.use('/api/collections', collectionsRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/reels', reelsRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/households', householdRoutes);
+app.use('/api/countries', countryRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/provider-business', providerBusinessRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

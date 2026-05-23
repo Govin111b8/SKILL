@@ -2,6 +2,8 @@
 -- Migration 015: Phase 5.2 (Collections), Phase 8.2 (User Points)
 -- ============================================================
 
+BEGIN;
+
 -- ── Phase 5.2: Save Collections (Pinterest-style) ──────────
 
 CREATE TABLE IF NOT EXISTS collections (
@@ -32,3 +34,5 @@ CREATE TABLE IF NOT EXISTS user_points (
   lifetime_points INT     NOT NULL DEFAULT 0,
   level           INT     NOT NULL DEFAULT 1
 );
+
+COMMIT;

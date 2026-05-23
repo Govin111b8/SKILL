@@ -11,6 +11,7 @@ function Referrals() {
   const [copied, setCopied] = useState(false);
   const [applyCode, setApplyCode] = useState('');
   const [message, setMessage] = useState('');
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -39,6 +40,7 @@ function Referrals() {
   async function applyReferral(e) {
     e.preventDefault();
     if (!applyCode.trim()) return;
+    setApplying(true);
     try {
       const res = await post('/referrals/apply', { code: applyCode.trim() });
       setMessage((res.data || res).message || 'Referral applied!');
@@ -46,6 +48,8 @@ function Referrals() {
       fetchData();
     } catch (err) {
       setMessage('Error: ' + (err.data?.error || err.message));
+    } finally {
+      setApplying(false);
     }
   }
 
@@ -127,8 +131,8 @@ function Referrals() {
               placeholder="Enter referral code"
               className="form-input"
             />
-            <button type="submit" className="btn btn-primary btn-sm" disabled={!applyCode.trim()}>
-              Apply
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!applyCode.trim() || applying}>
+              {applying ? 'Applying...' : 'Apply'}
             </button>
           </form>
         </div>

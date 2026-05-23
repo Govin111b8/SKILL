@@ -74,14 +74,14 @@ const search = async (req, res, next) => {
       ELSE 0.0
     END`;
 
-    // ── Profile completeness score (0–1) ─────────────────────────────
+    // ── Profile completeness score (0–1) — using pre-aggregated JOINs ──
     const completenessScore = `(
       CASE WHEN p.bio IS NOT NULL AND p.bio <> '' THEN 0.15 ELSE 0 END
       + CASE WHEN p.headline IS NOT NULL AND p.headline <> '' THEN 0.10 ELSE 0 END
       + CASE WHEN p.latitude IS NOT NULL THEN 0.15 ELSE 0 END
       + CASE WHEN u.government_id_verified THEN 0.25 ELSE 0 END
-      + CASE WHEN (SELECT COUNT(*) FROM portfolio_items pi WHERE pi.professional_id = p.id) > 0 THEN 0.20 ELSE 0 END
-      + CASE WHEN (SELECT COUNT(*) FROM certifications cc WHERE cc.professional_id = p.id) > 0 THEN 0.05 ELSE 0 END
+      + CASE WHEN COALESCE(port.has_portfolio, false) THEN 0.20 ELSE 0 END
+      + CASE WHEN COALESCE(cert.has_certs, false) THEN 0.05 ELSE 0 END
       + CASE WHEN p.cover_image_url IS NOT NULL THEN 0.05 ELSE 0 END
       + CASE WHEN u.avatar_url IS NOT NULL THEN 0.05 ELSE 0 END
     )`;
@@ -89,11 +89,8 @@ const search = async (req, res, next) => {
     // ── Activity score (last login within 90 days → 1.0, older → 0) ──
     const activityScore = `GREATEST(0, 1.0 - EXTRACT(EPOCH FROM (NOW() - COALESCE(u.last_login_at, u.created_at))) / (90 * 86400))`;
 
-    // ── Review recency (any review in last 30 days) ───────────────────
-    const reviewRecencyScore = `CASE WHEN EXISTS (
-      SELECT 1 FROM reviews rr
-      WHERE rr.professional_id = p.id AND rr.created_at >= NOW() - INTERVAL '30 days'
-    ) THEN 1.0 ELSE 0.0 END`;
+    // ── Review recency (any review in last 30 days) — using pre-aggregated JOIN ──
+    const reviewRecencyScore = `COALESCE(rrev.has_recent_review, false)::int::float`;
 
     // ── Composite ranking score ───────────────────────────────────────
     const rankingScore = latitude && longitude
@@ -132,6 +129,20 @@ const search = async (req, res, next) => {
       JOIN users u ON p.user_id = u.id
       LEFT JOIN reviews r ON p.id = r.professional_id
       LEFT JOIN professional_services ps ON ps.professional_id = p.id AND ps.is_active = true
+      LEFT JOIN (
+        SELECT professional_id, TRUE AS has_portfolio
+        FROM portfolio_items GROUP BY professional_id
+      ) port ON port.professional_id = p.id
+      LEFT JOIN (
+        SELECT professional_id, TRUE AS has_certs
+        FROM certifications GROUP BY professional_id
+      ) cert ON cert.professional_id = p.id
+      LEFT JOIN (
+        SELECT professional_id, TRUE AS has_recent_review
+        FROM reviews
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY professional_id
+      ) rrev ON rrev.professional_id = p.id
     `;
 
     // ── WHERE conditions ─────────────────────────────────────────────
@@ -231,7 +242,8 @@ const search = async (req, res, next) => {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const groupByClause = `GROUP BY p.id, u.name, u.location, u.email, u.avatar_url,
-      u.government_id_verified, u.last_login_at, u.id`;
+      u.government_id_verified, u.last_login_at, u.id,
+      port.has_portfolio, cert.has_certs, rrev.has_recent_review`;
 
     // Min rating filter (applied after aggregation)
     let havingClause = '';

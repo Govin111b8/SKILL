@@ -23,6 +23,14 @@ function ProfessionalCard({ professional }) {
   const responseTime = professional.response_time_hours;
   const govIdVerified = professional.government_id_verified;
   const reputationScore = professional.reputation_score;
+  const trustLevel = professional.trust_level;
+
+  const trustLevelConfig = {
+    bronze: { emoji: '🥉', label: 'Bronze', color: '#CD7F32' },
+    silver: { emoji: '🥈', label: 'Silver', color: '#C0C0C0' },
+    gold: { emoji: '🥇', label: 'Gold', color: '#FFD700' },
+    platinum: { emoji: '💎', label: 'Platinum', color: '#E5E4E2' },
+  };
 
   const initial = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
@@ -30,6 +38,11 @@ function ProfessionalCard({ professional }) {
     <div className="pro-card" role="article" aria-label={`Professional: ${name}`}>
       {/* Top badges */}
       <div className="pro-card-badges">
+        {trustLevel && trustLevelConfig[trustLevel] && (
+          <span className="pro-badge pro-badge--trust" style={{ borderColor: trustLevelConfig[trustLevel].color, color: trustLevelConfig[trustLevel].color }}>
+            {trustLevelConfig[trustLevel].emoji} {trustLevelConfig[trustLevel].label}
+          </span>
+        )}
         {provider_type === 'organization' && (
           <span className="pro-badge pro-badge--org">
             🏢 {company_name || 'Company'}
@@ -181,4 +194,6 @@ ProfessionalCard.propTypes = {
   }).isRequired,
 };
 
-export default ProfessionalCard;
+import { memo } from 'react';
+
+export default memo(ProfessionalCard);

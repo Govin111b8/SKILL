@@ -38,4 +38,6 @@ ReviewCard.propTypes = {
   }).isRequired,
 };
 
-export default ReviewCard;
+import { memo } from 'react';
+
+export default memo(ReviewCard);

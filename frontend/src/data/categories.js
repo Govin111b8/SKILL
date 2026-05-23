@@ -4,7 +4,7 @@ import {
   FiSearch, FiGrid, FiUser, FiSun, FiBriefcase, FiServer,
   FiMic, FiActivity, FiMonitor, FiSettings, FiNavigation,
   FiBox, FiMessageCircle, FiCalendar, FiEdit2, FiSquare,
-  FiFeather, FiAward,
+  FiFeather, FiAward, FiRepeat,
 } from 'react-icons/fi';
 
 export const categoriesData = [
@@ -193,4 +193,60 @@ export const categoriesData = [
       { name: 'Delivery', icon: FiTruck, desc: 'Local goods and parcel delivery' },
     ],
   },
+];
+
+// Service Engine Classification
+// booking = instant standardized services
+// subscription = recurring household services
+// marketplace = quote/project-based professional services
+export const serviceEngines = {
+  booking: {
+    label: 'Book Now',
+    desc: 'Instant standardized services — discover, book, track, pay',
+    icon: FiCalendar,
+    color: '#6366f1',
+  },
+  subscription: {
+    label: 'Subscribe',
+    desc: 'Recurring household services — daily, weekly, monthly',
+    icon: FiRepeat,
+    color: '#10b981',
+  },
+  marketplace: {
+    label: 'Get Quotes',
+    desc: 'Professional project services — proposals, milestones, contracts',
+    icon: FiBriefcase,
+    color: '#1f2937',
+  },
+};
+
+// Subscription-eligible categories
+export const subscriptionCategories = [
+  { name: 'Maid Service', frequency: 'daily', engine: 'subscription', priceRange: '₹3,000–5,000/mo' },
+  { name: 'Milk Delivery', frequency: 'daily', engine: 'subscription', priceRange: '₹500–1,000/mo' },
+  { name: 'Water Delivery', frequency: 'daily', engine: 'subscription', priceRange: '₹400–800/mo' },
+  { name: 'Tiffin Service', frequency: 'daily', engine: 'subscription', priceRange: '₹3,500–6,000/mo' },
+  { name: 'Laundry & Ironing', frequency: 'weekly', engine: 'subscription', priceRange: '₹1,000–2,000/mo' },
+  { name: 'House Cleaning', frequency: 'weekly', engine: 'subscription', priceRange: '₹1,500–3,000/mo' },
+  { name: 'Gardening', frequency: 'weekly', engine: 'subscription', priceRange: '₹1,000–2,500/mo' },
+  { name: 'Pest Control', frequency: 'monthly', engine: 'subscription', priceRange: '₹500–1,200/mo' },
+  { name: 'AC Maintenance', frequency: 'monthly', engine: 'subscription', priceRange: '₹400–800/mo' },
+  { name: 'RO Maintenance', frequency: 'monthly', engine: 'subscription', priceRange: '₹300–600/mo' },
+  { name: 'Elderly Checkups', frequency: 'monthly', engine: 'subscription', priceRange: '₹2,000–5,000/mo' },
+];
+
+// Marketplace (project/quote) categories
+export const marketplaceCategories = [
+  { name: 'Tutors & Coaching', engine: 'marketplace', icon: FiBook },
+  { name: 'Web Development', engine: 'marketplace', icon: FiMonitor },
+  { name: 'Graphic Design', engine: 'marketplace', icon: FiEdit2 },
+  { name: 'Photography', engine: 'marketplace', icon: FiCamera },
+  { name: 'Interior Design', engine: 'marketplace', icon: FiHome },
+  { name: 'Architecture', engine: 'marketplace', icon: FiGrid },
+  { name: 'Event Planning', engine: 'marketplace', icon: FiCalendar },
+  { name: 'Accounting & Tax', engine: 'marketplace', icon: FiBriefcase },
+  { name: 'Legal Services', engine: 'marketplace', icon: FiAward },
+  { name: 'Construction', engine: 'marketplace', icon: FiTool },
+  { name: 'Catering', engine: 'marketplace', icon: FiBox },
+  { name: 'Video Production', engine: 'marketplace', icon: FiCamera },
 ];

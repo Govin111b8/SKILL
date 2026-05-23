@@ -433,6 +433,36 @@ function Home() {
         </section>
       )}
 
+      {/* SERVICE ENGINES — 3 ways to use SkillConnect */}
+      <section className="section" style={{ padding: '2rem 0' }}>
+        <div className="container">
+          <div className="section-header center">
+            <span className="section-eyebrow">Three Ways to Get Help</span>
+            <h2 className="section-title">Choose How You Want to Use SkillConnect</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginTop: '1.5rem' }}>
+            <Link to="/categories" style={{ textDecoration: 'none', color: 'inherit', background: '#fff', border: '2px solid #6366f1', borderRadius: '16px', padding: '1.5rem', transition: 'transform 0.2s' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
+              <h3 style={{ color: '#6366f1', marginBottom: '0.3rem' }}>Book Now</h3>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Instant services — plumbing, electrical, cleaning, AC repair. Book a time slot, track live, pay on completion.</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.75rem', fontSize: '0.85rem', color: '#6366f1', fontWeight: 500 }}>Browse Services <FiArrowRight size={14} /></span>
+            </Link>
+            <Link to="/subscriptions" style={{ textDecoration: 'none', color: 'inherit', background: '#fff', border: '2px solid #10b981', borderRadius: '16px', padding: '1.5rem', transition: 'transform 0.2s' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔄</div>
+              <h3 style={{ color: '#10b981', marginBottom: '0.3rem' }}>Subscribe</h3>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Recurring household services — maid, milk, laundry, gardening. Set a schedule, pause anytime, share with family.</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.75rem', fontSize: '0.85rem', color: '#10b981', fontWeight: 500 }}>View Plans <FiArrowRight size={14} /></span>
+            </Link>
+            <Link to="/marketplace" style={{ textDecoration: 'none', color: 'inherit', background: '#fff', border: '2px solid #1f2937', borderRadius: '16px', padding: '1.5rem', transition: 'transform 0.2s' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💼</div>
+              <h3 style={{ color: '#1f2937', marginBottom: '0.3rem' }}>Get Quotes</h3>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Project-based work — tutors, designers, photographers, contractors. Describe your project, compare proposals, pay by milestone.</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.75rem', fontSize: '0.85rem', color: '#1f2937', fontWeight: 500 }}>Find Professionals <FiArrowRight size={14} /></span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ALL SERVICES */}
       <section className="section categories-section">
         <div className="container">

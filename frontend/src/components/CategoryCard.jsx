@@ -27,4 +27,6 @@ CategoryCard.propTypes = {
   }).isRequired,
 };
 
-export default CategoryCard;
+import { memo } from 'react';
+
+export default memo(CategoryCard);

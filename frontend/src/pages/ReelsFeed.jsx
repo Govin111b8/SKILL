@@ -21,7 +21,8 @@ export default function ReelsFeed() {
       const res = await get(`/reels/feed?page=${page}&limit=10`);
       const data = res.data || [];
       setReels(prev => page === 1 ? data : [...prev, ...data]);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load reels:', err);
     } finally {
       setLoading(false);
     }

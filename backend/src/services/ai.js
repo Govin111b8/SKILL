@@ -44,15 +44,24 @@ function getCached(key) {
     cache.delete(key);
     return null;
   }
+  // Update timestamp on access (LRU behavior)
+  entry.ts = Date.now();
   return entry.value;
 }
 
 function setCache(key, value) {
   cache.set(key, { value, ts: Date.now() });
-  // Prevent unbounded growth
+  // Prevent unbounded growth — LRU eviction (evict least recently used)
   if (cache.size > 10000) {
-    const oldest = cache.keys().next().value;
-    cache.delete(oldest);
+    let oldestKey = null;
+    let oldestTs = Infinity;
+    for (const [k, entry] of cache) {
+      if (entry.ts < oldestTs) {
+        oldestTs = entry.ts;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey) cache.delete(oldestKey);
   }
 }
 

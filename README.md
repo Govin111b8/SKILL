@@ -55,35 +55,37 @@
 
 | 📦 Components | 📊 Metrics | 🧪 Quality |
 |:---:|:---:|:---:|
-| 3 platforms (Web + Mobile + API) | 400+ source files | 50%+ test coverage |
-| 39 backend controllers | 100+ API endpoints | ESLint + Flutter Lints |
-| 52 frontend pages (+ 10 admin) | 74+ database tables | 16 backend test suites (150 tests) |
-| 40+ mobile screens | 39 route files | Conventional Commits |
-| 23 reusable React components | 17 database migrations | 13 automated cron jobs |
-| 19 Flutter services | 6 config files | 4 Prometheus alert rules |
+| 3 platforms (Web + Mobile + API) | 433+ source files | 60,000+ lines of code |
+| 38 backend controllers | 218+ API endpoints | ESLint + Flutter Lints |
+| 57 frontend pages (+ 10 admin) | 88+ database tables | 16 backend test suites (150 tests) |
+| 49 mobile screens | 39 route files | Conventional Commits |
+| 23 reusable React components | 19 database migrations | 13 automated cron jobs |
+| 19 Flutter services | 9 backend services | 4 Prometheus alert rules |
 
-**📋 Implementation Status (Post Phase 7 — May 2026)**
+**📋 Implementation Status (Post Deep Audit v2 — May 2026)**
 
 | Domain | Score | What's Implemented |
 |:---|:---:|:---|
-| **Core Marketplace** (booking, contacts, reviews) | **10/10** ✅ | Full FSM, timing window, velocity detection, helpful, edit |
-| **Trust & Safety** | **10/10** ✅ | Trust Index 0-100, badge tiers (Rising Pro → Elite), trust timeline, trust explainability |
-| **Subscriptions & Payments** | **9.5/10** ✅ | Monthly + annual billing, escrow, GST invoices, grace period, portfolio tier limits |
+| **Core Marketplace** (booking, contacts, reviews) | **10/10** ✅ | Full FSM, timing window, velocity detection, helpful votes, edit |
+| **Trust & Safety** | **10/10** ✅ | Trust Index 0-100, badge tiers (Rising Pro → Elite), trust timeline, trust explainability, top-rated percentile |
+| **Subscriptions & Payments** | **9.5/10** ✅ | Monthly + annual billing, escrow (dispute-aware), GST invoices, grace period, tier limits |
 | **Real-time & Notifications** | **9/10** ✅ | WebSocket hub, FCM push, SMS, email — all triggers wired |
-| **Search & Discovery** | **9.5/10** ✅ | Full-text search, trending/new/responsive, reels feed, discover carousels |
+| **Search & Discovery** | **9.5/10** ✅ | Full-text + service-level search, trending/new/responsive, reels feed, geolocation |
 | **Social & Engagement** | **9/10** ✅ | Follow system, stories (24h), community posts, collections, reels feed |
 | **Storefront & Branding** | **9/10** ✅ | 8 themes, brand colors, custom layouts, service packages, media gallery, hero experience |
+| **Service Catalog** | **9/10** ✅ | `professional_services` table, per-service pricing, booking integration, search matching |
 | **User Account** | **10/10** ✅ | DPDPA data export, soft delete, notification preferences, city selector, language |
 | **Admin Panel** | **9/10** ✅ | KYC queue, disputes, complaints, appeals, category requests, featured slots, A/B experiments |
+| **Security** | **8.5/10** ✅ | SQL injection fixed, path traversal blocked, rate limiting, fraud prevention, password validation |
 | **Legal & Compliance** | **10/10** ✅ | 6 legal pages (ToS, Privacy/DPDPA, Refund, Cookie, Pro Terms, Moderation), PII masking |
 | **SEO & Growth** | **9/10** ✅ | react-helmet-async, JSON-LD schema, sitemap.xml, waitlist, Open Graph |
-| **Mobile** | **9/10** ✅ | Flutter 3.8, 22+ screens, offline-first, EN/HI/TE i18n |
-| **Infrastructure & Security** | **9.5/10** ✅ | K8s, HPA, PDB, Semgrep+Gitleaks+Trivy CI, backup CronJobs, PgBouncer |
+| **Mobile** | **7/10** ⚠️ | Flutter 3.8, 49 screens, offline-first, EN/HI/TE i18n — models need splitting |
+| **Infrastructure & Security** | **7/10** ⚠️ | K8s, HPA, PDB, CI/CD, PgBouncer — needs NetworkPolicy + HA DB |
 | **Observability** | **9/10** ✅ | Prometheus, Grafana, Sentry, structured logging, PII redaction |
 | **Documentation** | **10/10** ✅ | ARCHITECTURE.md, RUNBOOKS.md, INCIDENT_RESPONSE.md, THREAT_MODEL.md |
 | **Testing** | **9/10** ✅ | 150 backend tests (16 suites), vitest frontend, k6 load tests |
 
-> **Overall: 9.5 / 10** — Production-grade with social + storefront layers. Remaining: BullMQ queue, OpenTelemetry tracing, K8s overlays, WhatsApp integration, gamification, AI layer.
+> **Overall: 8.5 / 10** — Production-grade with social + storefront + service catalog layers complete. Security hardened via Deep Audit v2. Remaining: BullMQ queue, OpenTelemetry, K8s overlays, WhatsApp integration, gamification, AI layer, mobile model refactor.
 
 ---
 
@@ -3790,6 +3792,26 @@ git push origin feature/your-feature-name
 - [x] Backend: `GET /api/trust/:id/badges`, `/timeline`, `/explain`
 - [x] Frontend: `TrustTimeline.jsx`, `TrustSection.jsx` components on storefront
 
+### ✅ Completed — Deep Audit v2: Security & Stability (May 2026)
+
+- [x] **Service Catalog System** — `professional_services` table, CRUD API, management UI, booking integration, service-level search
+- [x] **6-Step Professional Onboarding Wizard** — Individual/Company paths, category + service selection, portfolio upload, availability setup
+- [x] **Customer Discovery Enhancements** — Geolocation near-me, service-level browsing, quick filters, recently-viewed persistence
+- [x] **Dashboard Enhancements** — Calendar view for bookings, quick actions widget, customer insights cards
+- [x] **Security: SQL injection** — Parameterized all dynamic INTERVAL/query string interpolation in analytics + admin controllers
+- [x] **Security: Path traversal** — Upload folder parameter now whitelist-validated
+- [x] **Security: Escrow dispute check** — `releaseEscrow()` now verifies no active disputes before releasing funds
+- [x] **Security: Password validation** — 8+ chars, uppercase, digit required on password change
+- [x] **Security: Amount caps** — Booking limited to 90 days future, payment capped at ₹10,00,000
+- [x] **Stability: NaN pagination** — parseInt fallbacks across searchController, categoryController, contactController, reviewController
+- [x] **Stability: Null safety** — Guarded `.rows[0]` access in notificationController + fraudPrevention
+- [x] **Stability: Crash guards** — ReelsFeed array bounds, Chat null reference, Emergency array fallback
+- [x] **Frontend: Silent catches** — 40+ `.catch(() => {})` replaced with `console.error` + user feedback
+- [x] **Frontend: Logout API** — Now calls `POST /auth/logout` to invalidate server session
+- [x] **Frontend: Currency** — Fixed $ → ₹ across Bookings.jsx
+- [x] **Trust: Top Rated badge** — Implemented category-level percentile calculation (top 10%)
+- [x] **Cleanup** — Removed Dashboard.jsx.bak, fixed placeholder phone number in Footer
+
 ### 🔜 Future Roadmap
 
 **Phase 8: Gamification & Retention**
@@ -4532,18 +4554,84 @@ Special thanks to the maintainers of all open-source packages used in this proje
 
 | Metric | Count |
 |--------|-------|
-| **Total Source Files** | 267+ |
-| **Dart (Mobile)** | 74 files / 14,460 LOC |
-| **JavaScript (Backend)** | 96 files / 7,639 LOC |
-| **React (Frontend)** | 49 JSX files |
-| **CSS Stylesheets** | 38 files |
-| **SQL Migrations** | 10 files / 235 LOC |
-| **API Endpoints** | 75+ |
-| **Database Tables** | 20+ |
-| **Backend Controllers** | 25 |
-| **Mobile Screens** | 22+ |
-| **Test Files** | 15+ |
+| **Total Source Files** | 433+ |
+| **JavaScript (Backend)** | 143 files / 14,697 LOC |
+| **React (Frontend)** | 86 JSX files / 15,708 LOC |
+| **Dart (Mobile)** | 87 files / 16,350 LOC |
+| **CSS Stylesheets** | 60 files / 13,965 LOC |
+| **SQL Migrations** | 19 files |
+| **API Endpoints** | 218+ |
+| **Database Tables** | 88+ |
+| **Backend Controllers** | 38 |
+| **Backend Route Files** | 39 |
+| **Backend Services** | 9 |
+| **Backend Middleware** | 8 |
+| **Frontend Pages** | 57 |
+| **Frontend Components** | 23 reusable |
+| **Mobile Screens** | 49 |
+| **Mobile Services** | 19 |
+| **Test Suites** | 16 (150 tests) |
+| **Cron Jobs** | 13 automated |
 | **Supported Languages** | 3 (EN, HI, TE) |
+| **Storefront Themes** | 8 |
+| **Trust Badge Tiers** | 5 |
+| **Total LOC (approx.)** | 60,000+ |
+
+---
+
+## 🔬 Current Platform Status (May 2026 — Deep Audit v2)
+
+> **Comprehensive codebase audit completed.** 150+ issues identified, 80+ fixed. Platform scored **8.5/10** overall production readiness.
+
+### Production Readiness Scorecard
+
+| Area | Score | Status |
+|------|:-----:|:------:|
+| **Auth & Roles** | 9/10 | ✅ 4 roles (customer, professional, agent, admin), RBAC routes, token refresh |
+| **Backend API** | 8.5/10 | ✅ 38 controllers, 218+ endpoints, retry logic, rate limiting |
+| **Service Catalog** | 9/10 | ✅ `professional_services` table, CRUD API, management UI, booking integration |
+| **Provider Onboarding** | 8/10 | ✅ 6-step wizard, Individual/Company toggle, company storefront sections |
+| **Customer Discovery** | 8/10 | ✅ Geolocation, service browsing, quick filters, recently viewed |
+| **Booking Flow** | 7.5/10 | ✅ Multi-step wizard, service selection, slot picker, amount validation |
+| **Professional Dashboard** | 8/10 | ✅ Stats, calendar view, quick actions, customer insights |
+| **Storefront & Branding** | 8.5/10 | ✅ 8 themes, media gallery, packages, trust badges, hero experience |
+| **Social Features** | 8/10 | ✅ Follow, collections, stories, community posts, reels |
+| **Trust System** | 9/10 | ✅ 5-tier badges, trust timeline, explainability, auto-calculation cron |
+| **Security** | 8.5/10 | ✅ SQL injection fixed, path traversal blocked, password validation |
+| **Mobile App** | 7/10 | ⚠️ 49 screens, offline-first, i18n — models need splitting |
+| **Infrastructure** | 7/10 | ⚠️ K8s manifests, CI/CD, monitoring — needs NetworkPolicy + HA DB |
+
+### Recent Security & Stability Fixes (Sprint 5-6)
+
+| Fix | Impact |
+|-----|--------|
+| ✅ Escrow release now blocks when dispute is active | Prevents funds released during disputes |
+| ✅ SQL injection in analytics parameterized | Eliminates injection attack vector |
+| ✅ Upload path traversal — folder whitelist enforced | Blocks filesystem traversal |
+| ✅ Booking date capped at 90 days future | Prevents spam bookings |
+| ✅ Payment amount capped at ₹10,00,000 | Blocks billing exploits |
+| ✅ Password validation (8+ chars, uppercase, digit) | Enforces strong passwords |
+| ✅ NaN pagination fallbacks across 4 controllers | Prevents broken queries |
+| ✅ 40+ frontend silent catches now log errors | No more hidden failures |
+| ✅ Frontend logout calls `POST /auth/logout` | Server sessions properly invalidated |
+| ✅ Top-rated badge percentile calculation | Badge now actually awarded |
+| ✅ Unsafe `.rows[0]` access guarded | Prevents runtime crashes |
+| ✅ ReelsFeed/Chat/Emergency crash guards | Prevents page crashes |
+
+### What's Next
+
+| Priority | Item | Status |
+|:--------:|------|:------:|
+| 🟠 | Referral code deduplication | Planned |
+| 🟠 | Search N+1 query optimization (6 subqueries per row) | Planned |
+| 🟠 | XSS input sanitization middleware | Planned |
+| 🟡 | Search debouncing (300ms) | Planned |
+| 🟡 | Form double-submit prevention | Planned |
+| 🟡 | React.lazy code splitting | Planned |
+| 🟡 | Mobile models.dart split into domain files | Planned |
+| 🔵 | K8s NetworkPolicy definitions | Planned |
+| 🔵 | HA database setup (multi-replica) | Planned |
+| 🔵 | BullMQ queue (replace in-memory) | Planned |
 
 ---
 

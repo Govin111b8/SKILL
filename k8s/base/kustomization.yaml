@@ -14,6 +14,7 @@ resources:
   - statefulsets.yaml
   - ingress.yaml
   - hpa.yaml
+  - network-policy.yaml
   - monitoring/prometheus.yaml
   - monitoring/grafana.yaml
 

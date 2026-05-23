@@ -6,7 +6,7 @@ import {
   FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
   FiDollarSign, FiCalendar, FiPieChart, FiActivity, FiAward,
   FiHeart, FiShoppingBag, FiBookOpen, FiZap, FiArrowUp, FiArrowDown,
-  FiTarget, FiBell,
+  FiTarget, FiBell, FiRepeat,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
@@ -104,6 +104,12 @@ function CustomerDashboard({ data }) {
         </Link>
         <Link to="/referrals" className="quick-action-btn">
           <FiAward /> Referrals
+        </Link>
+        <Link to="/subscriptions" className="quick-action-btn">
+          <FiRepeat /> Subscriptions
+        </Link>
+        <Link to="/family" className="quick-action-btn">
+          <FiUsers /> Family
         </Link>
       </div>
 
@@ -264,14 +270,18 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
     try { await put(`/contacts/${contactId}/status`, { status }); refresh(); } catch (err) { console.error('Contact action failed:', err.message); }
   }
 
+  const [savingPortfolio, setSavingPortfolio] = useState(false);
+
   async function handleAddPortfolio(e) {
     e.preventDefault();
+    setSavingPortfolio(true);
     try {
       await post('/portfolio', portfolioForm);
       setPortfolioForm({ title: '', description: '', media_type: 'image', media_url: '' });
       setShowPortfolioForm(false);
       refresh();
     } catch (err) { console.error('Add portfolio failed:', err.message); }
+    finally { setSavingPortfolio(false); }
   }
 
   async function handleDeletePortfolio(id) {
@@ -582,7 +592,7 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
                 <textarea value={portfolioForm.description} onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })} rows={2} />
               </div>
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary btn-sm">Save</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={savingPortfolio}>{savingPortfolio ? 'Saving...' : 'Save'}</button>
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowPortfolioForm(false)}>Cancel</button>
               </div>
             </form>

@@ -1,0 +1,272 @@
+.marketplace-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.marketplace-hero {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.marketplace-hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.marketplace-hero p {
+  font-size: 1.05rem;
+  opacity: 0.9;
+  max-width: 650px;
+  margin-bottom: 1.5rem;
+}
+
+.marketplace-hero-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.marketplace-hero-flow span {
+  background: rgba(255,255,255,0.15);
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+}
+
+/* View toggle */
+.marketplace-view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  background: #f3f4f6;
+  padding: 0.3rem;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.marketplace-view-toggle button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.marketplace-view-toggle button.active {
+  background: #fff;
+  color: #1f2937;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Categories grid */
+.marketplace-categories h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.marketplace-card {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.marketplace-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.marketplace-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.marketplace-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.marketplace-card p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.marketplace-card-action {
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Projects list */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.project-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.project-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.project-card-header h3 {
+  font-size: 1.05rem;
+}
+
+.project-status {
+  padding: 0.25rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.project-desc {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.project-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.project-card-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.project-date {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* Empty */
+.marketplace-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.marketplace-empty svg {
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.marketplace-empty h3 {
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.marketplace-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+/* How it works */
+.marketplace-how {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  margin-top: 3rem;
+}
+
+.marketplace-how h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.marketplace-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.mkt-step {
+  text-align: center;
+}
+
+.mkt-step-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.mkt-step h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.mkt-step p {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .marketplace-hero {
+    padding: 2rem 1.5rem;
+  }
+
+  .marketplace-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .marketplace-hero-flow {
+    display: none;
+  }
+
+  .marketplace-grid {
+    grid-template-columns: 1fr;
+  }
+}

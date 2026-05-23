@@ -24,6 +24,7 @@ export default function Warranties() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [claimForm, setClaimForm] = useState({ id: null, reason: '' });
+  const [claiming, setClaiming] = useState(false);
 
   const isPro = user?.role === 'professional';
 
@@ -47,6 +48,7 @@ export default function Warranties() {
       setMessage('Please describe the issue');
       return;
     }
+    setClaiming(true);
     try {
       await post(`/warranties/${claimForm.id}/claim`, { reason: claimForm.reason });
       setMessage('Warranty claimed! A re-service booking has been created.');
@@ -54,6 +56,8 @@ export default function Warranties() {
       fetchWarranties();
     } catch (err) {
       setMessage('Error: ' + (err.data?.error || err.message));
+    } finally {
+      setClaiming(false);
     }
   }
 
@@ -105,7 +109,7 @@ export default function Warranties() {
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-outline" onClick={() => setClaimForm({ id: null, reason: '' })}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Claim & Request Re-Service</button>
+                <button type="submit" className="btn btn-primary" disabled={claiming}>{claiming ? 'Claiming...' : 'Claim & Request Re-Service'}</button>
               </div>
             </form>
           </div>

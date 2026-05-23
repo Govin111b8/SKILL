@@ -1,0 +1,359 @@
+.subscriptions-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Hero */
+.subscriptions-hero {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  margin-bottom: 3rem;
+  color: #fff;
+}
+
+.subscriptions-hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.subscriptions-hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-bottom: 1.5rem;
+}
+
+.subscriptions-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.subscriptions-hero-badges .badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Categories Grid */
+.subscriptions-categories {
+  margin-bottom: 3rem;
+}
+
+.subscriptions-categories h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.section-subtitle {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.sub-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.sub-category-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sub-category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.sub-cat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+}
+
+.sub-category-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.sub-cat-frequency {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.sub-cat-price {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.sub-cat-btn {
+  display: inline-block;
+  background: #6366f1;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.sub-cat-btn:hover {
+  background: #4f46e5;
+}
+
+/* My Subscriptions */
+.my-subscriptions {
+  margin-bottom: 3rem;
+}
+
+.my-sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.my-sub-header h2 {
+  font-size: 1.5rem;
+}
+
+.sub-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sub-filter-btn {
+  padding: 0.4rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-filter-btn.active {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+
+/* Sub Cards */
+.sub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sub-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.sub-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.sub-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sub-card-title h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.sub-status {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.sub-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.sub-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.sub-card-details span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sub-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sub-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.sub-action-btn.pause {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.sub-action-btn.pause:hover {
+  background: #fef3c7;
+}
+
+.sub-action-btn.resume {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.sub-action-btn.resume:hover {
+  background: #d1fae5;
+}
+
+.sub-action-btn.cancel {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.sub-action-btn.cancel:hover {
+  background: #fee2e2;
+}
+
+/* Empty state */
+.sub-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.sub-empty svg {
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.sub-empty h3 {
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.sub-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+/* How it works */
+.sub-how-it-works {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+}
+
+.sub-how-it-works h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.sub-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.sub-step {
+  text-align: center;
+}
+
+.sub-step-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin: 0 auto 0.75rem;
+}
+
+.sub-step h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sub-step p {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .subscriptions-hero {
+    padding: 2rem 1.5rem;
+  }
+
+  .subscriptions-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .sub-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .my-sub-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

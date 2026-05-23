@@ -37,7 +37,11 @@ async function applyCode(req, res, next) {
     const { code } = req.body;
     const referredId = req.user.id;
 
-    // Check if user already used a referral
+    if (!code || typeof code !== 'string' || code.trim().length === 0) {
+      return res.status(400).json({ error: 'Referral code is required' });
+    }
+
+    // Check if user already used a referral (dedup check)
     const existingRef = await pool.query(
       'SELECT 1 FROM referrals WHERE referred_id = $1', [referredId]
     );
@@ -48,7 +52,7 @@ async function applyCode(req, res, next) {
     // Validate code
     const codeRes = await pool.query(
       `SELECT * FROM referral_codes WHERE code = $1 AND is_active = TRUE AND (max_uses IS NULL OR uses_count < max_uses)`,
-      [code]
+      [code.trim().toUpperCase()]
     );
     if (codeRes.rows.length === 0) {
       return res.status(404).json({ error: 'Invalid or expired referral code' });
@@ -58,6 +62,16 @@ async function applyCode(req, res, next) {
 
     if (referralCode.user_id === referredId) {
       return res.status(400).json({ error: 'Cannot use your own referral code' });
+
+    }
+
+    // Dedup: check if this specific referrer→referred pair already exists
+    const dupePair = await pool.query(
+      'SELECT 1 FROM referrals WHERE referrer_id = $1 AND referred_id = $2',
+      [referralCode.user_id, referredId]
+    );
+    if (dupePair.rows.length > 0) {
+      return res.status(400).json({ error: 'This referral has already been applied' });
     }
 
     // Create referral record
