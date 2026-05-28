@@ -1,0 +1,30 @@
+{
+  "_comment": "PLACEHOLDER - Replace with real google-services.json from Firebase Console for SkillConnect project. In CI/CD, this is decoded from GOOGLE_SERVICES_JSON secret.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "skillconnect-prod",
+    "storage_bucket": "skillconnect-prod.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "com.skillconnect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_REAL_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

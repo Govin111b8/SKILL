@@ -1,0 +1,26 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.skillconnect.app",
+        "paths": [
+          "/booking/*",
+          "/professional/*",
+          "/search*",
+          "/referral/*",
+          "/collections/*",
+          "/marketplace/*",
+          "/subscriptions",
+          "/community",
+          "/agent/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAMID.com.skillconnect.app"
+    ]
+  }
+}

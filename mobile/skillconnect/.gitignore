@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase placeholders are committed intentionally; real secrets come from CI/CD
+
+# Signing keystores (never commit real keys)
+*.jks
+*.keystore
+android/key.properties
+
+# Local development properties
+android/local.properties

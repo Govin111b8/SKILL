@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/upload_service.dart';
+import '../../services/push_notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,6 +23,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _currentPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
   bool _saving = false;
+  String _selectedLanguage = 'en';
+
+  static const _languages = [
+    {'code': 'en', 'name': 'English', 'native': 'English'},
+    {'code': 'hi', 'name': 'Hindi', 'native': 'हिंदी'},
+    {'code': 'te', 'name': 'Telugu', 'native': 'తెలుగు'},
+  ];
 
   @override
   void initState() {
@@ -29,6 +38,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _nameCtrl.text = user?['name'] ?? '';
     _phoneCtrl.text = user?['phone'] ?? '';
     _locationCtrl.text = user?['location'] ?? '';
+    _loadLanguage();
+  }
+
+  Future<void> _loadLanguage() async {
+    final lang = await PushNotificationService.getLanguage();
+    if (mounted) setState(() => _selectedLanguage = lang);
+  }
+
+  Future<void> _changeLanguage(String code) async {
+    await PushNotificationService.setLanguage(code);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', code);
+    if (mounted) {
+      setState(() => _selectedLanguage = code);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Language updated. Restart the app to apply fully.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -39,6 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _currentPassCtrl.dispose();
     _newPassCtrl.dispose();
     super.dispose();
+  }
   }
 
   Future<void> _pickAvatar() async {
@@ -196,6 +227,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () => context.read<ThemeService>().setMode(ThemeMode.dark),
                 ),
               ]),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text('Language', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'App & notification language',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  ),
+                  const SizedBox(height: 12),
+                  ..._languages.map((lang) => _ThemeTile(
+                    icon: Icons.language,
+                    label: '${lang['native']} (${lang['name']})',
+                    selected: _selectedLanguage == lang['code'],
+                    onTap: () => _changeLanguage(lang['code']!),
+                  )),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),
