@@ -141,44 +141,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Choose language'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _applyLanguage('en');
-            },
-            child: Row(
-              children: [
-                const Expanded(child: Text('English')),
-                if (_appLanguage == 'en') const Icon(Icons.check, size: 18),
-              ],
-            ),
-          ),
-          SimpleDialogOption(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _applyLanguage('hi');
-            },
-            child: Row(
-              children: [
-                const Expanded(child: Text('हिंदी (Hindi)')),
-                if (_appLanguage == 'hi') const Icon(Icons.check, size: 18),
-              ],
-            ),
-          ),
-          SimpleDialogOption(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _applyLanguage('te');
-            },
-            child: Row(
-              children: [
-                const Expanded(child: Text('తెలుగు (Telugu)')),
-                if (_appLanguage == 'te') const Icon(Icons.check, size: 18),
-              ],
-            ),
-          ),
-        ],
+        children: AppLocaleService.languageOptions
+            .map(
+              (option) => SimpleDialogOption(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _applyLanguage(option.key);
+                },
+                child: Row(
+                  children: [
+                    Expanded(child: Text(option.value)),
+                    if (_appLanguage == option.key)
+                      const Icon(Icons.check, size: 18),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }

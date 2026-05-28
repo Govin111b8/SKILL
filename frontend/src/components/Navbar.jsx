@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell, FiRepeat, FiBriefcase } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell, FiRepeat, FiBriefcase, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import './Navbar.css';
@@ -67,6 +67,9 @@ function Navbar() {
             </Link>
             <Link to="/marketplace" className={`nav-link ${location.pathname === '/marketplace' ? 'active' : ''}`}>
               <FiBriefcase size={16} /> Projects
+            </Link>
+            <Link to="/societies" className={`nav-link ${location.pathname === '/societies' ? 'active' : ''}`}>
+              <FiUsers size={16} /> Societies
             </Link>
             <Link to="/search" className={`nav-link ${location.pathname === '/search' ? 'active' : ''}`}>
               <FiSearch size={16} /> Explore

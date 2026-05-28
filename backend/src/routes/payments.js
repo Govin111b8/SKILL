@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
-const { createPayment, verifyPayment, releaseEscrow, refundPayment, getPayments, getEarnings } = require('../controllers/paymentController');
+const { createPayment, verifyPayment, releaseEscrow, confirmCOD, refundPayment, getPayments, getEarnings } = require('../controllers/paymentController');
 const { pool } = require('../config/database');
 const storage = require('../services/storage');
 const logger = require('../config/logger');
@@ -14,6 +14,7 @@ router.post('/:payment_id/verify', verifyPayment);
 router.get('/', getPayments);
 router.get('/earnings', getEarnings);
 router.post('/:payment_id/release', releaseEscrow);
+router.post('/:payment_id/cod-confirm', confirmCOD);
 router.post('/:payment_id/refund', refundPayment);
 
 // My Invoices — professional can download their GST invoices

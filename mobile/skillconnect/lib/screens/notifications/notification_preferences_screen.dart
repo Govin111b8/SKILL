@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/app_locale_service.dart';
+
 /// Smart push notification preferences screen.
 /// Lets users control notification categories to avoid annoyance.
 class NotificationPreferencesScreen extends StatefulWidget {
@@ -100,23 +102,18 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
-            children: [
-              ChoiceChip(
-                label: const Text('English'),
-                selected: _language == 'en',
-                onSelected: (s) { if (s) setState(() => _language = 'en'); },
-              ),
-              ChoiceChip(
-                label: const Text('తెలుగు (Telugu)'),
-                selected: _language == 'te',
-                onSelected: (s) { if (s) setState(() => _language = 'te'); },
-              ),
-              ChoiceChip(
-                label: const Text('हिंदी (Hindi)'),
-                selected: _language == 'hi',
-                onSelected: (s) { if (s) setState(() => _language = 'hi'); },
-              ),
-            ],
+            runSpacing: 8,
+            children: AppLocaleService.languageOptions
+                .map(
+                  (option) => ChoiceChip(
+                    label: Text(option.value),
+                    selected: _language == option.key,
+                    onSelected: (selected) {
+                      if (selected) setState(() => _language = option.key);
+                    },
+                  ),
+                )
+                .toList(),
           ),
 
           const SizedBox(height: 32),

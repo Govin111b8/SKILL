@@ -61,6 +61,8 @@ const quoteRoutes = require('./routes/quotes');
 const homeProfileRoutes = require('./routes/homeProfiles');
 const trackingRoutes = require('./routes/tracking');
 const amcRoutes = require('./routes/amc');
+const demandRoutes = require('./routes/demand');
+const societyRoutes = require('./routes/societies');
 
 const app = express();
 
@@ -212,6 +214,8 @@ app.use('/api/quotes', quoteRoutes);
 app.use('/api/home-profiles', homeProfileRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/amc', amcRoutes);
+app.use('/api/demand', demandRoutes);
+app.use('/api/societies', societyRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

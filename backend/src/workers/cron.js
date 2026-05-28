@@ -374,8 +374,9 @@ function startCronJobs() {
 
   // Provider CRM updater — sync booking data into provider_customers — weekly Monday 05:00 IST = Sunday 23:30 UTC
   cron.schedule('30 23 * * 0', syncProviderCRM, { timezone: 'UTC' });
+  cron.schedule('0 2 * * *', aggregateDemandSignals, { timezone: 'UTC' });
 
-  logger.info('All 15 cron jobs scheduled');
+  logger.info('All 17 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -504,6 +505,67 @@ async function recalcBadges() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 16. Demand Signal Aggregation — daily 02:00 UTC
+// Aggregates booking counts into service_demand_logs for demand prediction
+// ─────────────────────────────────────────────────────────────────────────────
+async function aggregateDemandSignals() {
+  logger.info('CRON: demand_signal_aggregation — start');
+  try {
+    // Aggregate yesterday's bookings into demand logs by category/city/hour/dow
+    const result = await query(`
+      INSERT INTO service_demand_logs (category_id, city, hour_of_day, day_of_week, week_start, booking_count)
+      SELECT
+        p.category_id,
+        u.city,
+        EXTRACT(HOUR FROM b.scheduled_at)::SMALLINT AS hour_of_day,
+        EXTRACT(DOW FROM b.scheduled_at)::SMALLINT AS day_of_week,
+        DATE_TRUNC('week', b.scheduled_at)::DATE AS week_start,
+        COUNT(*) AS booking_count
+      FROM bookings b
+      JOIN professionals p ON p.id = b.professional_id
+      JOIN users u ON u.id = b.customer_id
+      WHERE b.scheduled_at >= CURRENT_DATE - INTERVAL '2 days'
+        AND b.scheduled_at < CURRENT_DATE
+        AND b.status IN ('accepted', 'completed')
+        AND p.category_id IS NOT NULL
+        AND u.city IS NOT NULL
+      GROUP BY p.category_id, u.city, hour_of_day, day_of_week, week_start
+      ON CONFLICT (category_id, city, hour_of_day, day_of_week, week_start)
+      DO UPDATE SET booking_count = service_demand_logs.booking_count + EXCLUDED.booking_count
+      RETURNING id
+    `);
+
+    // Generate area demand summaries for today
+    await query(`
+      INSERT INTO area_demand_summary (city, category_id, summary_date, total_demand, available_pros)
+      SELECT
+        u.city,
+        p.category_id,
+        CURRENT_DATE AS summary_date,
+        COUNT(b.id) AS total_demand,
+        COUNT(DISTINCT CASE WHEN p.is_available THEN p.id END) AS available_pros
+      FROM bookings b
+      JOIN professionals p ON p.id = b.professional_id
+      JOIN users u ON u.id = b.customer_id
+      WHERE b.created_at >= CURRENT_DATE - INTERVAL '1 day'
+        AND p.category_id IS NOT NULL
+        AND u.city IS NOT NULL
+      GROUP BY u.city, p.category_id
+      ON CONFLICT (city, category_id, summary_date)
+      DO UPDATE SET
+        total_demand = EXCLUDED.total_demand,
+        available_pros = EXCLUDED.available_pros
+    `);
+
+    logger.info({ logged: result.rowCount }, 'CRON: demand_signal_aggregation — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: demand_signal_aggregation failed');
+    }
+  }
+}
+
 module.exports = {
   startCronJobs,
   recalcReputationScores,
@@ -521,6 +583,7 @@ module.exports = {
   escalateStaleDisputes,
   advanceSubscriptionOccurrences,
   syncProviderCRM,
+  aggregateDemandSignals,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

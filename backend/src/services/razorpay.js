@@ -61,6 +61,43 @@ async function apiRequest(method, endpoint, body = null) {
 }
 
 /**
+ * EMI durations supported (months)
+ */
+const EMI_DURATIONS = [3, 6, 9, 12, 18, 24];
+
+/**
+ * Create a Razorpay Order for EMI payment
+ * Enables EMI at checkout for amounts ≥ ₹3000; Razorpay handles bank-specific EMI enablement.
+ * @param {object} params - { amount, currency, receipt, notes }
+ * @returns {object} Razorpay order object
+ */
+async function createEMIOrder({ amount, currency = 'INR', receipt, notes = {} }) {
+  if (!KEY_ID || !KEY_SECRET) {
+    logger.warn('Razorpay keys not configured — returning simulated EMI order');
+    return {
+      id: `order_emi_sim_${Date.now()}`,
+      amount,
+      currency,
+      receipt,
+      status: 'created',
+      simulated: true,
+    };
+  }
+
+  if (amount < 3000) {
+    throw Object.assign(new Error('EMI is available only for amounts ≥ ₹3,000'), { statusCode: 400 });
+  }
+
+  return apiRequest('POST', '/orders', {
+    amount: Math.round(amount * 100),
+    currency,
+    receipt,
+    notes,
+    // Razorpay automatically enables EMI at the checkout page when method=emi
+  });
+}
+
+/**
  * Create a Razorpay Order (used before payment capture on frontend)
  * @param {object} params - { amount (in paise), currency, receipt, notes }
  * @returns {object} Razorpay order object
@@ -170,6 +207,8 @@ async function createTransfer(paymentId, { account, amount }) {
 
 module.exports = {
   createOrder,
+  createEMIOrder,
+  EMI_DURATIONS,
   verifyPaymentSignature,
   fetchPayment,
   initiateRefund,

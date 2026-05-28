@@ -73,6 +73,7 @@ const ReelsFeed = lazy(() => import('./pages/ReelsFeed'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const FamilyAccount = lazy(() => import('./pages/FamilyAccount'));
 const Marketplace = lazy(() => import('./pages/Marketplace'));
+const SocietyDashboard = lazy(() => import('./pages/SocietyDashboard'));
 const QuoteRequest = lazy(() => import('./pages/QuoteRequest'));
 const HomeProfile = lazy(() => import('./pages/HomeProfile'));
 const JobTracker = lazy(() => import('./pages/JobTracker'));
@@ -363,6 +364,7 @@ function App() {
           <Route path="/reels" element={<ReelsFeed />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/societies" element={<SocietyDashboard />} />
           <Route path="/quotes" element={<QuoteRequest />} />
           <Route
             path="/home-profiles"
