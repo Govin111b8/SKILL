@@ -43,7 +43,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       });
     }
     try {
-      final res = await ApiService.get('/reels', auth: true, queryParams: {'page': _page.toString()});
+      final res = await ApiService.get('/reels', queryParams: {'page': _page.toString()});
       final data = res['data'];
       final items = data is List
           ? data

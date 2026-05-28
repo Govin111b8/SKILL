@@ -30,7 +30,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
       _error = null;
     });
     try {
-      final res = await ApiService.get('/collections', auth: true);
+      final res = await ApiService.get('/collections');
       final data = res['data'];
       final list = data is List
           ? data

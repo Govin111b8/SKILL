@@ -42,10 +42,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> with SingleTicker
       _error = null;
     });
     try {
-      final browseRes = await ApiService.get('/marketplace', auth: true, queryParams: _query());
-      final myRes = await ApiService.get('/marketplace', auth: true, queryParams: {..._query(), 'mine': 'true'});
+      final browseRes = await ApiService.get('/marketplace', queryParams: _query());
       _browseProjects = _extractList(browseRes);
-      _myProjects = _extractList(myRes);
+      try {
+        final myRes = await ApiService.get('/marketplace', auth: true, queryParams: {..._query(), 'mine': 'true'});
+        _myProjects = _extractList(myRes);
+      } catch (_) {
+        _myProjects = [];
+      }
     } catch (e) {
       _error = e.toString();
     }
