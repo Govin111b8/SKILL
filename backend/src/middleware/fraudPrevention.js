@@ -6,98 +6,143 @@
  * - Duplicate booking prevention via idempotency keys
  * - Suspicious payment patterns
  * - Account takeover indicators
+ * 
+ * Uses Redis for distributed state (multi-instance safe).
+ * Falls back to in-memory Maps when Redis is unavailable.
  */
 
 const { query } = require('../config/database');
 const logger = require('../config/logger');
+const redis = require('../config/redis');
 
-// In-memory store for rate limiting per action (per user)
-// In production, use Redis for multi-instance support
+// In-memory fallback stores (only used when Redis is unavailable)
 const actionCounters = new Map();
 const idempotencyKeys = new Map();
 
-// Cleanup old entries every 5 minutes
+// Cleanup old in-memory entries every 5 minutes (fallback only)
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of actionCounters) {
-    if (now - entry.firstAt > 3600000) { // 1 hour
+    if (now - entry.firstAt > 3600000) {
       actionCounters.delete(key);
     }
   }
   for (const [key, entry] of idempotencyKeys) {
-    if (now - entry.createdAt > 86400000) { // 24 hours
+    if (now - entry.createdAt > 86400000) {
       idempotencyKeys.delete(key);
     }
   }
 }, 300000);
+
+const IDEMPOTENCY_PREFIX = 'idempotency:';
+const ACTION_COUNTER_PREFIX = 'action_counter:';
+const IDEMPOTENCY_TTL = 86400; // 24 hours
+const ACTION_COUNTER_TTL = 3600; // 1 hour
 
 /**
  * Idempotency middleware — prevents duplicate bookings/payments.
  * Client sends `X-Idempotency-Key` header; if same key seen before,
  * returns the original response without processing again.
  */
-function idempotencyCheck(req, res, next) {
+async function idempotencyCheck(req, res, next) {
   const key = req.headers['x-idempotency-key'];
   if (!key) return next();
 
   const userId = req.user?.id || req.ip;
   const fullKey = `${userId}:${key}`;
 
-  const existing = idempotencyKeys.get(fullKey);
-  if (existing) {
-    // Return cached response
-    logger.info(`Idempotency key hit: ${fullKey}`);
-    return res.status(existing.statusCode).json(existing.body);
+  try {
+    let existing;
+
+    if (redis.isAvailable()) {
+      existing = await redis.get(`${IDEMPOTENCY_PREFIX}${fullKey}`);
+    } else {
+      existing = idempotencyKeys.get(fullKey);
+    }
+
+    if (existing) {
+      logger.info({ fullKey }, 'Idempotency key hit');
+      return res.status(existing.statusCode).json(existing.body);
+    }
+
+    // Monkey-patch res.json to capture the response
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+      const entry = {
+        statusCode: res.statusCode,
+        body,
+        createdAt: Date.now(),
+      };
+
+      if (redis.isAvailable()) {
+        redis.set(`${IDEMPOTENCY_PREFIX}${fullKey}`, entry, IDEMPOTENCY_TTL).catch((err) => {
+          logger.error({ err, fullKey }, 'Failed to store idempotency key in Redis');
+        });
+      } else {
+        idempotencyKeys.set(fullKey, entry);
+      }
+
+      return originalJson(body);
+    };
+
+    next();
+  } catch (err) {
+    logger.error({ err }, 'Idempotency check error');
+    next();
   }
-
-  // Monkey-patch res.json to capture the response
-  const originalJson = res.json.bind(res);
-  res.json = (body) => {
-    idempotencyKeys.set(fullKey, {
-      statusCode: res.statusCode,
-      body,
-      createdAt: Date.now(),
-    });
-    return originalJson(body);
-  };
-
-  next();
 }
 
 /**
  * Action rate limiter — detects rapid repeated actions (bot behavior).
- * More granular than global rate limiting.
+ * Uses Redis for distributed counting, falls back to in-memory.
  */
 function actionRateLimit(action, maxAttempts = 5, windowMs = 60000) {
-  return (req, res, next) => {
+  const ttlSeconds = Math.ceil(windowMs / 1000);
+
+  return async (req, res, next) => {
     const userId = req.user?.id || req.ip;
     const key = `${userId}:${action}`;
     const now = Date.now();
 
-    let entry = actionCounters.get(key);
-    if (!entry || (now - entry.firstAt) > windowMs) {
-      entry = { count: 0, firstAt: now };
+    try {
+      let count;
+
+      if (redis.isAvailable()) {
+        const redisKey = `${ACTION_COUNTER_PREFIX}${key}`;
+        count = await redis.incr(redisKey);
+        if (count === 1) {
+          await redis.expire(redisKey, ttlSeconds);
+        }
+      } else {
+        let entry = actionCounters.get(key);
+        if (!entry || (now - entry.firstAt) > windowMs) {
+          entry = { count: 0, firstAt: now };
+        }
+        entry.count++;
+        actionCounters.set(key, entry);
+        count = entry.count;
+      }
+
+      if (count > maxAttempts) {
+        logger.warn({
+          userId,
+          action,
+          count,
+          window: windowMs,
+        }, 'Suspicious activity: action rate limit exceeded');
+
+        return res.status(429).json({
+          success: false,
+          message: 'Too many attempts. Please try again later.',
+          retryAfter: ttlSeconds,
+        });
+      }
+
+      next();
+    } catch (err) {
+      logger.error({ err, key }, 'Action rate limit error');
+      next();
     }
-
-    entry.count++;
-    actionCounters.set(key, entry);
-
-    if (entry.count > maxAttempts) {
-      logger.warn(`Suspicious activity: ${action} rate limit exceeded for user ${userId}`, {
-        userId,
-        action,
-        count: entry.count,
-        window: windowMs,
-      });
-
-      return res.status(429).json({
-        success: false,
-        message: 'Too many attempts. Please try again later.',
-        retryAfter: Math.ceil((windowMs - (now - entry.firstAt)) / 1000),
-      });
-    }
-
-    next();
   };
 }
 
@@ -118,7 +163,7 @@ async function detectSuspiciousBooking(req, res, next) {
     );
 
     if (parseInt(recentBookings.rows[0]?.count || 0) >= 10) {
-      logger.warn(`Suspicious: User ${userId} created 10+ bookings in 1 hour`);
+      logger.warn({ userId }, 'Suspicious: User created 10+ bookings in 1 hour');
       return res.status(429).json({
         success: false,
         message: 'Booking limit reached. Please try again later.',
@@ -149,7 +194,7 @@ async function detectSuspiciousBooking(req, res, next) {
     next();
   } catch (error) {
     // Don't block the request if fraud check fails
-    logger.error('Fraud check error:', error);
+    logger.error({ err: error }, 'Fraud check error');
     next();
   }
 }
@@ -157,28 +202,35 @@ async function detectSuspiciousBooking(req, res, next) {
 /**
  * Detect account takeover indicators
  */
-function detectAccountTakeover(req, res, next) {
+async function detectAccountTakeover(req, res, next) {
   if (!req.user) return next();
 
-  // Track login locations — flag if suddenly from new location
-  const currentIP = req.ip;
-  const userAgent = req.headers['user-agent'] || '';
-
-  // Check for suspicious patterns
-  const suspicious = [];
-
-  // Multiple password changes in short time
+  // Track password change attempts
   if (req.path.includes('password') && req.method === 'PUT') {
-    const key = `pwd_change:${req.user.id}`;
-    const entry = actionCounters.get(key);
-    if (entry && entry.count >= 3) {
-      suspicious.push('multiple_password_changes');
-    }
-  }
+    const userId = req.user.id;
+    const key = `pwd_change:${userId}`;
 
-  if (suspicious.length > 0) {
-    logger.warn(`Account takeover indicators for user ${req.user.id}:`, suspicious);
-    // Don't block, just log — security team reviews
+    try {
+      let count;
+      if (redis.isAvailable()) {
+        const redisKey = `${ACTION_COUNTER_PREFIX}${key}`;
+        count = await redis.incr(redisKey);
+        if (count === 1) {
+          await redis.expire(redisKey, 3600); // 1 hour window
+        }
+      } else {
+        const entry = actionCounters.get(key) || { count: 0, firstAt: Date.now() };
+        entry.count++;
+        actionCounters.set(key, entry);
+        count = entry.count;
+      }
+
+      if (count >= 3) {
+        logger.warn({ userId, count }, 'Account takeover indicator: multiple password changes');
+      }
+    } catch (err) {
+      logger.error({ err }, 'Account takeover detection error');
+    }
   }
 
   next();
