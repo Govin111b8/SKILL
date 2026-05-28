@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/api_service.dart';
@@ -46,6 +46,7 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
     try {
       final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (picked == null || !mounted) return;
+      final bytes = await picked.readAsBytes();
       final titleController = TextEditingController();
       final descriptionController = TextEditingController();
       final confirmed = await showDialog<bool>(
@@ -65,7 +66,7 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       );
       if (confirmed != true) return;
       setState(() {
-        _portfolio.add(_PortfolioDraft(path: picked.path, title: titleController.text.trim(), description: descriptionController.text.trim()));
+        _portfolio.add(_PortfolioDraft(path: picked.path, bytes: bytes, title: titleController.text.trim(), description: descriptionController.text.trim()));
       });
     } catch (e) {
       if (!mounted) return;
@@ -199,7 +200,7 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                     child: Row(children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(File(item.path), width: 64, height: 64, fit: BoxFit.cover),
+                        child: Image.memory(item.bytes, width: 64, height: 64, fit: BoxFit.cover),
                       ),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -255,9 +256,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
 
 class _PortfolioDraft {
   final String path;
+  final Uint8List bytes;
   final String title;
   final String description;
-  const _PortfolioDraft({required this.path, required this.title, required this.description});
+  const _PortfolioDraft({required this.path, required this.bytes, required this.title, required this.description});
 
   Map<String, dynamic> toJson() => {
         'path': path,

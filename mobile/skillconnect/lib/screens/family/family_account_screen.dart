@@ -177,7 +177,7 @@ class _FamilyAccountScreenState extends State<FamilyAccountScreen> {
                               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             child: Row(children: [
-                              CircleAvatar(child: Text((member['name'] ?? '?').toString().substring(0, 1).toUpperCase())),
+                              CircleAvatar(child: Text((member['name'] ?? '').toString().trim().isEmpty ? '?' : (member['name'] ?? '').toString().trim()[0].toUpperCase())),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

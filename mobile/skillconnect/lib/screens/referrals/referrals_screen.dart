@@ -154,7 +154,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             child: Row(children: [
-                              CircleAvatar(child: Text((item['name'] ?? item['user_name'] ?? '?').toString().substring(0, 1).toUpperCase())),
+                              CircleAvatar(child: Text((item['name'] ?? item['user_name'] ?? '').toString().trim().isEmpty ? '?' : (item['name'] ?? item['user_name'] ?? '').toString().trim()[0].toUpperCase())),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

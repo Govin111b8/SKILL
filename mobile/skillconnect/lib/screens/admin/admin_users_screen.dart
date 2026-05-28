@@ -221,7 +221,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
                                   child: ListTile(
                                     onTap: () => _showActions(user),
-                                    leading: CircleAvatar(child: Text((user['name'] ?? '?').toString().substring(0, 1).toUpperCase())),
+                                    leading: CircleAvatar(child: Text((user['name'] ?? '').toString().trim().isEmpty ? '?' : (user['name'] ?? '').toString().trim()[0].toUpperCase())),
                                     title: Text(user['name']?.toString() ?? 'User', style: const TextStyle(fontWeight: FontWeight.w700)),
                                     subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                       Text(user['email']?.toString() ?? ''),

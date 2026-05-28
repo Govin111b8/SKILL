@@ -125,7 +125,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> with SingleTicker
                           ),
                         ]),
                         const SizedBox(height: 10),
-                        LinearProgressIndicator(value: progress.clamp(0, 1), minHeight: 8, borderRadius: BorderRadius.circular(999), color: color),
+                        LinearProgressIndicator(value: progress.clamp(0, 1).toDouble(), minHeight: 8, borderRadius: BorderRadius.circular(999), color: color),
                       ]),
                     );
                   }),

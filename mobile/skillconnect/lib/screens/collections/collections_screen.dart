@@ -94,7 +94,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
                       backgroundImage: (pro['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(pro['avatar_url'].toString()) : null,
-                      child: (pro['avatar_url'] ?? '').toString().isEmpty ? Text((pro['name'] ?? '?').toString().substring(0, 1).toUpperCase()) : null,
+                      child: (pro['avatar_url'] ?? '').toString().isEmpty ? Text((pro['name'] ?? '').toString().trim().isEmpty ? '?' : (pro['name'] ?? '').toString().trim()[0].toUpperCase()) : null,
                     ),
                     title: Text(pro['name']?.toString() ?? 'Professional'),
                     subtitle: Text(pro['category']?.toString() ?? pro['headline']?.toString() ?? ''),
