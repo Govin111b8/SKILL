@@ -67,6 +67,7 @@ const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const ProfessionalTerms = lazy(() => import('./pages/ProfessionalTerms'));
 const ContentModerationPolicy = lazy(() => import('./pages/ContentModerationPolicy'));
 const ProfessionalOnboarding = lazy(() => import('./pages/ProfessionalOnboarding'));
+const CompanyKYC = lazy(() => import('./pages/CompanyKYC'));
 const Collections = lazy(() => import('./pages/Collections'));
 const CommunityFeed = lazy(() => import('./pages/CommunityFeed'));
 const ReelsFeed = lazy(() => import('./pages/ReelsFeed'));
@@ -117,6 +118,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['professional']}>
                 <ProfessionalOnboarding />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/kyc/company"
+            element={
+              <ProtectedRoute allowedRoles={['professional']}>
+                <CompanyKYC />
               </ProtectedRoute>
             }
           />

@@ -34,6 +34,9 @@ import '../screens/collections/collections_screen.dart';
 import '../screens/community/community_feed_screen.dart';
 import '../screens/family/family_account_screen.dart';
 import '../screens/analytics/provider_analytics_screen.dart';
+import '../screens/social/followers_screen.dart';
+import '../screens/social/stories_screen.dart';
+import '../screens/loyalty/loyalty_screen.dart';
 import '../screens/onboarding/professional_onboarding_screen.dart';
 import '../screens/agent/agent_onboarding_screen.dart';
 import '../screens/agent/agent_wallet_screen.dart';
@@ -168,6 +171,9 @@ class AppRouter {
         GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
         GoRoute(path: '/collections', builder: (_, __) => const CollectionsScreen()),
         GoRoute(path: '/community', builder: (_, __) => const CommunityFeedScreen()),
+        GoRoute(path: '/followers', builder: (_, __) => const FollowersScreen()),
+        GoRoute(path: '/stories', builder: (_, state) => StoriesScreen(professionalId: state.uri.queryParameters['professionalId'] ?? '', storyId: state.uri.queryParameters['storyId'])),
+        GoRoute(path: '/loyalty', builder: (_, __) => const LoyaltyScreen()),
         GoRoute(path: '/family', builder: (_, __) => const FamilyAccountScreen()),
         GoRoute(path: '/analytics', builder: (_, __) => const ProviderAnalyticsScreen()),
         GoRoute(path: '/onboarding/professional', builder: (_, __) => const ProfessionalOnboardingScreen()),

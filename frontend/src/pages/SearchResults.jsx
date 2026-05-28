@@ -1,14 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   FiSearch, FiSliders, FiGrid, FiList, FiX, FiStar, FiArrowDown,
-  FiChevronDown, FiFilter,
+  FiChevronDown, FiFilter, FiMap, FiMapPin,
 } from 'react-icons/fi';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { get } from '../api/client';
 import ProfessionalCard from '../components/ProfessionalCard';
 import SearchBar from '../components/SearchBar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './SearchResults.css';
+
+// Fix Leaflet default marker icon broken by bundlers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 function mapProfessional(p) {
   return {
@@ -247,6 +258,9 @@ function SearchResults() {
                 <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="List view">
                   <FiList size={16} />
                 </button>
+                <button className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')} aria-label="Map view">
+                  <FiMap size={16} />
+                </button>
               </div>
             </div>
           </div>
@@ -341,13 +355,17 @@ function SearchResults() {
               </div>
             ) : results.length > 0 ? (
               <>
-                <div className={`sr-results-grid ${viewMode === 'list' ? 'sr-results-list' : ''}`}>
-                  {results.map(pro => (
-                    <ProfessionalCard key={pro.id} professional={pro} />
-                  ))}
-                </div>
+                {viewMode === 'map' ? (
+                  <SearchResultsMapView results={results} />
+                ) : (
+                  <div className={`sr-results-grid ${viewMode === 'list' ? 'sr-results-list' : ''}`}>
+                    {results.map(pro => (
+                      <ProfessionalCard key={pro.id} professional={pro} />
+                    ))}
+                  </div>
+                )}
 
-                {totalPages > 1 && (
+                {viewMode !== 'map' && totalPages > 1 && (
                   <div className="sr-pagination">
                     <button className="btn btn-outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
                       ← Previous
@@ -380,6 +398,57 @@ function SearchResults() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// India center coordinates — used as fallback when no geo results
+const INDIA_CENTER = [20.5937, 78.9629];
+
+function SearchResultsMapView({ results }) {
+  const navigate = useNavigate();
+  const mappable = results.filter(p => p.latitude && p.longitude);
+  const center = mappable.length > 0
+    ? [parseFloat(mappable[0].latitude), parseFloat(mappable[0].longitude)]
+    : INDIA_CENTER;
+  const zoom = mappable.length > 0 ? 12 : 5;
+
+  return (
+    <div className="sr-map-container">
+      <MapContainer center={center} zoom={zoom} style={{ height: '520px', width: '100%', borderRadius: '12px' }} scrollWheelZoom>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {mappable.map(pro => (
+          <Marker key={pro.id} position={[parseFloat(pro.latitude), parseFloat(pro.longitude)]}>
+            <Popup>
+              <div className="sr-map-popup">
+                <strong>{pro.name}</strong>
+                {pro.headline && <p style={{ margin: '4px 0 2px', fontSize: '0.8rem', color: '#555' }}>{pro.headline}</p>}
+                <p style={{ margin: '2px 0', fontSize: '0.8rem' }}>
+                  ⭐ {parseFloat(pro.rating || 0).toFixed(1)} · {pro.categories?.[0] || ''}
+                </p>
+                {pro.pricing && <p style={{ margin: '2px 0', fontSize: '0.8rem', color: '#059669' }}>{pro.pricing}</p>}
+                <button
+                  className="sr-map-popup-btn"
+                  onClick={() => navigate(`/professionals/${pro.id}`)}
+                >
+                  View Profile
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+      {mappable.length < results.length && (
+        <p className="sr-map-note">
+          <FiMapPin size={14} /> {mappable.length} of {results.length} professionals shown on map (others have no location data)
+        </p>
+      )}
+      {mappable.length === 0 && (
+        <p className="sr-map-note">No professionals with location data found. Try enabling geolocation on your search.</p>
+      )}
     </div>
   );
 }

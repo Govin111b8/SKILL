@@ -1,0 +1,404 @@
+/* ── Company KYC Page ──────────────────────────────────── */
+.ckyc-page {
+  min-height: 100vh;
+  background: var(--gray-50, #f9fafb);
+  padding: 2rem 1rem 4rem;
+}
+
+.ckyc-header {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.ckyc-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--gray-300, #d1d5db);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--gray-600, #4b5563);
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.ckyc-back:hover {
+  background: var(--gray-100, #f3f4f6);
+}
+
+.ckyc-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  margin: 0 0 4px;
+}
+
+.ckyc-subtitle {
+  font-size: 0.9rem;
+  color: var(--gray-500, #6b7280);
+  margin: 0;
+}
+
+.ckyc-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.ckyc-sidebar {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  position: sticky;
+  top: 90px;
+}
+
+.ckyc-sidebar-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-500, #6b7280);
+  margin: 0 0 1rem;
+}
+
+.ckyc-progress-bar {
+  background: var(--gray-200, #e5e7eb);
+  border-radius: 8px;
+  height: 8px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.ckyc-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  border-radius: 8px;
+  transition: width 0.4s ease;
+}
+
+.ckyc-progress-label {
+  font-size: 0.78rem;
+  color: var(--gray-500, #6b7280);
+  margin: 0 0 1.25rem;
+}
+
+.ckyc-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ckyc-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid transparent;
+}
+
+.ckyc-checklist-item:hover {
+  background: var(--gray-50, #f9fafb);
+}
+
+.ckyc-checklist-item.active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.ckyc-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ckyc-status-dot--green  { background: #10b981; }
+.ckyc-status-dot--orange { background: #f59e0b; }
+.ckyc-status-dot--red    { background: #ef4444; }
+.ckyc-status-dot--gray   { background: #d1d5db; }
+
+.ckyc-checklist-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ckyc-checklist-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--gray-800, #1f2937);
+}
+
+.ckyc-required-badge {
+  font-size: 0.7rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.ckyc-trust-box {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: #15803d;
+  line-height: 1.5;
+}
+
+/* ── Main card ───────────────────────────────────────── */
+.ckyc-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ckyc-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.ckyc-step-indicator {
+  font-size: 0.78rem;
+  color: var(--gray-400, #9ca3af);
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+}
+
+.ckyc-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ckyc-doc-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ckyc-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  margin: 0 0 4px;
+}
+
+.ckyc-card-desc {
+  font-size: 0.875rem;
+  color: var(--gray-500, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ckyc-optional-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  background: #fef9c3;
+  color: #854d0e;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ckyc-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+}
+.ckyc-status-banner--green  { background: #f0fdf4; color: #15803d; }
+.ckyc-status-banner--orange { background: #fffbeb; color: #92400e; }
+.ckyc-status-banner--red    { background: #fef2f2; color: #b91c1c; }
+
+.ckyc-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.ckyc-alert--success { background: #f0fdf4; color: #15803d; }
+.ckyc-alert--error   { background: #fef2f2; color: #b91c1c; }
+
+.ckyc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ckyc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ckyc-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700, #374151);
+}
+
+.ckyc-req {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.ckyc-optional-label {
+  font-size: 0.78rem;
+  color: var(--gray-400, #9ca3af);
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.ckyc-input {
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300, #d1d5db);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: white;
+}
+.ckyc-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.ckyc-hint {
+  font-size: 0.78rem;
+  color: var(--gray-400, #9ca3af);
+  margin: 0;
+}
+
+.ckyc-upload-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ckyc-upload-row .ckyc-input {
+  flex: 1;
+  padding-right: 36px;
+}
+.ckyc-upload-icon {
+  position: absolute;
+  right: 12px;
+  color: var(--gray-400, #9ca3af);
+}
+
+.ckyc-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.ckyc-submit-btn {
+  flex: 1;
+}
+
+.ckyc-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-100, #f3f4f6);
+}
+
+.ckyc-benefits {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.ckyc-benefits h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  margin: 0 0 1rem;
+}
+
+.ckyc-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ckyc-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--gray-700, #374151);
+  line-height: 1.4;
+}
+
+.ckyc-benefits li svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ckyc-layout {
+    grid-template-columns: 1fr;
+  }
+  .ckyc-sidebar {
+    position: static;
+  }
+  .ckyc-header {
+    flex-direction: column;
+  }
+}

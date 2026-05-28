@@ -6,7 +6,7 @@ import {
   FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
   FiDollarSign, FiCalendar, FiPieChart, FiActivity, FiAward,
   FiHeart, FiShoppingBag, FiBookOpen, FiZap, FiArrowUp, FiArrowDown,
-  FiTarget, FiBell, FiRepeat, FiArrowRight,
+  FiTarget, FiBell, FiRepeat, FiArrowRight, FiShield,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
@@ -278,6 +278,13 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
   }
 
   const [savingPortfolio, setSavingPortfolio] = useState(false);
+  const [gamifStats, setGamifStats] = useState(null);
+
+  useEffect(() => {
+    get('/gamification/professional/stats')
+      .then(r => setGamifStats(r.data.data))
+      .catch(err => console.error('Gamification stats failed:', err.message));
+  }, []);
 
   async function handleAddPortfolio(e) {
     e.preventDefault();
@@ -394,8 +401,52 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
             <FiPlus size={18} color="#10b981" />
             <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Onboarding Wizard</span>
           </Link>
+          {profile?.provider_type === 'organization' && (
+            <Link to="/kyc/company" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: '#fef9c3', borderRadius: '10px', border: '1px solid #fde68a', textDecoration: 'none', color: '#92400e' }}>
+              <FiShield size={18} color="#d97706" />
+              <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Company KYC</span>
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* ── Gamification / Growth Stats ── */}
+      {gamifStats && (
+        <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-header"><h2><FiZap /> Growth Stats &amp; Tips</h2></div>
+          <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#fffbeb', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#d97706' }}>🔥 {gamifStats.streak_days}</div>
+              <div style={{ fontSize: '0.78rem', color: '#92400e', marginTop: '4px' }}>Day Streak</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#eef2ff', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#4f46e5' }}>#{gamifStats.rank || '–'}</div>
+              <div style={{ fontSize: '0.78rem', color: '#4338ca', marginTop: '4px' }}>Category Rank</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#f0fdf4', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#16a34a' }}>{gamifStats.weekly_bookings}</div>
+              <div style={{ fontSize: '0.78rem', color: '#15803d', marginTop: '4px' }}>This Week's Bookings</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#fdf4ff', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#7e22ce' }}>{gamifStats.trust_score}</div>
+              <div style={{ fontSize: '0.78rem', color: '#6b21a8', marginTop: '4px' }}>Trust Score</div>
+            </div>
+          </div>
+          {gamifStats.tips?.length > 0 && (
+            <div style={{ padding: '0 1rem 1rem' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💡 Tips to Grow</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {gamifStats.tips.map((tip, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 12px', background: 'var(--gray-50, #f9fafb)', borderRadius: '8px', fontSize: '0.875rem', color: '#374151' }}>
+                    <span>{tip.icon}</span>
+                    <span>{tip.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Earnings Cards */}
       <div className="earnings-row">
