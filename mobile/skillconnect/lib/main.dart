@@ -178,6 +178,21 @@ class SkillConnectApp extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: _primary.withAlpha(25),
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -229,7 +244,7 @@ class SkillConnectApp extends StatelessWidget {
         routes: {
         '/login': (_) => const WelcomeScreen(),
         '/register': (_) => const RegisterScreen(),
-        '/home': (_) => const MainShell(),
+        '/home': (_) => const _OnboardingGate(),
         '/contacts': (_) => const MyContactsScreen(),
         '/instant-quote': (_) => const InstantQuoteScreen(),
         '/emergency': (_) => const EmergencyBookingScreen(),

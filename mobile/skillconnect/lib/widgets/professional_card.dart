@@ -26,7 +26,10 @@ class ProfessionalCard extends StatelessWidget {
     ];
     final c = avatarColors[(p.name.isEmpty ? 0 : p.name.codeUnitAt(0)) % avatarColors.length];
 
-    return Card(
+    return Semantics(
+      label: '${p.name}, ${p.headline ?? "Professional"}. Rating: ${p.rating.toStringAsFixed(1)} stars. ${isAvailable ? "Available now" : ""}',
+      button: true,
+      child: Card(
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
@@ -117,7 +120,7 @@ class ProfessionalCard extends StatelessWidget {
           ]),
         ),
       ),
-    );
+    ));
   }
 }
 

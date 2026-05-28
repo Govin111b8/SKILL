@@ -7,7 +7,10 @@ import '../../models/models.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
+import '../../theme/design_tokens.dart';
+import '../../widgets/app_components.dart';
 import '../messages/chat_screen.dart';
+import '../reviews/post_service_rating_screen.dart';
 import 'bookings_list_screen.dart' show bookingStatusColor, prettyStatus;
 
 class BookingDetailScreen extends StatefulWidget {
@@ -58,6 +61,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
+  int _getStepIndex(String status) {
+    switch (status) {
+      case 'requested': return 0;
+      case 'quoted': return 1;
+      case 'accepted': return 2;
+      case 'scheduled': return 3;
+      case 'in_progress': return 4;
+      case 'completed': return 6; // All done
+      default: return 0;
+    }
+  }
+
   // Allowed transitions per role for each current state
   List<_Action> _availableActions(bool isPro) {
     final s = _booking!.status;
@@ -92,7 +107,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   Future<void> _runAction(_Action a) async {
     if (a.to == '__review__') {
-      await _showReviewDialog();
+      // Use the new delightful multi-step rating experience
+      final result = await Navigator.push<bool>(context, MaterialPageRoute(
+        builder: (_) => PostServiceRatingScreen(
+          bookingId: _booking!.id,
+          professionalName: _booking!.professionalName ?? 'Professional',
+          serviceName: _booking!.description ?? 'Service',
+        ),
+      ));
+      if (result == true && mounted) _load();
       return;
     }
     final payload = <String, dynamic>{};
@@ -203,7 +226,20 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     final otherName = isPro ? (b.customerName ?? 'Customer') : (b.professionalName ?? 'Professional');
     final actions = _availableActions(isPro);
     final cs = Theme.of(context).colorScheme;
+
+    // Determine current step for the step indicator
+    final stepIndex = _getStepIndex(b.status);
+
     return ListView(padding: const EdgeInsets.all(16), children: [
+      // ── Booking Progress Stepper ──────────────────────────────
+      if (b.status != 'cancelled' && b.status != 'disputed')
+        StepIndicator(
+          currentStep: stepIndex,
+          steps: const ['Requested', 'Quoted', 'Accepted', 'Scheduled', 'In Progress', 'Done'],
+        ),
+      if (b.status != 'cancelled' && b.status != 'disputed')
+        const SizedBox(height: 8),
+
       Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
