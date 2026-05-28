@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const { awardPoints } = require('./gamificationController');
 
 // Generate referral code for user
 async function generateCode(req, res, next) {
@@ -125,6 +126,11 @@ async function completeReferral(userId) {
          VALUES ($1, 'system', '🎉 Referral Reward!', $2)`,
         [referrer_id, `You earned ₹${reward_amount} in loyalty points from your referral!`]
       );
+
+      // Award gamification points to referrer (200 pts = ₹20 value)
+      try {
+        await awardPoints(referrer_id, Math.round(reward_amount), 'referral_bonus', referral.rows[0].id);
+      } catch (_) { /* non-critical */ }
     }
   } catch (err) {
     logger.error({ err }, 'Error completing referral');

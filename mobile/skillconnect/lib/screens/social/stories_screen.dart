@@ -30,6 +30,9 @@ class _StoriesScreenState extends State<StoriesScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _progressController = AnimationController(vsync: this, duration: const Duration(seconds: 5))
+      ..addListener(() {
+        if (mounted) setState(() {});
+      })
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) _goNext();
       });

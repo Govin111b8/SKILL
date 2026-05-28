@@ -60,6 +60,6 @@ class ReferralService {
 
   static String _extractCode(Map<String, dynamic> data) {
     final nested = _asMap(data['referral_code']);
-    return data['code']?.toString() ?? data['referral_code']?.toString() ?? nested['code']?.toString() ?? '';
+    return data['code']?.toString() ?? nested['code']?.toString() ?? (data['referral_code'] is String ? data['referral_code'].toString() : '');
   }
 }
