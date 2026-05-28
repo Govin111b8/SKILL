@@ -1252,9 +1252,10 @@ SKILL/
 13. **Deep Audit v2 found 79 new issues** — See Sprint 5-7 for prioritized fix plan
 14. **Global Ecosystem implemented** — 3-engine architecture (Booking/Subscription/Marketplace), multi-tenant country system, family/household accounts, provider business OS (inventory + CRM), 9 country tenants seeded, subscription auto-scheduler cron, admin country management page
 15. **Sprint 10 COMPLETE** — COD+EMI payments, demand prediction (migration 024 + demandController + cron), Society/B2B module (migration 025 + societyController + SocietyDashboard.jsx), 9-language i18n (129 keys each)
-16. **Payment methods** — now supports: card, upi, netbanking, wallet, cod (cash-on-delivery), emi (Razorpay EMI ≥₹3000). COD confirm via POST /payments/:id/cod-confirm
-17. **Cron jobs** — now 17 total (was 15). New: aggregateDemandSignals (daily 02:00 UTC)
-18. **Migrations** — now 025 (latest: 025_society_b2b.sql)
+16. **Sprint 11 COMPLETE** — P3.4 Map view (Leaflet/OpenStreetMap in SearchResults), P2.3 Company KYC frontend (CompanyKYC.jsx 4-step wizard), Phase 8 Gamification (migration 028, gamificationController, /api/gamification routes, Dashboard stats widget, awardPoints wired into booking + referral), P5 Mobile (6 new model files: story/follow/user_points/badge/community_post/featured_slot; 6 new services: warranty/dispute/collection/points/community/referral; 3 new screens: Followers/Stories/Loyalty; router wired)
+17. **Payment methods** — now supports: card, upi, netbanking, wallet, cod (cash-on-delivery), emi (Razorpay EMI ≥₹3000). COD confirm via POST /payments/:id/cod-confirm
+18. **Cron jobs** — now 17 total (was 15). New: aggregateDemandSignals (daily 02:00 UTC)
+19. **Migrations** — now 028 (latest: 028_gamification.sql)
 
 ---
 
