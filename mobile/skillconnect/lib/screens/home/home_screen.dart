@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../theme/design_tokens.dart';
 import '../../widgets/professional_card.dart';
 import '../../widgets/review_prompt.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/nearby_providers_section.dart';
+import '../../widgets/promotions_banner.dart';
+import '../../widgets/app_components.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
@@ -18,7 +23,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   List<Professional> _topProfessionals = [];
   bool _loading = true;
   String? _error;
@@ -41,9 +46,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openService(int id, String name, {bool isRoot = false}) {
+    HapticFeedback.selectionClick();
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => CategoryDetailScreen(categoryId: id, categoryName: name, isRoot: isRoot),
     ));
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  String _getGreetingEmoji() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return '☀️';
+    if (hour < 17) return '👋';
+    return '🌙';
   }
 
   @override
@@ -56,252 +76,343 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final auth = context.watch<AuthService>();
+    final userName = auth.user?['name']?.toString().split(' ').first ?? 'there';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(children: [
-          Container(
-            width: 34, height: 34,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.handyman_rounded, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 10),
-          const Text('SkillConnect'),
-        ]),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () { HapticFeedback.lightImpact(); _load(); },
-            tooltip: 'Refresh',
-          ),
-          const SizedBox(width: 40),
-        ],
-      ),
       body: RefreshIndicator(
+        color: AppColors.primary,
         onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            // ── Hero banner ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: CustomScrollView(
+          slivers: [
+            // ── Personalized Header (like sample image) ─────────────
+            SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF0891B2)],
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
                   ),
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withAlpha(70), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withAlpha(60))),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.verified_rounded, color: Colors.white, size: 12),
-                        SizedBox(width: 4),
-                        Text('40+ verified services', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                      ]),
-                    ),
-                  ]),
-                  const SizedBox(height: 10),
-                  Text('Find trusted\nprofessionals', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w900, height: 1.1)),
-                  const SizedBox(height: 6),
-                  Text('Verified · Reviewed · Zero commission', style: TextStyle(color: Colors.white.withAlpha(210), fontSize: 12, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 14),
-                  GestureDetector(
-                    onTap: () { HapticFeedback.lightImpact(); Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())); },
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                      child: Row(children: [
-                        const Icon(Icons.search, color: Color(0xFF6366F1), size: 18),
-                        const SizedBox(width: 8),
-                        Text('Search services...', style: TextStyle(color: Colors.grey.shade500, fontSize: 14, fontWeight: FontWeight.w500)),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(color: const Color(0xFF6366F1), borderRadius: BorderRadius.circular(8)),
-                          child: const Text('Go', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xxl),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Greeting + Avatar row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Text(
+                                      '${_getGreeting()} ${_getGreetingEmoji()}',
+                                      style: TextStyle(
+                                        color: Colors.white.withAlpha(200),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Available badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.success.withAlpha(40),
+                                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                                        border: Border.all(color: AppColors.success.withAlpha(80)),
+                                      ),
+                                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                                        Icon(Icons.circle, size: 6, color: AppColors.success),
+                                        SizedBox(width: 4),
+                                        Text('Online', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                      ]),
+                                    ),
+                                  ]),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    userName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // User Avatar
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withAlpha(80), width: 3),
+                                gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ]),
+                        const SizedBox(height: AppSpacing.xl),
+                        // Search bar
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+                          },
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              boxShadow: AppShadows.md(Colors.black),
+                            ),
+                            child: Row(children: [
+                              const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Search services or professionals...',
+                                style: TextStyle(color: Colors.grey.shade500, fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: const Text('Go', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ]),
+                ),
+              ),
+            ),
+
+            // ── Promotions Banner Carousel ──────────────────────────
+            const SliverToBoxAdapter(child: PromotionsBanner()),
+
+            // ── Quick Actions (expanded 8-icon grid) ────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Quick Actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: AppSpacing.lg),
+                    GridView.count(
+                      crossAxisCount: 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.85,
+                      children: [
+                        _QuickActionIcon(
+                          icon: Icons.home_repair_service_rounded,
+                          label: 'Services',
+                          color: const Color(0xFF6366F1),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.emergency_rounded,
+                          label: 'Emergency',
+                          color: const Color(0xFFEF4444),
+                          onTap: () => Navigator.pushNamed(context, '/emergency'),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.event_note_rounded,
+                          label: 'Bookings',
+                          color: const Color(0xFFF59E0B),
+                          onTap: () {}, // Navigate handled by bottom nav
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.account_balance_wallet_rounded,
+                          label: 'Wallet',
+                          color: const Color(0xFF10B981),
+                          onTap: () => Navigator.pushNamed(context, '/earnings'),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.camera_alt_rounded,
+                          label: 'Photo Quote',
+                          color: const Color(0xFF06B6D4),
+                          onTap: () => Navigator.pushNamed(context, '/instant-quote'),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.people_rounded,
+                          label: 'Referrals',
+                          color: const Color(0xFF8B5CF6),
+                          onTap: () => Navigator.pushNamed(context, '/contacts'),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.verified_user_rounded,
+                          label: 'Warranty',
+                          color: const Color(0xFF059669),
+                          onTap: () => Navigator.pushNamed(context, '/warranty'),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.local_offer_rounded,
+                          label: 'Offers',
+                          color: const Color(0xFFEC4899),
+                          onTap: () {}, // Placeholder for offers
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
             // ── Review prompt (only if pending) ──────────────────
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: ReviewPromptBanner(),
-            ),
-
-            // ── Quick actions ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Row(children: [
-                Expanded(child: _QuickActionCard(
-                  icon: Icons.camera_alt_rounded,
-                  label: 'Photo Quote',
-                  color: const Color(0xFF06B6D4),
-                  onTap: () => Navigator.pushNamed(context, '/instant-quote'),
-                )),
-                const SizedBox(width: 10),
-                Expanded(child: _QuickActionCard(
-                  icon: Icons.emergency_rounded,
-                  label: 'Emergency',
-                  color: const Color(0xFFEF4444),
-                  onTap: () => Navigator.pushNamed(context, '/emergency'),
-                )),
-                const SizedBox(width: 10),
-                Expanded(child: _QuickActionCard(
-                  icon: Icons.verified_user_rounded,
-                  label: 'Warranty',
-                  color: const Color(0xFF10B981),
-                  onTap: () => Navigator.pushNamed(context, '/warranty'),
-                )),
-              ]),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                child: ReviewPromptBanner(),
+              ),
             ),
 
             // ── Service hubs ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Row(children: [
-                Container(width: 3, height: 16, decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 8),
-                Text('Categories', style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
-                  child: Text('View all', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.primary)),
-                ),
-              ]),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Categories',
+                accentColor: cs.primary,
+                actionLabel: 'View all',
+                onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
+              ),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 110,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: kServiceHubs.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (_, i) {
-                  final hub = kServiceHubs[i];
-                  return GestureDetector(
-                    onTap: () { HapticFeedback.selectionClick(); _openService(hub.id, hub.name, isRoot: true); },
-                    child: Container(
-                      width: 120,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: hub.gradient),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: hub.gradient.first.withAlpha(50), blurRadius: 10, offset: const Offset(0, 4))],
-                      ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(hub.emoji, style: const TextStyle(fontSize: 24)),
-                        Text(hub.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: -0.2), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      ]),
-                    ),
-                  );
-                },
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.md),
+                child: SizedBox(
+                  height: 110,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: kServiceHubs.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) {
+                      final hub = kServiceHubs[i];
+                      return GestureDetector(
+                        onTap: () => _openService(hub.id, hub.name, isRoot: true),
+                        child: Container(
+                          width: 120,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: hub.gradient),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            boxShadow: AppShadows.md(hub.gradient.first),
+                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            Text(hub.emoji, style: const TextStyle(fontSize: 24)),
+                            Text(hub.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: -0.2), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ]),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
 
             // ── Popular services grid ─────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Row(children: [
-                Container(width: 3, height: 16, decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 8),
-                Text('Popular services', style: Theme.of(context).textTheme.titleMedium),
-              ]),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Popular Services',
+                accentColor: const Color(0xFFEF4444),
+              ),
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 0.85),
-                itemCount: popularServices.length,
-                itemBuilder: (_, i) {
-                  final s = popularServices[i];
-                  return InkWell(
-                    onTap: () { HapticFeedback.selectionClick(); _openService(s.id, s.name); },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Container(
-                          width: 42, height: 42,
-                          decoration: BoxDecoration(gradient: LinearGradient(colors: s.gradient), borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: s.gradient.first.withAlpha(60), blurRadius: 8, offset: const Offset(0, 3))]),
-                          child: Icon(s.icon, color: Colors.white, size: 20),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 0.85),
+                  itemCount: popularServices.length,
+                  itemBuilder: (_, i) {
+                    final s = popularServices[i];
+                    return InkWell(
+                      onTap: () => _openService(s.id, s.name),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                         ),
-                        const SizedBox(height: 6),
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text(s.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, height: 1.2))),
-                      ]),
-                    ),
-                  );
-                },
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: s.gradient),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              boxShadow: AppShadows.sm(s.gradient.first),
+                            ),
+                            child: Icon(s.icon, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(s.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                          ),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
             // ── Nearby available providers (smart location) ─────
-            const NearbyProvidersSection(),
+            const SliverToBoxAdapter(child: NearbyProvidersSection()),
 
             // ── Top-rated professionals ───────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-              child: Row(children: [
-                Container(width: 3, height: 16, decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 8),
-                Text('Top-rated professionals', style: Theme.of(context).textTheme.titleMedium),
-              ]),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: 'Top-rated Professionals',
+                accentColor: const Color(0xFFF59E0B),
+              ),
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _loading
-                  ? Column(children: List.generate(3, (_) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonProfessionalCard())))
-                  : _error != null
-                      ? Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Column(children: [
-                            Icon(Icons.wifi_off_rounded, size: 36, color: Colors.red.shade400),
-                            const SizedBox(height: 8),
-                            const Text('Could not connect', style: TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text('Check your connection and try again', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                            const SizedBox(height: 10),
-                            OutlinedButton(onPressed: _load, child: const Text('Try again')),
-                          ]),
-                        )
-                      : _topProfessionals.isEmpty
-                          ? EmptyStateWidget(
-                              icon: Icons.person_search_rounded,
-                              title: 'No professionals yet',
-                              subtitle: 'Be the first to join! Check back soon.',
-                              actionLabel: 'Browse services',
-                              onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
-                            )
-                          : Column(children: _topProfessionals.map((p) => Padding(padding: const EdgeInsets.only(bottom: 12), child: ProfessionalCard(professional: p))).toList()),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
+                child: _loading
+                    ? Column(children: List.generate(3, (_) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonProfessionalCard())))
+                    : _error != null
+                        ? _ErrorWidget(onRetry: _load, isDark: isDark)
+                        : _topProfessionals.isEmpty
+                            ? EmptyStateWidget(
+                                icon: Icons.person_search_rounded,
+                                title: 'No professionals yet',
+                                subtitle: 'Be the first to join! Check back soon.',
+                                actionLabel: 'Browse services',
+                                onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
+                              )
+                            : Column(
+                                children: _topProfessionals.map((p) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: ProfessionalCard(professional: p),
+                                )).toList(),
+                              ),
+              ),
             ),
           ],
         ),
@@ -310,13 +421,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
+// ─── Quick Action Icon (grid item) ──────────────────────────────────────────
+
+class _QuickActionIcon extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickActionCard({
+  const _QuickActionIcon({
     required this.icon,
     required this.label,
     required this.color,
@@ -326,21 +439,68 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withAlpha(20),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withAlpha(60)),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: color, size: 24),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withAlpha(25),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: color.withAlpha(50)),
+            ),
+            child: Icon(icon, color: color, size: 26),
+          ),
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-        ]),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// ─── Error State Widget ─────────────────────────────────────────────────────
+
+class _ErrorWidget extends StatelessWidget {
+  final VoidCallback onRetry;
+  final bool isDark;
+
+  const _ErrorWidget({required this.onRetry, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : AppColors.errorLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.error.withAlpha(60)),
+      ),
+      child: Column(children: [
+        Icon(Icons.wifi_off_rounded, size: 40, color: AppColors.error.withAlpha(180)),
+        const SizedBox(height: AppSpacing.md),
+        const Text('Could not connect', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        const SizedBox(height: AppSpacing.xs),
+        Text('Check your connection and try again', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+        const SizedBox(height: AppSpacing.lg),
+        OutlinedButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh_rounded, size: 16),
+          label: const Text('Try again'),
+        ),
+      ]),
     );
   }
 }

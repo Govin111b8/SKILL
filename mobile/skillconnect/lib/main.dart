@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
@@ -10,6 +12,7 @@ import 'services/analytics_service.dart';
 import 'services/performance_monitor.dart';
 import 'services/offline/offline_services.dart';
 import 'services/app_locale_service.dart';
+import 'theme/design_tokens.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -22,6 +25,7 @@ import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
 import 'screens/home/category_detail_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding/onboarding_intro_screen.dart';
 import 'screens/contacts/my_contacts_screen.dart';
 import 'screens/bookings/bookings_list_screen.dart';
 import 'screens/messages/threads_screen.dart';
@@ -37,6 +41,7 @@ import 'screens/notifications/notification_preferences_screen.dart';
 import 'screens/schedule/schedule_management_screen.dart';
 import 'screens/earnings/earnings_screen.dart';
 import 'widgets/connectivity_banner.dart';
+import 'widgets/app_components.dart';
 
 void main() async {
   // Track cold start time
@@ -215,8 +220,10 @@ class SkillConnectApp extends StatelessWidget {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Consumer<AuthService>(
           builder: (_, auth, __) {
-            final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
-            return SplashScreen(nextScreen: dest);
+            if (auth.isLoggedIn) {
+              return SplashScreen(nextScreen: const _OnboardingGate());
+            }
+            return const SplashScreen(nextScreen: WelcomeScreen());
           },
         ),
         routes: {
@@ -288,6 +295,47 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
+/// Gate that shows onboarding intro for first-time users, then shows MainShell.
+class _OnboardingGate extends StatefulWidget {
+  const _OnboardingGate();
+
+  @override
+  State<_OnboardingGate> createState() => _OnboardingGateState();
+}
+
+class _OnboardingGateState extends State<_OnboardingGate> {
+  bool _showOnboarding = false;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('onboarding_complete') ?? false;
+    if (mounted) {
+      setState(() {
+        _showOnboarding = !done;
+        _loaded = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: () {
+        if (mounted) setState(() => _showOnboarding = false);
+      });
+    }
+    return const MainShell();
+  }
+}
+
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _unread = 0;
@@ -329,7 +377,7 @@ class _MainShellState extends State<MainShell> {
     ];
   }
 
-  List<NavigationDestination> _destinations(bool isPro, bool isAgent, bool isAdmin) {
+  List<NavigationDestination> _buildDestinations(bool isPro, bool isAgent, bool isAdmin) {
     if (isAdmin) {
       return const [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
@@ -347,19 +395,31 @@ class _MainShellState extends State<MainShell> {
       ];
     }
     if (isPro) {
-      return const [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
-        NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      return [
+        const NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+        const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+        NavigationDestination(
+          icon: _unread > 0
+              ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
+              : const Icon(Icons.chat_bubble_outline),
+          selectedIcon: const Icon(Icons.chat_bubble),
+          label: 'Chats',
+        ),
+        const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ];
     }
-    return const [
-      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-      NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
-      NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-      NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-      NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    return [
+      const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
+      const NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps_rounded), label: 'Services'),
+      const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note_rounded), label: 'Bookings'),
+      NavigationDestination(
+        icon: _unread > 0
+            ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
+            : const Icon(Icons.chat_bubble_outline),
+        selectedIcon: const Icon(Icons.chat_bubble_rounded),
+        label: 'Chats',
+      ),
+      const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
     ];
   }
 
@@ -467,13 +527,18 @@ class _MainShellState extends State<MainShell> {
       ]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: NavigationBar(
           selectedIndex: safeIndex,
-          onDestinationSelected: (i) => setState(() => _index = i),
+          onDestinationSelected: (i) {
+            HapticFeedback.selectionClick();
+            setState(() => _index = i);
+          },
           animationDuration: const Duration(milliseconds: 400),
-          destinations: _destinations(isPro, isAgent, isAdmin),
+          destinations: _buildDestinations(isPro, isAgent, isAdmin),
         ),
       ),
     );
