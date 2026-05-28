@@ -15,6 +15,22 @@ const {
 const router = Router();
 
 // Get own professional profile (for dashboard)
+/**
+ * @swagger
+ * /professionals/me:
+ *   get:
+ *     summary: Get the authenticated professional profile
+ *     tags: [Professionals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Professional profile retrieved
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.get('/me', authenticate, authorize('professional'), getProfileByUser);
 
 // Get availability status
@@ -30,6 +46,35 @@ router.post('/me/availability', authenticate, authorize('professional'),
 );
 
 // Toggle availability (PUT — original)
+/**
+ * @swagger
+ * /professionals/me/availability:
+ *   put:
+ *     summary: Update the authenticated professional availability status
+ *     tags: [Professionals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [availability_status]
+ *             properties:
+ *               availability_status:
+ *                 type: string
+ *                 enum: [available, busy, offline]
+ *     responses:
+ *       200:
+ *         description: Availability updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.put('/me/availability', authenticate, authorize('professional'),
   validate([
     body('availability_status').isIn(['available', 'busy', 'offline']).withMessage('Invalid status'),
@@ -38,8 +83,83 @@ router.put('/me/availability', authenticate, authorize('professional'),
 );
 
 // Update own professional profile (convenience for onboarding — resolves ID from auth)
+/**
+ * @swagger
+ * /professionals/profile:
+ *   put:
+ *     summary: Update the authenticated professional profile
+ *     tags: [Professionals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               headline:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               pricing_estimate:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Professional profile updated
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.put('/profile', authenticate, authorize('professional'), updateOwnProfile);
 
+/**
+ * @swagger
+ * /professionals:
+ *   post:
+ *     summary: Create a professional profile
+ *     tags: [Professionals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [headline, bio, years_of_experience, pricing_estimate, service_location_radius_km, latitude, longitude, category_ids]
+ *             properties:
+ *               headline:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               years_of_experience:
+ *                 type: integer
+ *               pricing_estimate:
+ *                 type: number
+ *               service_location_radius_km:
+ *                 type: number
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
+ *               category_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       201:
+ *         description: Professional profile created
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.post(
   '/',
   authenticate,
@@ -78,6 +198,25 @@ router.post(
   createProfile
 );
 
+/**
+ * @swagger
+ * /professionals/{id}:
+ *   get:
+ *     summary: Get a professional profile by id
+ *     tags: [Professionals]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Professional profile retrieved
+ *       404:
+ *         description: Professional not found
+ */
 router.get('/:id', getProfile);
 
 // Get online presence for a professional (quick WS check)

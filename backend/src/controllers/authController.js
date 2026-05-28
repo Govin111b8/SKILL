@@ -76,13 +76,56 @@ const generateAccessToken = (user) => {
   );
 };
 
-const generateRefreshToken = (user) => {
+const generateRefreshToken = (user, family) => {
+  const tokenFamily = family || crypto.randomUUID();
   return jwt.sign(
-    { id: user.id, type: 'refresh' },
+    { id: user.id, type: 'refresh', family: tokenFamily },
     config.jwt.secret,
     { expiresIn: config.jwt.refreshExpiresIn }
   );
 };
+
+// Refresh token family tracking (Redis-backed with in-memory fallback)
+const TOKEN_FAMILY_PREFIX = 'token_family:';
+const TOKEN_FAMILY_TTL = 7 * 24 * 3600; // 7 days
+
+async function storeTokenFamily(userId, family, tokenJti) {
+  const key = `${TOKEN_FAMILY_PREFIX}${family}`;
+  const data = { userId, lastToken: tokenJti, createdAt: Date.now(), revoked: false };
+  if (redis.isAvailable()) {
+    await redis.set(key, data, TOKEN_FAMILY_TTL);
+  }
+}
+
+async function checkAndRotateFamily(family, userId) {
+  if (!redis.isAvailable()) return { valid: true }; // Skip check without Redis
+
+  const key = `${TOKEN_FAMILY_PREFIX}${family}`;
+  const record = await redis.get(key);
+
+  if (!record) return { valid: true }; // First use, allow
+
+  if (record.revoked) {
+    // Token reuse detected! Revoke entire family
+    logger.warn({ userId, family }, 'Refresh token reuse detected — revoking family');
+    return { valid: false, reuse: true };
+  }
+
+  // Mark current token as used (next use of same token = reuse attack)
+  record.lastToken = Date.now().toString();
+  await redis.set(key, record, TOKEN_FAMILY_TTL);
+  return { valid: true };
+}
+
+async function revokeTokenFamily(family) {
+  if (!redis.isAvailable()) return;
+  const key = `${TOKEN_FAMILY_PREFIX}${family}`;
+  const record = await redis.get(key);
+  if (record) {
+    record.revoked = true;
+    await redis.set(key, record, TOKEN_FAMILY_TTL);
+  }
+}
 
 const register = async (req, res, next) => {
   try {
@@ -225,6 +268,20 @@ const refreshTokenHandler = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token type.' });
     }
 
+    // Refresh token reuse detection via token families
+    if (decoded.family) {
+      const familyCheck = await checkAndRotateFamily(decoded.family, decoded.id);
+      if (!familyCheck.valid) {
+        // Potential token theft — revoke entire family
+        await revokeTokenFamily(decoded.family);
+        logger.warn({ userId: decoded.id, family: decoded.family }, 'Token reuse attack — all sessions revoked');
+        return res.status(401).json({
+          success: false,
+          message: 'Security alert: session invalidated. Please log in again.',
+        });
+      }
+    }
+
     const result = await query(
       'SELECT id, name, email, phone, role, location FROM users WHERE id = $1',
       [decoded.id]
@@ -236,7 +293,13 @@ const refreshTokenHandler = async (req, res, next) => {
 
     const user = result.rows[0];
     const newAccessToken = generateAccessToken(user);
-    const newRefreshToken = generateRefreshToken(user);
+    // Rotate refresh token within the same family
+    const newRefreshToken = generateRefreshToken(user, decoded.family);
+
+    // Store the new token in the family
+    if (decoded.family) {
+      await storeTokenFamily(user.id, decoded.family, Date.now().toString());
+    }
 
     res.status(200).json({
       success: true,

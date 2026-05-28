@@ -1245,15 +1245,17 @@ SKILL/
 6. **Express 5** — uses promise-based error handling
 7. **PostgreSQL 16** — uses `gen_random_uuid()`, no separate uuid extension needed
 8. **WebSocket via `ws` library** — not Socket.IO; simpler but no auto-reconnect
-9. **Sprint 5 is priority** — Critical security fixes from Deep Audit v2
-10. **Consumer-grade UX** — must feel like Airbnb/Instagram, NOT enterprise admin software
-11. **India-first** — WhatsApp integration, Hindi/Telugu i18n already in place
-12. **Start with 3–5 verticals** — Beauty, Home Services, Fitness, Tutors, Photographers
-13. **22/38 controllers untested** — focus on payment, admin, upload, professional, trust
-14. **6 remaining backend silent catches** — in hub.js, auth.js, payments.js, pushNotification.js
-15. **22 remaining frontend silent catches** — across Home, Dashboard, Storefront, Notifications, etc.
-16. **Deep Audit v2 found 79 new issues** — See Sprint 5-7 for prioritized fix plan
-17. **Global Ecosystem implemented** — 3-engine architecture (Booking/Subscription/Marketplace), multi-tenant country system, family/household accounts, provider business OS (inventory + CRM), 9 country tenants seeded, subscription auto-scheduler cron, admin country management page
+9. **Consumer-grade UX** — must feel like Airbnb/Instagram, NOT enterprise admin software
+10. **India-first** — WhatsApp integration; now 9 Indian languages (EN/HI/TE/TA/KN/MR/BN/GU/PA)
+11. **Start with 3–5 verticals** — Beauty, Home Services, Fitness, Tutors, Photographers
+12. **22/38 controllers untested** — focus on payment, admin, upload, professional, trust
+13. **Deep Audit v2 found 79 new issues** — See Sprint 5-7 for prioritized fix plan
+14. **Global Ecosystem implemented** — 3-engine architecture (Booking/Subscription/Marketplace), multi-tenant country system, family/household accounts, provider business OS (inventory + CRM), 9 country tenants seeded, subscription auto-scheduler cron, admin country management page
+15. **Sprint 10 COMPLETE** — COD+EMI payments, demand prediction (migration 024 + demandController + cron), Society/B2B module (migration 025 + societyController + SocietyDashboard.jsx), 9-language i18n (129 keys each)
+16. **Sprint 11 COMPLETE** — P3.4 Map view (Leaflet/OpenStreetMap in SearchResults), P2.3 Company KYC frontend (CompanyKYC.jsx 4-step wizard), Phase 8 Gamification (migration 028, gamificationController, /api/gamification routes, Dashboard stats widget, awardPoints wired into booking + referral), P5 Mobile (6 new model files: story/follow/user_points/badge/community_post/featured_slot; 6 new services: warranty/dispute/collection/points/community/referral; 3 new screens: Followers/Stories/Loyalty; router wired)
+17. **Payment methods** — now supports: card, upi, netbanking, wallet, cod (cash-on-delivery), emi (Razorpay EMI ≥₹3000). COD confirm via POST /payments/:id/cod-confirm
+18. **Cron jobs** — now 17 total (was 15). New: aggregateDemandSignals (daily 02:00 UTC)
+19. **Migrations** — now 028 (latest: 028_gamification.sql)
 
 ---
 
@@ -1269,10 +1271,17 @@ SKILL/
 | **Multi-Tenant Countries** | ✅ Complete | countryController.js (CRUD, config), AdminCountries.jsx, 9 countries seeded |
 | **Family/Household System** | ✅ Complete | householdController.js (CRUD, members), FamilyAccount.jsx |
 | **Provider Business OS** | ✅ Complete | providerBusinessController.js (inventory + CRM), Provider CRM sync cron |
-| **Navigation Updates** | ✅ Complete | Navbar (5 links), BottomNav (Subscribe), Dashboard quick actions |
+| **Navigation Updates** | ✅ Complete | Navbar (6 links incl. Societies), BottomNav (Subscribe), Dashboard quick actions |
+| **Home Services Expansion** | ✅ Complete | Migration 023, quoteController, homeProfileController, trackingController, amcController, whatsapp.js |
+| **Vernacular Languages (9)** | ✅ Complete | EN/HI/TE/TA/KN/MR/BN/GU/PA — 129 keys, ARB + generated Dart + settings screen |
+| **COD Payment** | ✅ Complete | paymentController (cod method + cod-confirm endpoint), payments route |
+| **EMI via Razorpay** | ✅ Complete | razorpay.js createEMIOrder(), paymentController emi method, EMI_DURATIONS exported |
+| **Provider Demand Prediction** | ✅ Complete | Migration 024, demandController (forecast/area/peak-hours/log), /api/demand routes, cron aggregateDemandSignals |
+| **Society/B2B Module** | ✅ Complete | Migration 025, societyController (full CRUD + bidding + B2B enquiries), /api/societies routes, SocietyDashboard.jsx |
 
 ### 🔲 Not Yet Implemented (Future Phases)
 
+- **Aadhaar KYC** (real HyperVerge/Digilocker integration — currently mock)
 - **AI modules** (voice booking, recommendations, pricing suggestions, fraud detection)
 - **WhatsApp integration** (booking reminders, re-engagement)
 - **Map view** for discovery

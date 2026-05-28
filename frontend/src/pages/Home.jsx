@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool, FiMapPin, FiClock,
-  FiTrendingUp, FiZap, FiPlay,
+  FiTrendingUp, FiZap, FiPlay, FiMessageSquare, FiAward, FiCalendar,
 } from 'react-icons/fi';
 import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
@@ -86,6 +86,10 @@ function Home() {
   const [nearbyPros, setNearbyPros] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState('idle'); // idle | requesting | granted | denied
+  const [banners, setBanners] = useState([]);
+  const [quickRebook, setQuickRebook] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [activeBanner, setActiveBanner] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem('sc_user_coords');
@@ -159,7 +163,14 @@ function Home() {
     get('/discover/trending?limit=8').then(res => setTrending(res.data || [])).catch((err) => console.error('Trending error:', err.message));
     get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch((err) => console.error('New pros error:', err.message));
     get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch((err) => console.error('Responsive error:', err.message));
-  }, []);
+    // Promotional banners
+    get('/banners').then(res => setBanners(res.data || [])).catch(() => {});
+    // Quick rebooking (recent completed bookings)
+    if (isAuthenticated) {
+      get('/bookings?status=completed&limit=5').then(res => setQuickRebook((res.data || []).slice(0, 4))).catch(() => {});
+      get('/discover/trending?limit=4').then(res => setRecommendations(res.data || [])).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   function handleCityChange(city) {
     setSelectedCity(city);
@@ -248,6 +259,90 @@ function Home() {
         </div>
       </section>
 
+      {/* PROMOTIONAL BANNERS CAROUSEL */}
+      {banners.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="promo-banner-carousel">
+              {banners.map((banner, idx) => (
+                <div key={banner.id} className={`promo-banner ${idx === activeBanner ? 'active' : ''}`}
+                  style={{ display: idx === activeBanner ? 'flex' : 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '12px', padding: '1.5rem 2rem', color: '#fff', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{banner.title}</h3>
+                    {banner.subtitle && <p style={{ fontSize: '0.85rem', opacity: 0.9 }}>{banner.subtitle}</p>}
+                  </div>
+                  {banner.cta_text && banner.link_url && (
+                    <Link to={banner.link_url} style={{ background: '#fff', color: '#6366f1', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
+                      {banner.cta_text}
+                    </Link>
+                  )}
+                </div>
+              ))}
+              {banners.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '0.75rem' }}>
+                  {banners.map((_, idx) => (
+                    <button key={idx} onClick={() => setActiveBanner(idx)}
+                      style={{ width: '8px', height: '8px', borderRadius: '50%', border: 'none', background: idx === activeBanner ? '#6366f1' : '#d1d5db', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* QUICK RE-BOOKING SHORTCUTS */}
+      {isAuthenticated && quickRebook.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="section-header">
+              <h2><FiCalendar /> Book Again</h2>
+            </div>
+            <div className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+              {quickRebook.map(booking => (
+                <Link key={booking.id}
+                  to={`/book?professional_id=${booking.professional_id}&professional_name=${encodeURIComponent(booking.professional_name || '')}&service=${encodeURIComponent(booking.title || '')}`}
+                  style={{ minWidth: '220px', padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', textDecoration: 'none', color: 'inherit' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{booking.title}</p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>with {booking.professional_name}</p>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', fontSize: '0.75rem', color: '#6366f1', fontWeight: 500 }}>
+                    <FiCalendar size={12} /> Book again
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* AI RECOMMENDATIONS */}
+      {isAuthenticated && recommendations.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-eyebrow"><FiAward size={14} /> Recommended for You</span>
+                <h2 className="section-title">Based on Your Activity</h2>
+              </div>
+            </div>
+            <div className="discovery-scroll">
+              {recommendations.map(pro => (
+                <Link key={pro.id} to={`/professionals/${pro.id}/storefront`} className="discovery-card">
+                  <div className="discovery-avatar">
+                    <img src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=6366f1&color=fff&size=64`} alt={pro.name} />
+                  </div>
+                  <strong>{pro.name}</strong>
+                  <span className="discovery-headline">{pro.headline || ''}</span>
+                  <div className="discovery-meta">
+                    {pro.average_rating > 0 && <span><FiStar size={12} fill="#f59e0b" /> {parseFloat(pro.average_rating).toFixed(1)}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* STATS */}
       <section className="stats-bar">
         <div className="container">
@@ -279,7 +374,7 @@ function Home() {
                   <div className="story-avatar-ring">
                     <img
                       src={group.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.professional_name)}&background=6366f1&color=fff&size=56`}
-                      alt={group.professional_name}
+                      alt={group.professional_name ? `${group.professional_name} profile` : 'User avatar'}
                     />
                   </div>
                   <span className="story-name">{group.professional_name?.split(' ')[0]}</span>
@@ -351,7 +446,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -383,7 +478,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=10b981&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -415,7 +510,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=f97316&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -459,6 +554,55 @@ function Home() {
               <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Project-based work — tutors, designers, photographers, contractors. Describe your project, compare proposals, pay by milestone.</p>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.75rem', fontSize: '0.85rem', color: '#1f2937', fontWeight: 500 }}>Find Professionals <FiArrowRight size={14} /></span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* HOME SERVICES SPOTLIGHT */}
+      <section className="section home-services-section">
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-eyebrow">🏠 Most Popular in India</span>
+              <h2 className="section-title">Home Services</h2>
+              <p className="section-subtitle" style={{ marginTop: '0.25rem' }}>
+                Book instantly or get custom quotes — trusted professionals for every home need
+              </p>
+            </div>
+            <Link to="/categories/home-services" className="section-link">View All <FiArrowRight size={14} /></Link>
+          </div>
+          <div className="hs-mode-tabs">
+            <Link to="/categories/home-services" className="hs-mode-tab hs-mode-tab--instant">
+              ⚡ Instant Book <span>AC, Plumbing, Electrical, Cleaning</span>
+            </Link>
+            <Link to="/quotes" className="hs-mode-tab hs-mode-tab--quote">
+              📋 Get Quotes <span>Painting, Renovation, Interior Design</span>
+            </Link>
+            <Link to="/subscriptions" className="hs-mode-tab hs-mode-tab--sub">
+              🔄 Subscribe <span>Maid, Cook, Daily Help</span>
+            </Link>
+          </div>
+          <div className="hs-services-grid">
+            {[
+              { icon: '❄️', name: 'AC Repair & Service', tag: 'From ₹499', path: '/search?q=AC+repair', mode: 'instant' },
+              { icon: '💧', name: 'Water Purifier / RO', tag: 'From ₹299', path: '/search?q=RO+service', mode: 'instant' },
+              { icon: '🪲', name: 'Pest Control', tag: 'From ₹999', path: '/search?q=pest+control', mode: 'instant' },
+              { icon: '🔌', name: 'Electrician', tag: 'From ₹199', path: '/search?q=electrician', mode: 'instant' },
+              { icon: '🚿', name: 'Plumber', tag: 'From ₹199', path: '/search?q=plumber', mode: 'instant' },
+              { icon: '🏠', name: 'Deep Home Cleaning', tag: 'From ₹999', path: '/search?q=home+cleaning', mode: 'instant' },
+              { icon: '🪑', name: 'Sofa / Carpet Cleaning', tag: 'From ₹499', path: '/search?q=sofa+cleaning', mode: 'instant' },
+              { icon: '🔨', name: 'Carpenter', tag: 'From ₹299', path: '/search?q=carpenter', mode: 'instant' },
+              { icon: '🎨', name: 'Home Painting', tag: 'Get Quote', path: '/quotes?category=painting', mode: 'quote' },
+              { icon: '🏗️', name: 'Renovation', tag: 'Get Quote', path: '/quotes?category=renovation', mode: 'quote' },
+              { icon: '🛋️', name: 'Interior Design', tag: 'Get Quote', path: '/quotes?category=interior', mode: 'quote' },
+              { icon: '👩‍🍳', name: 'Maid / Cook', tag: 'Subscribe', path: '/subscriptions', mode: 'sub' },
+            ].map((svc) => (
+              <Link key={svc.name} to={svc.path} className={`hs-service-chip hs-service-chip--${svc.mode}`}>
+                <span className="hs-chip-icon">{svc.icon}</span>
+                <span className="hs-chip-name">{svc.name}</span>
+                <span className="hs-chip-tag">{svc.tag}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -552,6 +696,7 @@ function Home() {
           <div className="container">
             <div className="section-header">
               <h2 className="section-title"><FiClock size={18} style={{ marginRight: 6 }} />Recently Viewed</h2>
+              <Link to="/favorites" className="section-link">My Favorites <FiArrowRight size={14} /></Link>
             </div>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }}>
               {recentlyViewed.slice(0, 5).map(pro => (
@@ -567,7 +712,7 @@ function Home() {
                 >
                   <img
                     src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=36`}
-                    alt={pro.name}
+                    alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
                   />
                   <div>
@@ -578,6 +723,43 @@ function Home() {
                   </div>
                 </Link>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ENGAGEMENT CTAs for authenticated users */}
+      {isAuthenticated && (
+        <section className="section" style={{ padding: '20px 0 40px' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+              <Link to="/bookings" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderRadius: '14px', border: '1px solid #a7f3d0' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiCalendar size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>My Bookings</p>
+                  <p style={{ fontSize: '0.8rem', color: '#065f46', margin: '2px 0 0' }}>Track active & past bookings</p>
+                </div>
+              </Link>
+              <Link to="/messages" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)', borderRadius: '14px', border: '1px solid #c7d2fe' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiMessageSquare size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>Messages</p>
+                  <p style={{ fontSize: '0.8rem', color: '#3730a3', margin: '2px 0 0' }}>Chat with your professionals</p>
+                </div>
+              </Link>
+              <Link to="/referrals" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', borderRadius: '14px', border: '1px solid #fcd34d' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiAward size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>Refer & Earn</p>
+                  <p style={{ fontSize: '0.8rem', color: '#92400e', margin: '2px 0 0' }}>Invite friends, get rewards</p>
+                </div>
+              </Link>
             </div>
           </div>
         </section>

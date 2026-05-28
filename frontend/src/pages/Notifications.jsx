@@ -205,6 +205,9 @@ function Notifications() {
         {error && (
           <div className="notifications-error">
             <FiAlertCircle /> {error}
+            <button className="btn btn-outline btn-sm" style={{ marginLeft: '1rem' }} onClick={fetchNotifications}>
+              Retry
+            </button>
           </div>
         )}
 

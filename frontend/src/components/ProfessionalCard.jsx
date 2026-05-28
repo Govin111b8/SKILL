@@ -70,7 +70,7 @@ function ProfessionalCard({ professional }) {
         {photo ? (
           <img
             src={photo}
-            alt={name}
+            alt={name ? `${name} profile` : 'User avatar'}
             className="pro-card-photo"
           />
         ) : (

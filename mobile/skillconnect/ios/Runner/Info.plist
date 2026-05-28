@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Skillconnect</string>
+	<string>SkillConnect</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>skillconnect</string>
+	<string>SkillConnect</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -28,6 +28,7 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Portrait primary, landscape allowed -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -44,6 +45,39 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+
+	<!-- Permission usage descriptions (required by App Store review) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SkillConnect uses your location to find nearby service professionals and show accurate service areas.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>SkillConnect uses your location in the background to provide live professional tracking during active bookings.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SkillConnect uses the microphone to record voice notes in chat and for Telugu/Hindi voice search.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SkillConnect uses the camera to upload your profile photo, portfolio images, and KYC documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SkillConnect accesses your photo library to upload profile photos, portfolio images, and booking evidence.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>SkillConnect saves booking confirmations and receipts to your photo library.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>SkillConnect accesses contacts to help you share referral codes with friends and family.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>SkillConnect uses Face ID for quick and secure login.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SkillConnect uses speech recognition for voice search in Telugu and Hindi.</string>
+
+	<!-- Background modes: push notifications + location for live tracking -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>location</string>
+		<string>audio</string>
+	</array>
+
+	<!-- Universal Links (Associated Domains configured in Xcode entitlements) -->
+	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 </dict>
 </plist>

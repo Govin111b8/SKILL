@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/realtime_service.dart';
@@ -9,6 +11,8 @@ import 'services/smart_location_service.dart';
 import 'services/analytics_service.dart';
 import 'services/performance_monitor.dart';
 import 'services/offline/offline_services.dart';
+import 'services/app_locale_service.dart';
+import 'theme/design_tokens.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -21,6 +25,7 @@ import 'screens/home/dashboard_screen.dart';
 import 'screens/home/service_hub_screen.dart';
 import 'screens/home/category_detail_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding/onboarding_intro_screen.dart';
 import 'screens/contacts/my_contacts_screen.dart';
 import 'screens/bookings/bookings_list_screen.dart';
 import 'screens/messages/threads_screen.dart';
@@ -36,6 +41,7 @@ import 'screens/notifications/notification_preferences_screen.dart';
 import 'screens/schedule/schedule_management_screen.dart';
 import 'screens/earnings/earnings_screen.dart';
 import 'widgets/connectivity_banner.dart';
+import 'widgets/app_components.dart';
 
 void main() async {
   // Track cold start time
@@ -56,7 +62,7 @@ void main() async {
 
   final authService = AuthService();
   final themeService = ThemeService();
-  await Future.wait([authService.init(), themeService.init()]);
+  await Future.wait([authService.init(), themeService.init(), AppLocaleService.init()]);
   runApp(
     MultiProvider(
       providers: [
@@ -172,6 +178,21 @@ class SkillConnectApp extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: _primary.withAlpha(25),
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -200,25 +221,30 @@ class SkillConnectApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeService>().mode;
-    return MaterialApp(
-      title: 'SkillConnect',
-      debugShowCheckedModeBanner: false,
-      theme: _buildTheme(Brightness.light),
-      darkTheme: _buildTheme(Brightness.dark),
-      themeMode: themeMode,
-      // i18n: Regional language support (Telugu-first)
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Consumer<AuthService>(
-        builder: (_, auth, __) {
-          final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
-          return SplashScreen(nextScreen: dest);
-        },
-      ),
-      routes: {
+    return ValueListenableBuilder<Locale?>(
+      valueListenable: AppLocaleService.notifier,
+      builder: (_, locale, __) => MaterialApp(
+        title: 'SkillConnect',
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(Brightness.light),
+        darkTheme: _buildTheme(Brightness.dark),
+        themeMode: themeMode,
+        locale: locale,
+        // i18n: Regional language support (Telugu-first)
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Consumer<AuthService>(
+          builder: (_, auth, __) {
+            if (auth.isLoggedIn) {
+              return SplashScreen(nextScreen: const _OnboardingGate());
+            }
+            return const SplashScreen(nextScreen: WelcomeScreen());
+          },
+        ),
+        routes: {
         '/login': (_) => const WelcomeScreen(),
         '/register': (_) => const RegisterScreen(),
-        '/home': (_) => const MainShell(),
+        '/home': (_) => const _OnboardingGate(),
         '/contacts': (_) => const MyContactsScreen(),
         '/instant-quote': (_) => const InstantQuoteScreen(),
         '/emergency': (_) => const EmergencyBookingScreen(),
@@ -227,51 +253,52 @@ class SkillConnectApp extends StatelessWidget {
         '/schedule': (_) => const ScheduleManagementScreen(),
         '/earnings': (_) => const EarningsScreen(),
       },
-      onGenerateRoute: (settings) {
-        if (settings.name == '/professional') {
-          final id = settings.arguments as String;
-          return MaterialPageRoute(builder: (_) => ProfessionalProfileScreen(professionalId: id));
-        }
-        if (settings.name == '/search') {
-          final args = settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (_) => SearchScreen(
-            categoryId: args?['categoryId'],
-            categoryName: args?['categoryName'],
-          ));
-        }
-        if (settings.name == '/category') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => CategoryDetailScreen(
-            categoryId: args['categoryId'] as int,
-            categoryName: args['categoryName']?.toString() ?? '',
-            categoryDescription: args['description']?.toString(),
-            isRoot: args['isRoot'] == true,
-          ));
-        }
-        if (settings.name == '/payment') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => PaymentScreen(
-            bookingId: args['bookingId'] as String,
-            amount: (args['amount'] as num).toDouble(),
-            professionalName: args['professionalName'] as String? ?? 'Professional',
-          ));
-        }
-        if (settings.name == '/tracking') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => LiveTrackingScreen(
-            bookingId: args['bookingId'] as String,
-            professionalName: args['professionalName'] as String? ?? 'Professional',
-          ));
-        }
-        if (settings.name == '/dispute') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => DisputeScreen(
-            bookingId: args['bookingId'] as String,
-            bookingTitle: args['bookingTitle'] as String? ?? 'Booking',
-          ));
-        }
-        return null;
-      },
+        onGenerateRoute: (settings) {
+          if (settings.name == '/professional') {
+            final id = settings.arguments as String;
+            return MaterialPageRoute(builder: (_) => ProfessionalProfileScreen(professionalId: id));
+          }
+          if (settings.name == '/search') {
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(builder: (_) => SearchScreen(
+              categoryId: args?['categoryId'],
+              categoryName: args?['categoryName'],
+            ));
+          }
+          if (settings.name == '/category') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => CategoryDetailScreen(
+              categoryId: args['categoryId'] as int,
+              categoryName: args['categoryName']?.toString() ?? '',
+              categoryDescription: args['description']?.toString(),
+              isRoot: args['isRoot'] == true,
+            ));
+          }
+          if (settings.name == '/payment') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => PaymentScreen(
+              bookingId: args['bookingId'] as String,
+              amount: (args['amount'] as num).toDouble(),
+              professionalName: args['professionalName'] as String? ?? 'Professional',
+            ));
+          }
+          if (settings.name == '/tracking') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => LiveTrackingScreen(
+              bookingId: args['bookingId'] as String,
+              professionalName: args['professionalName'] as String? ?? 'Professional',
+            ));
+          }
+          if (settings.name == '/dispute') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => DisputeScreen(
+              bookingId: args['bookingId'] as String,
+              bookingTitle: args['bookingTitle'] as String? ?? 'Booking',
+            ));
+          }
+          return null;
+        },
+      ),
     );
   }
 }
@@ -281,6 +308,47 @@ class MainShell extends StatefulWidget {
 
   @override
   State<MainShell> createState() => _MainShellState();
+}
+
+/// Gate that shows onboarding intro for first-time users, then shows MainShell.
+class _OnboardingGate extends StatefulWidget {
+  const _OnboardingGate();
+
+  @override
+  State<_OnboardingGate> createState() => _OnboardingGateState();
+}
+
+class _OnboardingGateState extends State<_OnboardingGate> {
+  bool _showOnboarding = false;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('onboarding_complete') ?? false;
+    if (mounted) {
+      setState(() {
+        _showOnboarding = !done;
+        _loaded = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: () {
+        if (mounted) setState(() => _showOnboarding = false);
+      });
+    }
+    return const MainShell();
+  }
 }
 
 class _MainShellState extends State<MainShell> {
@@ -324,7 +392,7 @@ class _MainShellState extends State<MainShell> {
     ];
   }
 
-  List<NavigationDestination> _destinations(bool isPro, bool isAgent, bool isAdmin) {
+  List<NavigationDestination> _buildDestinations(bool isPro, bool isAgent, bool isAdmin) {
     if (isAdmin) {
       return const [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
@@ -342,19 +410,31 @@ class _MainShellState extends State<MainShell> {
       ];
     }
     if (isPro) {
-      return const [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
-        NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      return [
+        const NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+        const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
+        NavigationDestination(
+          icon: _unread > 0
+              ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
+              : const Icon(Icons.chat_bubble_outline),
+          selectedIcon: const Icon(Icons.chat_bubble),
+          label: 'Chats',
+        ),
+        const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ];
     }
-    return const [
-      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-      NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Services'),
-      NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-      NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-      NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    return [
+      const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
+      const NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps_rounded), label: 'Services'),
+      const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note_rounded), label: 'Bookings'),
+      NavigationDestination(
+        icon: _unread > 0
+            ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
+            : const Icon(Icons.chat_bubble_outline),
+        selectedIcon: const Icon(Icons.chat_bubble_rounded),
+        label: 'Chats',
+      ),
+      const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
     ];
   }
 
@@ -462,13 +542,18 @@ class _MainShellState extends State<MainShell> {
       ]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: NavigationBar(
           selectedIndex: safeIndex,
-          onDestinationSelected: (i) => setState(() => _index = i),
+          onDestinationSelected: (i) {
+            HapticFeedback.selectionClick();
+            setState(() => _index = i);
+          },
           animationDuration: const Duration(milliseconds: 400),
-          destinations: _destinations(isPro, isAgent, isAdmin),
+          destinations: _buildDestinations(isPro, isAgent, isAdmin),
         ),
       ),
     );

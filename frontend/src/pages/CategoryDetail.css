@@ -122,6 +122,28 @@
   border-color: rgba(245, 158, 11, 0.4);
   color: #fde68a;
 }
+.cd-pill--instant {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: #bfdbfe;
+}
+.cd-pill--quote {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #ddd6fe;
+  text-decoration: none;
+}
+.cd-pill--sub {
+  background: rgba(5, 150, 105, 0.2);
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #a7f3d0;
+  text-decoration: none;
+}
+.cd-pill--visit {
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.4);
+  color: #fed7aa;
+}
 
 /* ── Sub-services section ────────────────────────────── */
 .cd-subs-wrap {

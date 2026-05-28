@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -19,12 +20,31 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    signingConfigs {
+        create("release") {
+            // Read from environment variables (CI/CD) or local.properties (local dev)
+            val keystoreFile = System.getenv("KEYSTORE_PATH") ?: project.findProperty("keystorePath")?.toString()
+            val keystorePass = System.getenv("STORE_PASSWORD") ?: project.findProperty("storePassword")?.toString()
+            val keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("keyAlias")?.toString()
+            val keyPass = System.getenv("KEY_PASSWORD") ?: project.findProperty("keyPassword")?.toString()
+            if (keystoreFile != null && keystorePass != null && keyAlias != null && keyPass != null) {
+                storeFile = file(keystoreFile)
+                storePassword = keystorePass
+                this.keyAlias = keyAlias
+                keyPassword = keyPass
+            }
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.skillconnect.skillconnect"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        applicationId = "com.skillconnect.app"
+        minSdk = 21  // Required by FCM, geolocator, speech_to_text
+        targetSdk = 35 // Android 15
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Build-time environment config — injected via --dart-define
+        resValue("string", "app_env", System.getenv("APP_ENV") ?: "dev")
     }
 
     // Phase 1: App size optimization — Split APKs per ABI
@@ -56,8 +76,8 @@ android {
 
     buildTypes {
         release {
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            val releaseSigning = signingConfigs.getByName("release")
+            signingConfig = if (releaseSigning.storeFile != null) releaseSigning else signingConfigs.getByName("debug")
             // Enable code shrinking and resource shrinking for smaller APK
             isMinifyEnabled = true
             isShrinkResources = true

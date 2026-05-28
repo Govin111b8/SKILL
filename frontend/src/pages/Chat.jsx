@@ -43,6 +43,9 @@ function Chat() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
+  const [quickReplies, setQuickReplies] = useState([]);
+  const [attachFile, setAttachFile] = useState(null);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -377,8 +380,43 @@ function Chat() {
         </div>
       )}
 
+      {/* Quick Replies */}
+      {showQuickReplies && quickReplies.length > 0 && (
+        <div style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', background: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+          {quickReplies.map((qr, i) => (
+            <button key={i} onClick={() => { setInputText(qr.content); setShowQuickReplies(false); }}
+              style={{ padding: '4px 10px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '16px', fontSize: '0.75rem', cursor: 'pointer' }}>
+              {qr.title || qr.content?.slice(0, 30)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Input */}
       <div className="chat-input-area">
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <label style={{ cursor: 'pointer', padding: '6px', color: 'var(--gray-500)' }} title="Attach file">
+            <input type="file" hidden onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setAttachFile(file);
+                setInputText(`📎 ${file.name}`);
+              }
+            }} />
+            📎
+          </label>
+          <button type="button" onClick={async () => {
+            if (!showQuickReplies && quickReplies.length === 0) {
+              try {
+                const res = await get('/quick-replies');
+                setQuickReplies(res.data || []);
+              } catch (e) { /* silent */ }
+            }
+            setShowQuickReplies(!showQuickReplies);
+          }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', fontSize: '1rem' }} title="Quick replies">
+            ⚡
+          </button>
+        </div>
         <textarea
           ref={textareaRef}
           rows={1}

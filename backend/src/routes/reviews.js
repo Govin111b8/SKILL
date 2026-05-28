@@ -6,6 +6,40 @@ const { createReview, editReview, markHelpful, getReviews, getPendingReviews } =
 
 const router = Router();
 
+/**
+ * @swagger
+ * /reviews:
+ *   post:
+ *     summary: Create a review for a professional
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [professional_id, rating]
+ *             properties:
+ *               professional_id:
+ *                 type: string
+ *               booking_id:
+ *                 type: string
+ *               rating:
+ *                 type: integer
+ *               comment:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Review created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Professional or booking not found
+ */
 router.post(
   '/',
   authenticate,
@@ -22,6 +56,40 @@ router.post(
 );
 
 // Edit review text within 24h window
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   put:
+ *     summary: Edit a review comment
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [comment]
+ *             properties:
+ *               comment:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Review updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Review not found
+ */
 router.put(
   '/:id',
   authenticate,
@@ -30,9 +98,68 @@ router.put(
 );
 
 // Mark review as helpful
+/**
+ * @swagger
+ * /reviews/{id}/helpful:
+ *   post:
+ *     summary: Mark a review as helpful
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Helpful vote recorded
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Review not found
+ */
 router.post('/:id/helpful', authenticate, markHelpful);
 
+/**
+ * @swagger
+ * /reviews/pending:
+ *   get:
+ *     summary: List reviews pending for the current user
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending reviews retrieved
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/pending', authenticate, getPendingReviews);
+/**
+ * @swagger
+ * /reviews/{professionalId}:
+ *   get:
+ *     summary: Get reviews for a professional
+ *     tags: [Reviews]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: professionalId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully
+ *       404:
+ *         description: Professional not found
+ */
 router.get('/:professionalId', getReviews);
 router.get('/:professionalId/distribution', async (req, res, next) => {
   try {

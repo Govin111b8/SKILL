@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- PLACEHOLDER - Replace with real GoogleService-Info.plist from Firebase Console -->
+<!-- In CI/CD, this is decoded from GOOGLE_SERVICE_INFO_PLIST secret -->
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>000000000000-REPLACE.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.000000000000-REPLACE</string>
+	<key>API_KEY</key>
+	<string>REPLACE_WITH_REAL_API_KEY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>000000000000</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.skillconnect.app</string>
+	<key>PROJECT_ID</key>
+	<string>skillconnect-prod</string>
+	<key>STORAGE_BUCKET</key>
+	<string>skillconnect-prod.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:000000000000:ios:0000000000000000</string>
+</dict>
+</plist>

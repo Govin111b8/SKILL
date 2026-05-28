@@ -13,7 +13,7 @@ async function createPayment(req, res, next) {
     if (!booking_id || !uuidV4Regex.test(booking_id)) {
       return res.status(400).json({ error: 'A valid booking_id (UUID v4) is required' });
     }
-    const validMethods = ['card', 'upi', 'netbanking', 'wallet'];
+    const validMethods = ['card', 'upi', 'netbanking', 'wallet', 'cod', 'emi'];
     if (method && !validMethods.includes(method)) {
       return res.status(400).json({ error: `method must be one of: ${validMethods.join(', ')}` });
     }
@@ -44,16 +44,55 @@ async function createPayment(req, res, next) {
 
     const platformFee = Math.round(amount * 0.05 * 100) / 100; // 5% platform fee
     const taxAmount = Math.round(platformFee * 0.18 * 100) / 100; // 18% GST on fee
+    const transactionRef = `TXN_${Date.now()}_${require('crypto').randomBytes(8).toString('hex')}`;
 
-    // Create Razorpay order
+    // Cash-on-delivery: record payment without Razorpay order, collect at service time
+    if (method === 'cod') {
+      const result = await pool.query(
+        `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, 'INR', 'cod', 'cod_pending', $7, $8)
+         RETURNING *`,
+        [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, transactionRef,
+         JSON.stringify({ cod_note: 'Customer will pay cash at service time' })]
+      );
+      await pool.query(
+        `UPDATE bookings SET status = 'accepted', updated_at = NOW() WHERE id = $1 AND status = 'quoted'`,
+        [booking_id]
+      );
+      logger.info({ paymentId: result.rows[0].id }, 'COD payment recorded');
+      return res.status(201).json({ payment: result.rows[0], payment_method: 'cod' });
+    }
+
+    // EMI via Razorpay: create order with EMI options
+    if (method === 'emi') {
+      const { emi_duration } = req.body;
+      const order = await razorpay.createEMIOrder({
+        amount: parseFloat(amount),
+        currency: 'INR',
+        receipt: `booking_${booking_id}`,
+        notes: { booking_id, payer_id },
+      });
+      const result = await pool.query(
+        `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, 'INR', 'emi', 'pending', $7, $8)
+         RETURNING *`,
+        [booking_id, payer_id, booking.pro_user_id, amount, platformFee, taxAmount, transactionRef,
+         JSON.stringify({ razorpay_order_id: order.id, emi_duration: emi_duration || null })]
+      );
+      return res.status(201).json({
+        payment: result.rows[0],
+        razorpay_order: { id: order.id, amount: order.amount, currency: order.currency, key_id: razorpay.KEY_ID },
+        emi_options: razorpay.EMI_DURATIONS,
+      });
+    }
+
+    // Standard Razorpay payment (card, upi, netbanking, wallet)
     const order = await razorpay.createOrder({
       amount: parseFloat(amount),
       currency: 'INR',
       receipt: `booking_${booking_id}`,
       notes: { booking_id, payer_id },
     });
-
-    const transactionRef = `TXN_${Date.now()}_${require('crypto').randomBytes(8).toString('hex')}`;
 
     const result = await pool.query(
       `INSERT INTO payments (booking_id, payer_id, payee_id, amount, platform_fee, tax_amount, currency, method, status, transaction_ref, metadata)
@@ -175,6 +214,44 @@ async function releaseEscrow(req, res, next) {
   }
 }
 
+// Confirm COD payment (professional marks cash collected)
+async function confirmCOD(req, res, next) {
+  try {
+    const { payment_id } = req.params;
+
+    const paymentRes = await pool.query(
+      `SELECT p.*, b.professional_id, pro.user_id as pro_user_id
+       FROM payments p
+       JOIN bookings b ON p.booking_id = b.id
+       JOIN professionals pro ON b.professional_id = pro.id
+       WHERE p.id = $1 AND p.method = 'cod' AND p.status = 'cod_pending'`,
+      [payment_id]
+    );
+
+    if (paymentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'COD payment not found or already confirmed' });
+    }
+
+    const payment = paymentRes.rows[0];
+
+    if (payment.pro_user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only the assigned professional can confirm cash collection' });
+    }
+
+    const result = await pool.query(
+      `UPDATE payments SET status = 'released', escrow_released_at = NOW(),
+       metadata = metadata || $2::jsonb, updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [payment_id, JSON.stringify({ cod_confirmed_at: new Date().toISOString(), confirmed_by: req.user.id })]
+    );
+
+    logger.info({ paymentId: payment_id }, 'COD payment confirmed by professional');
+    res.json({ payment: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Refund payment
 async function refundPayment(req, res, next) {
   try {
@@ -278,4 +355,4 @@ async function getEarnings(req, res, next) {
   }
 }
 
-module.exports = { createPayment, verifyPayment, releaseEscrow, refundPayment, getPayments, getEarnings };
+module.exports = { createPayment, verifyPayment, releaseEscrow, confirmCOD, refundPayment, getPayments, getEarnings };

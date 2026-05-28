@@ -21,7 +21,8 @@ RUN addgroup -g 1001 -S nginxuser && \
     chown nginxuser:nginxuser /var/run/nginx.pid
 
 COPY --from=build /app/dist /usr/share/nginx/html
-RUN chown -R nginxuser:nginxuser /usr/share/nginx/html
+COPY well-known /etc/nginx/well-known
+RUN chown -R nginxuser:nginxuser /usr/share/nginx/html /etc/nginx/well-known
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

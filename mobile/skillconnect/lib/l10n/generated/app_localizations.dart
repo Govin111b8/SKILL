@@ -9,11 +9,18 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
-import 'app_localizations_te.dart';
 import 'app_localizations_hi.dart';
+import 'app_localizations_te.dart';
+import 'app_localizations_ta.dart';
+import 'app_localizations_kn.dart';
+import 'app_localizations_mr.dart';
+import 'app_localizations_bn.dart';
+import 'app_localizations_gu.dart';
+import 'app_localizations_pa.dart';
 
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -21,22 +28,29 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('te'),
     Locale('hi'),
+    Locale('te'),
+    Locale('ta'),
+    Locale('kn'),
+    Locale('mr'),
+    Locale('bn'),
+    Locale('gu'),
+    Locale('pa'),
   ];
 
-  // App-wide strings
   String get appTitle;
   String get home;
   String get services;
@@ -80,6 +94,86 @@ abstract class AppLocalizations {
   String get serviceReminders;
   String get offersPromotions;
   String get languagePreference;
+  String get subscriptions;
+  String get marketplace;
+  String get referrals;
+  String get collections;
+  String get community;
+  String get familyAccount;
+  String get wallet;
+  String get analytics;
+  String get referralCode;
+  String get shareReferral;
+  String get referralEarnings;
+  String get totalReferrals;
+  String get pendingEarnings;
+  String get creditedEarnings;
+  String get vacationMode;
+  String get pauseSubscription;
+  String get replaceProvider;
+  String get activeSubscription;
+  String get pausedSubscription;
+  String get postProject;
+  String get placeBid;
+  String get milestones;
+  String get addFamilyMember;
+  String get removeMember;
+  String get spendingLimit;
+  String get agentWallet;
+  String get requestPayout;
+  String get commissions;
+  String get leaderboard;
+  String get platformStats;
+  String get manageUsers;
+  String get reviewKYC;
+  String get resolveDisputes;
+  String get featuredSlots;
+  String get approve;
+  String get reject;
+  String get resolve;
+  String get suspend;
+  String get unsuspend;
+  String get searchMap;
+  String get nearbyProfessionals;
+  String get addMoney;
+  String get withdraw;
+  String get escrowHeld;
+  String get weeklyEarnings;
+  String get monthlyEarnings;
+  String get peakHours;
+  String get returnRate;
+  String get professionalOnboarding;
+  String get basicInfo;
+  String get myServices;
+  String get portfolio;
+  String get pricing;
+  String get publishProfile;
+  String get darkMode;
+  String get language;
+  String get english;
+  String get hindi;
+  String get telugu;
+  String get version;
+  String get privacyPolicy;
+  String get termsOfService;
+  String get deleteAccount;
+  String get contactSupport;
+  String get cashOnDelivery;
+  String get payViaEmi;
+  String get emiOptions;
+  String get tamil;
+  String get kannada;
+  String get marathi;
+  String get bengali;
+  String get gujarati;
+  String get punjabi;
+  String get societyServices;
+  String get societyDashboard;
+  String get postSocietyRequest;
+  String get b2bEnquiry;
+  String get demandForecast;
+  String get peakDemandHours;
+  String get predictedBookings;
   String get nearbyProviders;
   String get viewAll;
   String get cancel;
@@ -97,7 +191,9 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'te', 'hi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'hi', 'te', 'ta', 'kn', 'mr', 'bn', 'gu', 'pa']
+          .contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -105,9 +201,27 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
-    case 'te': return AppLocalizationsTe();
-    case 'hi': return AppLocalizationsHi();
     case 'en':
-    default: return AppLocalizationsEn();
+      return AppLocalizationsEn();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'te':
+      return AppLocalizationsTe();
+    case 'ta':
+      return AppLocalizationsTa();
+    case 'kn':
+      return AppLocalizationsKn();
+    case 'mr':
+      return AppLocalizationsMr();
+    case 'bn':
+      return AppLocalizationsBn();
+    case 'gu':
+      return AppLocalizationsGu();
+    case 'pa':
+      return AppLocalizationsPa();
   }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "${locale.languageCode}".',
+  );
 }

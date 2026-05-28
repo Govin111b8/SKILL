@@ -49,6 +49,21 @@ class _SkeletonShimmerState extends State<SkeletonShimmer> with SingleTickerProv
   }
 }
 
+class SkeletonLoader extends StatelessWidget {
+  final double? width;
+  final double height;
+  final double radius;
+
+  const SkeletonLoader({super.key, this.width, required this.height, this.radius = 8});
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonShimmer(
+      child: SkeletonBox(width: width, height: height, radius: radius),
+    );
+  }
+}
+
 /// A single placeholder box
 class SkeletonBox extends StatelessWidget {
   final double? width;

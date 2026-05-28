@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/razorpay_service.dart';
 
 /// UPI-first payment screen.
 /// Lightweight UPI intent flow (no webview needed).
@@ -28,39 +33,186 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _success = false;
   String? _error;
 
-  Future<void> _initiatePayment() async {
-    setState(() { _processing = true; _error = null; });
-    try {
-      final res = await ApiService.post('/payments/initiate', {
-        'booking_id': widget.bookingId,
-        'amount': widget.amount,
-        'currency': widget.currency,
-        'method': _selectedMethod,
-      }, auth: true);
+  Future<bool> _launchUpiIntent(String upiUrl) async {
+    final uri = Uri.parse(upiUrl);
+    if (await canLaunchUrl(uri)) {
+      return launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    return false;
+  }
 
-      // For UPI, the backend returns a UPI deep link / intent URL
-      final paymentId = res['data']?['payment_id'];
-      if (paymentId != null) {
-        // In production, launch UPI intent here
-        // For now, confirm payment
-        await _confirmPayment(paymentId.toString());
+  Future<void> _initiatePayment() async {
+    setState(() {
+      _processing = true;
+      _error = null;
+    });
+
+    try {
+      if (_selectedMethod == 'upi') {
+        final res = await ApiService.post('/payments/initiate', {
+          'booking_id': widget.bookingId,
+          'amount': widget.amount,
+          'currency': widget.currency,
+          'method': 'upi',
+        }, auth: true);
+
+        final data = res['data'] as Map<String, dynamic>? ?? {};
+        final upiUrl = data['upi_url']?.toString();
+        final paymentRef = data['payment_ref']?.toString() ??
+            data['payment_id']?.toString() ??
+            widget.bookingId;
+
+        if (upiUrl != null && upiUrl.isNotEmpty) {
+          final launched = await _launchUpiIntent(upiUrl);
+          if (!launched && mounted) {
+            await _showManualUpiDialog(paymentRef);
+          } else if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('UPI app opened. Complete the payment there.'),
+              ),
+            );
+          }
+        } else if (mounted) {
+          await _showManualUpiDialog(paymentRef);
+        }
+      } else if (_selectedMethod == 'razorpay') {
+        final auth = context.read<AuthService>();
+        final user = auth.user ?? const <String, dynamic>{};
+
+        RazorpayService.onSuccess = (paymentId, orderId, signature) async {
+          final verified = await RazorpayService.verifyPayment(
+            paymentId: paymentId,
+            orderId: orderId,
+            signature: signature,
+            bookingId: widget.bookingId,
+          );
+          if (!mounted) return;
+          setState(() {
+            _processing = false;
+            _success = verified;
+            _error = verified ? null : 'Payment verification failed. Please contact support.';
+          });
+        };
+        RazorpayService.onFailure = (message, _) {
+          if (!mounted) return;
+          setState(() {
+            _processing = false;
+            _error = message;
+          });
+        };
+        RazorpayService.onExternalWallet = (walletName) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Continuing with $walletName...')),
+          );
+        };
+
+        await RazorpayService.openCheckout(
+          context: context,
+          bookingId: widget.bookingId,
+          amount: widget.amount,
+          professionalName: widget.professionalName,
+          customerName: user['name']?.toString() ?? 'SkillConnect Customer',
+          customerEmail: user['email']?.toString() ?? 'customer@skillconnect.in',
+          customerPhone: user['phone']?.toString() ?? '',
+        );
+      } else {
+        await ApiService.post('/payments/initiate', {
+          'booking_id': widget.bookingId,
+          'amount': widget.amount,
+          'currency': widget.currency,
+          'method': 'cash',
+        }, auth: true);
+        if (!mounted) return;
+        setState(() => _success = true);
       }
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      if (!mounted) return;
+      setState(() {
+        _processing = false;
+        _error = e.message;
+      });
     } catch (_) {
-      setState(() => _error = 'Payment failed. Please try again.');
+      if (!mounted) return;
+      setState(() {
+        _processing = false;
+        _error = 'Payment failed. Please try again.';
+      });
     } finally {
-      if (mounted) setState(() => _processing = false);
+      if (mounted && _selectedMethod != 'razorpay') {
+        setState(() => _processing = false);
+      }
     }
+  }
+
+  Future<void> _showManualUpiDialog(String paymentRef) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Pay via UPI'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('No UPI app found. Please open your UPI app manually and pay to:'),
+            const SizedBox(height: 12),
+            const SelectableText(
+              'skillconnect@upi',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Reference: $paymentRef',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: paymentRef));
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Payment reference copied')),
+                );
+              }
+            },
+            child: const Text('Copy Ref'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await _confirmPayment(paymentRef);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('I have paid'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _confirmPayment(String paymentId) async {
     try {
       await ApiService.post('/payments/$paymentId/confirm', {}, auth: true);
+      if (!mounted) return;
       setState(() => _success = true);
     } catch (_) {
+      if (!mounted) return;
       setState(() => _error = 'Payment confirmation failed.');
     }
+  }
+
+  String get _payButtonLabel {
+    if (_selectedMethod == 'cash') return 'Confirm Cash Payment';
+    if (_selectedMethod == 'razorpay') {
+      return 'Pay ₹${widget.amount.toStringAsFixed(0)} with Razorpay';
+    }
+    return 'Pay ₹${widget.amount.toStringAsFixed(0)} via UPI';
   }
 
   @override
@@ -74,7 +226,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Amount card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -103,8 +254,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Payment methods
             Text('Payment Method', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             _PaymentOption(
@@ -116,6 +265,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 8),
             _PaymentOption(
+              icon: Icons.credit_card_rounded,
+              label: 'Razorpay (Cards/Net Banking)',
+              subtitle: 'Cards, UPI, wallets, and net banking',
+              selected: _selectedMethod == 'razorpay',
+              onTap: () => setState(() => _selectedMethod = 'razorpay'),
+            ),
+            const SizedBox(height: 8),
+            _PaymentOption(
               icon: Icons.money,
               label: 'Cash on Service',
               subtitle: 'Pay after job is done',
@@ -123,18 +280,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
               onTap: () => setState(() => _selectedMethod = 'cash'),
             ),
             const Spacer(),
-
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(_error!, style: TextStyle(color: Colors.red.shade600, fontSize: 13)),
               ),
-
             FilledButton(
               onPressed: _processing ? null : _initiatePayment,
               child: _processing
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(_selectedMethod == 'cash' ? 'Confirm Cash Payment' : 'Pay ₹${widget.amount.toStringAsFixed(0)} via UPI'),
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(_payButtonLabel),
             ),
           ],
         ),

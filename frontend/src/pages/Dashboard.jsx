@@ -6,7 +6,7 @@ import {
   FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
   FiDollarSign, FiCalendar, FiPieChart, FiActivity, FiAward,
   FiHeart, FiShoppingBag, FiBookOpen, FiZap, FiArrowUp, FiArrowDown,
-  FiTarget, FiBell, FiRepeat,
+  FiTarget, FiBell, FiRepeat, FiArrowRight, FiShield,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
@@ -39,7 +39,14 @@ function Dashboard() {
   }
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}><p>Error: {error}</p></div>;
+  if (error) return (
+    <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>
+      <p style={{ color: 'var(--danger, #ef4444)', marginBottom: '1rem' }}>Error: {error}</p>
+      <button className="btn btn-primary btn-sm" onClick={() => { setLoading(true); setError(null); fetchDashboard(); }}>
+        Try Again
+      </button>
+    </div>
+  );
 
   const isProfessional = user?.role === 'professional';
 
@@ -271,6 +278,13 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
   }
 
   const [savingPortfolio, setSavingPortfolio] = useState(false);
+  const [gamifStats, setGamifStats] = useState(null);
+
+  useEffect(() => {
+    get('/gamification/professional/stats')
+      .then(r => setGamifStats(r.data.data))
+      .catch(err => console.error('Gamification stats failed:', err.message));
+  }, []);
 
   async function handleAddPortfolio(e) {
     e.preventDefault();
@@ -290,10 +304,15 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
 
   if (needsProfile) {
     return (
-      <div className="needs-profile-card">
-        <FiBriefcase size={48} />
-        <h2>Complete Your Professional Profile</h2>
-        <p>Set up your profile to appear in search results and receive customer inquiries.</p>
+      <div className="needs-profile-card" style={{ textAlign: 'center', padding: '3rem 2rem', background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)', borderRadius: '16px', border: '1px solid #c7d2fe' }}>
+        <FiBriefcase size={48} style={{ color: '#6366f1', marginBottom: '1rem' }} />
+        <h2 style={{ marginBottom: '0.5rem' }}>Complete Your Professional Profile</h2>
+        <p style={{ color: '#4b5563', marginBottom: '1.5rem', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
+          Set up your profile to appear in search results and start receiving customer inquiries.
+        </p>
+        <Link to="/onboarding/professional" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <FiArrowRight size={16} /> Start Onboarding
+        </Link>
       </div>
     );
   }
@@ -382,8 +401,52 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
             <FiPlus size={18} color="#10b981" />
             <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Onboarding Wizard</span>
           </Link>
+          {profile?.provider_type === 'organization' && (
+            <Link to="/kyc/company" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: '#fef9c3', borderRadius: '10px', border: '1px solid #fde68a', textDecoration: 'none', color: '#92400e' }}>
+              <FiShield size={18} color="#d97706" />
+              <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Company KYC</span>
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* ── Gamification / Growth Stats ── */}
+      {gamifStats && (
+        <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-header"><h2><FiZap /> Growth Stats &amp; Tips</h2></div>
+          <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#fffbeb', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#d97706' }}>🔥 {gamifStats.streak_days}</div>
+              <div style={{ fontSize: '0.78rem', color: '#92400e', marginTop: '4px' }}>Day Streak</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#eef2ff', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#4f46e5' }}>#{gamifStats.rank || '–'}</div>
+              <div style={{ fontSize: '0.78rem', color: '#4338ca', marginTop: '4px' }}>Category Rank</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#f0fdf4', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#16a34a' }}>{gamifStats.weekly_bookings}</div>
+              <div style={{ fontSize: '0.78rem', color: '#15803d', marginTop: '4px' }}>This Week's Bookings</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', background: '#fdf4ff', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#7e22ce' }}>{gamifStats.trust_score}</div>
+              <div style={{ fontSize: '0.78rem', color: '#6b21a8', marginTop: '4px' }}>Trust Score</div>
+            </div>
+          </div>
+          {gamifStats.tips?.length > 0 && (
+            <div style={{ padding: '0 1rem 1rem' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💡 Tips to Grow</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {gamifStats.tips.map((tip, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 12px', background: 'var(--gray-50, #f9fafb)', borderRadius: '8px', fontSize: '0.875rem', color: '#374151' }}>
+                    <span>{tip.icon}</span>
+                    <span>{tip.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Earnings Cards */}
       <div className="earnings-row">
@@ -604,7 +667,7 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
                   {item.media_type === 'image' ? (
                     <img
                       src={item.media_url}
-                      alt={item.title || 'Portfolio'}
+                      alt={item.title || 'Portfolio image'}
                       onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || 'P')}&background=eef2ff&color=6366f1&size=200`; }}
                     />
                   ) : (
@@ -646,7 +709,133 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
           </div>
         </div>
       </div>
+
+      {/* ── Goal Setting & Progress ── */}
+      <GoalWidget />
+
+      {/* ── Upcoming Calendar ── */}
+      <UpcomingCalendarWidget />
     </>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Goal Setting Widget
+   ───────────────────────────────────────────── */
+function GoalWidget() {
+  const [goals, setGoals] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ type: 'bookings', target_value: '', period: 'monthly' });
+
+  useEffect(() => { fetchGoals(); }, []);
+
+  async function fetchGoals() {
+    try {
+      const res = await get('/goals');
+      setGoals(res.data || []);
+    } catch (e) { /* silent */ }
+  }
+
+  async function handleCreateGoal(e) {
+    e.preventDefault();
+    try {
+      await post('/goals', { ...form, target_value: parseInt(form.target_value) });
+      setShowForm(false);
+      setForm({ type: 'bookings', target_value: '', period: 'monthly' });
+      fetchGoals();
+    } catch (e) { /* silent */ }
+  }
+
+  return (
+    <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+      <div className="card-header">
+        <h2><FiTarget /> Goals & Progress</h2>
+        <button className="btn btn-sm btn-outline" onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Cancel' : <><FiPlus /> Set Goal</>}
+        </button>
+      </div>
+      {showForm && (
+        <form onSubmit={handleCreateGoal} style={{ padding: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: '#f9fafb', borderRadius: '8px', margin: '0 1rem 1rem' }}>
+          <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+            <option value="bookings">Bookings</option>
+            <option value="revenue">Revenue (₹)</option>
+            <option value="rating">Rating</option>
+          </select>
+          <input type="number" placeholder="Target" value={form.target_value}
+            onChange={e => setForm({ ...form, target_value: e.target.value })} required
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', width: '100px' }} />
+          <select value={form.period} onChange={e => setForm({ ...form, period: e.target.value })}
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <button type="submit" className="btn btn-sm btn-primary">Save</button>
+        </form>
+      )}
+      <div style={{ padding: '1rem' }}>
+        {goals.length > 0 ? goals.map(g => {
+          const pct = Math.min(100, Math.round((g.current_value / g.target_value) * 100));
+          return (
+            <div key={g.id} style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{g.type} ({g.period})</span>
+                <span>{g.current_value || 0} / {g.target_value}</span>
+              </div>
+              <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{ background: pct >= 100 ? '#10b981' : '#6366f1', width: `${pct}%`, height: '100%', borderRadius: '999px', transition: 'width 0.3s' }} />
+              </div>
+            </div>
+          );
+        }) : (
+          <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '0.85rem' }}>No goals set yet. Set a target to track your progress!</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Upcoming Calendar Widget
+   ───────────────────────────────────────────── */
+function UpcomingCalendarWidget() {
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    async function fetch7Days() {
+      try {
+        const res = await get('/bookings?status=scheduled&limit=7');
+        setBookings((res.data || []).slice(0, 7));
+      } catch (e) { /* silent */ }
+    }
+    fetch7Days();
+  }, []);
+
+  return (
+    <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+      <div className="card-header"><h2><FiCalendar /> Upcoming Bookings (Next 7)</h2></div>
+      <div style={{ padding: '1rem' }}>
+        {bookings.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {bookings.map(b => (
+              <Link to={`/bookings/${b.id}`} key={b.id}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: 'inherit' }}>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{b.title || b.service_title || 'Booking'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{b.customer_name || b.professional_name || ''}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 500 }}>{b.preferred_date ? new Date(b.preferred_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{b.preferred_time || ''}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '0.85rem' }}>No upcoming bookings</p>
+        )}
+      </div>
+    </div>
   );
 }
 

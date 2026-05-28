@@ -2,6 +2,7 @@ const { query } = require('../config/database');
 const hub = require('../realtime/hub');
 const { notify } = require('../utils/notifier');
 const { completeReferral } = require('./referralController');
+const { awardPoints } = require('./gamificationController');
 
 // Resolve professional row + owner user_id
 async function getPro(professionalId) {
@@ -318,6 +319,16 @@ exports.transition = async (req, res, next) => {
         try {
           await completeReferral(b.customer_id);
         } catch (_) { /* ignore */ }
+
+        // Award gamification points to customer (50 pts per booking)
+        try {
+          const paidAmt = await query(
+            `SELECT amount FROM payments WHERE booking_id = $1 AND status IN ('completed','released') LIMIT 1`,
+            [b.id]
+          );
+          const pts = paidAmt.rows[0] ? Math.floor(Number(paidAmt.rows[0].amount) / 10) : 50;
+          await awardPoints(b.customer_id, pts, 'booking_complete', b.id);
+        } catch (_) { /* non-critical */ }
       } catch (_) { /* non-critical */ }
     }
 

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { config } = require('./config');
 const logger = require('./config/logger');
@@ -12,6 +13,10 @@ const httpLogger = require('./middleware/httpLogger');
 const { requireFeature, getAllFlags } = require('./middleware/featureFlags');
 const { register: metricsRegistry, metricsMiddleware } = require('./config/metrics');
 const { sentryErrorHandler } = require('./config/sentry');
+const { requestTimeout } = require('./middleware/requestTimeout');
+const { csrfProtection, getCsrfToken } = require('./middleware/csrf');
+const { searchRateLimit, aiRateLimit, analyticsRateLimit } = require('./middleware/perUserRateLimit');
+const { setupSwagger } = require('./config/swagger');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -57,6 +62,14 @@ const householdRoutes = require('./routes/households');
 const countryRoutes = require('./routes/countries');
 const marketplaceRoutes = require('./routes/marketplace');
 const providerBusinessRoutes = require('./routes/providerBusiness');
+const quoteRoutes = require('./routes/quotes');
+const homeProfileRoutes = require('./routes/homeProfiles');
+const trackingRoutes = require('./routes/tracking');
+const amcRoutes = require('./routes/amc');
+const demandRoutes = require('./routes/demand');
+const societyRoutes = require('./routes/societies');
+const sprint11Routes = require('./routes/sprint11');
+const gamificationRoutes = require('./routes/gamification');
 
 const app = express();
 
@@ -102,10 +115,20 @@ app.use(cors({
 app.use(httpLogger);
 
 app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 
 // XSS sanitization — strip HTML/script tags from all text body fields
 const sanitize = require('./middleware/sanitize');
 app.use(sanitize);
+
+// Request timeout — 30s default, 60s for search/analytics/AI
+app.use(requestTimeout());
+
+// CSRF protection for cookie-based sessions
+app.use(csrfProtection);
+
+// CSRF token endpoint
+app.get('/api/csrf-token', getCsrfToken);
 
 // Rate limiting — protect auth endpoints from brute force
 const authLimiter = rateLimit({
@@ -165,7 +188,7 @@ app.use('/api/upload', uploadLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api/search', searchRateLimit, searchRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/contacts', contactRoutes);
@@ -179,7 +202,7 @@ app.use('/api/messages', requireFeature('CHAT'), messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/favorites', favoriteRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/analytics', analyticsRateLimit, analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/disputes', requireFeature('DISPUTES'), disputeRoutes);
@@ -204,13 +227,21 @@ app.use('/api/households', householdRoutes);
 app.use('/api/countries', countryRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/provider-business', providerBusinessRoutes);
+app.use('/api/quotes', quoteRoutes);
+app.use('/api/home-profiles', homeProfileRoutes);
+app.use('/api/tracking', trackingRoutes);
+app.use('/api/amc', amcRoutes);
+app.use('/api/demand', demandRoutes);
+app.use('/api/societies', societyRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api', sprint11Routes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });
 app.use('/robots.txt', (req, res, next) => { req.url = '/robots.txt'; seoRoutes(req, res, next); });
 app.use('/api/seo', seoRoutes);
 app.use('/api/growth', growthRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiRateLimit, aiRoutes);
 
 // Prometheus metrics — accessible only from internal network in production
 // (expose on a separate port or protect with IP allowlist via nginx)
@@ -297,6 +328,9 @@ app.get('/', (req, res) => {
 
 // Serve other public static files (excluding index.html at root)
 app.use(express.static(publicPath));
+
+// API Documentation (Swagger UI) — dev/staging only
+setupSwagger(app);
 
 // Sentry error handler — must be BEFORE the app error handler
 app.use(sentryErrorHandler());

@@ -4,8 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/app_locale_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/upload_service.dart';
+import '../../services/push_notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,6 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _currentPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
   bool _saving = false;
+  String _appLanguage = 'en';
 
   @override
   void initState() {
@@ -29,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _nameCtrl.text = user?['name'] ?? '';
     _phoneCtrl.text = user?['phone'] ?? '';
     _locationCtrl.text = user?['location'] ?? '';
+    _loadLanguage();
   }
 
   @override
@@ -71,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'location': _locationCtrl.text.trim(),
       }, auth: true);
       if (mounted) {
-        // Update local user data in AuthService so UI reflects new name immediately
         context.read<AuthService>().updateLocalUser({
           'name': _nameCtrl.text.trim(),
           'phone': _phoneCtrl.text.trim(),
@@ -105,6 +108,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() => _saving = false);
   }
 
+  Future<void> _loadLanguage() async {
+    final language = await AppLocaleService.getLanguage();
+    if (mounted) {
+      setState(() => _appLanguage = language);
+    }
+  }
+
+  Future<void> _applyLanguage(String code) async {
+    await AppLocaleService.setLanguage(code);
+    await PushNotificationService.setLanguage(code);
+    if (!mounted) return;
+    setState(() => _appLanguage = code);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Language updated'),
+        content: const Text('The app language has been updated. Most screens refresh instantly, but restart the app if any text does not change yet.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLanguagePicker() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Choose language'),
+        children: AppLocaleService.languageOptions
+            .map(
+              (option) => SimpleDialogOption(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _applyLanguage(option.key);
+                },
+                child: Row(
+                  children: [
+                    Expanded(child: Text(option.value)),
+                    if (_appLanguage == option.key)
+                      const Icon(Icons.check, size: 18),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,7 +175,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(children: [
-                // Avatar upload
                 GestureDetector(
                   onTap: _pickAvatar,
                   child: CircleAvatar(
@@ -199,6 +255,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          Text('Language', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text('App Language'),
+              subtitle: Text(AppLocaleService.labelFor(_appLanguage)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _showLanguagePicker,
+            ),
+          ),
+          const SizedBox(height: 24),
           Text('Danger Zone', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
           const SizedBox(height: 12),
           Card(
@@ -265,6 +333,7 @@ class _ThemeTile extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
   const _ThemeTile({required this.icon, required this.label, required this.selected, required this.onTap});
 
   @override
