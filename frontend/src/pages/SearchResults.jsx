@@ -42,6 +42,7 @@ function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState('grid');
@@ -76,6 +77,7 @@ function SearchResults() {
 
   async function fetchResults() {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
@@ -93,8 +95,9 @@ function SearchResults() {
       const items = Array.isArray(payload) ? payload : (payload.professionals || payload.results || []);
       setResults(items.map(mapProfessional));
       setTotalPages(res.pagination?.pages || payload.totalPages || 1);
-    } catch {
+    } catch (err) {
       setResults([]);
+      setError(err.message || 'Failed to load results. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -327,6 +330,15 @@ function SearchResults() {
 
             {loading ? (
               <div className="sr-loading"><LoadingSpinner /></div>
+            ) : error ? (
+              <div className="sr-empty">
+                <div className="sr-empty-icon" style={{ color: '#ef4444' }}>⚠️</div>
+                <h3>Something went wrong</h3>
+                <p>{error}</p>
+                <button className="btn btn-primary" onClick={fetchResults}>
+                  Try Again
+                </button>
+              </div>
             ) : results.length > 0 ? (
               <>
                 <div className={`sr-results-grid ${viewMode === 'list' ? 'sr-results-list' : ''}`}>

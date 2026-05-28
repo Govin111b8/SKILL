@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
 import '../screens/auth/welcome_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/home/dashboard_screen.dart';
 import '../screens/home/category_detail_screen.dart';
 import '../screens/profile/professional_profile_screen.dart';
 import '../screens/contacts/my_contacts_screen.dart';
@@ -183,13 +185,105 @@ class AppRouter {
   }
 }
 
-class MainShellPlaceholder extends StatelessWidget {
+class MainShellPlaceholder extends StatefulWidget {
   const MainShellPlaceholder({super.key});
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+  State<MainShellPlaceholder> createState() => _MainShellPlaceholderState();
+}
+
+class _MainShellPlaceholderState extends State<MainShellPlaceholder> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    // Import screens dynamically based on index
+    final screens = [
+      const _HomeTab(),
+      const _SearchTab(),
+      const _BookingsTab(),
+      const _MessagesTab(),
+      const _ProfileTab(),
+    ];
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: screens,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'Explore',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Bookings',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Wrapper tabs to load the appropriate content screens
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
+  @override
+  Widget build(BuildContext context) {
+    // We import the home_screen.dart module here to avoid circular dependencies
+    // The HomeScreen already handles role-based content display
+    return const HomeScreen();
+  }
+}
+
+class _SearchTab extends StatelessWidget {
+  const _SearchTab();
+
+  @override
+  Widget build(BuildContext context) => const SearchScreen();
+}
+
+class _BookingsTab extends StatelessWidget {
+  const _BookingsTab();
+
+  @override
+  Widget build(BuildContext context) => const BookingsListScreen();
+}
+
+class _MessagesTab extends StatelessWidget {
+  const _MessagesTab();
+
+  @override
+  Widget build(BuildContext context) => const ThreadsScreen();
+}
+
+class _ProfileTab extends StatelessWidget {
+  const _ProfileTab();
+
+  @override
+  Widget build(BuildContext context) => const DashboardScreen();
 }
 
 class _SplashRedirect extends StatelessWidget {

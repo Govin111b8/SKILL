@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const {
   createQuoteRequest,
   listMyQuoteRequests,
@@ -12,13 +12,13 @@ const {
 const router = Router();
 
 // Customer routes
-router.post('/', authenticate, createQuoteRequest);
+router.post('/', authenticate, authorize('customer'), createQuoteRequest);
 router.get('/my', authenticate, listMyQuoteRequests);
 router.get('/:id', authenticate, getQuoteRequest);
-router.put('/:id/accept-bid/:bidId', authenticate, acceptBid);
+router.put('/:id/accept-bid/:bidId', authenticate, authorize('customer'), acceptBid);
 
 // Professional routes
 router.get('/', authenticate, listOpenQuoteRequests);
-router.post('/:id/bids', authenticate, submitBid);
+router.post('/:id/bids', authenticate, authorize('professional'), submitBid);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell, FiRepeat, FiBriefcase, FiUsers } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiGrid, FiHome, FiUser, FiLogOut, FiChevronDown, FiBell, FiRepeat, FiBriefcase, FiUsers, FiCalendar, FiDollarSign, FiSettings, FiShield, FiMessageSquare } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import './Navbar.css';
@@ -11,7 +11,7 @@ function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef(null);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isProfessional, isAgent, isAdmin } = useAuth();
   const { unreadNotificationCount } = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +54,7 @@ function Navbar() {
             <span>Skill<em>Connect</em></span>
           </Link>
 
-          {/* Center Nav */}
+          {/* Center Nav — role-aware */}
           <div className="navbar-center">
             <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
               <FiHome size={16} /> Home
@@ -62,15 +62,57 @@ function Navbar() {
             <Link to="/categories" className={`nav-link ${location.pathname === '/categories' ? 'active' : ''}`}>
               <FiGrid size={16} /> Services
             </Link>
-            <Link to="/subscriptions" className={`nav-link ${location.pathname === '/subscriptions' ? 'active' : ''}`}>
-              <FiRepeat size={16} /> Subscribe
-            </Link>
-            <Link to="/marketplace" className={`nav-link ${location.pathname === '/marketplace' ? 'active' : ''}`}>
-              <FiBriefcase size={16} /> Projects
-            </Link>
-            <Link to="/societies" className={`nav-link ${location.pathname === '/societies' ? 'active' : ''}`}>
-              <FiUsers size={16} /> Societies
-            </Link>
+            {/* Customer-focused links */}
+            {(!isAuthenticated || (!isProfessional() && !isAgent() && !isAdmin())) && (
+              <>
+                <Link to="/subscriptions" className={`nav-link ${location.pathname === '/subscriptions' ? 'active' : ''}`}>
+                  <FiRepeat size={16} /> Subscribe
+                </Link>
+                <Link to="/marketplace" className={`nav-link ${location.pathname === '/marketplace' ? 'active' : ''}`}>
+                  <FiBriefcase size={16} /> Projects
+                </Link>
+              </>
+            )}
+            {/* Professional-specific links */}
+            {isAuthenticated && isProfessional() && (
+              <>
+                <Link to="/bookings" className={`nav-link ${location.pathname === '/bookings' ? 'active' : ''}`}>
+                  <FiCalendar size={16} /> Bookings
+                </Link>
+                <Link to="/marketplace" className={`nav-link ${location.pathname === '/marketplace' ? 'active' : ''}`}>
+                  <FiBriefcase size={16} /> Projects
+                </Link>
+                <Link to="/earnings" className={`nav-link ${location.pathname === '/earnings' ? 'active' : ''}`}>
+                  <FiDollarSign size={16} /> Earnings
+                </Link>
+              </>
+            )}
+            {/* Agent-specific links */}
+            {isAuthenticated && isAgent() && (
+              <>
+                <Link to="/agent/dashboard" className={`nav-link ${location.pathname === '/agent/dashboard' ? 'active' : ''}`}>
+                  <FiBriefcase size={16} /> My Dashboard
+                </Link>
+                <Link to="/agent/wallet" className={`nav-link ${location.pathname === '/agent/wallet' ? 'active' : ''}`}>
+                  <FiDollarSign size={16} /> Wallet
+                </Link>
+                <Link to="/agent/leaderboard" className={`nav-link ${location.pathname === '/agent/leaderboard' ? 'active' : ''}`}>
+                  <FiUsers size={16} /> Leaderboard
+                </Link>
+              </>
+            )}
+            {/* Admin-specific links */}
+            {isAuthenticated && isAdmin() && (
+              <>
+                <Link to="/admin" className={`nav-link ${location.pathname === '/admin' ? 'active' : ''}`}>
+                  <FiShield size={16} /> Admin
+                </Link>
+                <Link to="/admin/users" className={`nav-link ${location.pathname === '/admin/users' ? 'active' : ''}`}>
+                  <FiUsers size={16} /> Users
+                </Link>
+              </>
+            )}
+            {/* Common explore link */}
             <Link to="/search" className={`nav-link ${location.pathname === '/search' ? 'active' : ''}`}>
               <FiSearch size={16} /> Explore
             </Link>
@@ -147,13 +189,44 @@ function Navbar() {
         <div className="drawer-links">
           <Link to="/"><FiHome /> Home</Link>
           <Link to="/categories"><FiGrid /> Services</Link>
-          <Link to="/subscriptions"><FiRepeat /> Subscriptions</Link>
-          <Link to="/marketplace"><FiBriefcase /> Marketplace</Link>
+          {/* Customer links */}
+          {(!isAuthenticated || (!isProfessional() && !isAgent() && !isAdmin())) && (
+            <>
+              <Link to="/subscriptions"><FiRepeat /> Subscriptions</Link>
+              <Link to="/marketplace"><FiBriefcase /> Marketplace</Link>
+            </>
+          )}
+          {/* Professional links */}
+          {isAuthenticated && isProfessional() && (
+            <>
+              <Link to="/bookings"><FiCalendar /> My Bookings</Link>
+              <Link to="/earnings"><FiDollarSign /> Earnings</Link>
+              <Link to="/marketplace"><FiBriefcase /> Marketplace</Link>
+              <Link to="/storefront-setup"><FiSettings /> My Storefront</Link>
+            </>
+          )}
+          {/* Agent links */}
+          {isAuthenticated && isAgent() && (
+            <>
+              <Link to="/agent/dashboard"><FiBriefcase /> Agent Dashboard</Link>
+              <Link to="/agent/wallet"><FiDollarSign /> Wallet</Link>
+              <Link to="/agent/leaderboard"><FiUsers /> Leaderboard</Link>
+            </>
+          )}
+          {/* Admin links */}
+          {isAuthenticated && isAdmin() && (
+            <>
+              <Link to="/admin"><FiShield /> Admin Panel</Link>
+              <Link to="/admin/users"><FiUsers /> Manage Users</Link>
+            </>
+          )}
           <Link to="/search"><FiSearch /> Explore</Link>
           {isAuthenticated ? (
             <>
               <Link to="/notifications"><FiBell /> Notifications</Link>
+              <Link to="/messages"><FiMessageSquare /> Messages</Link>
               <Link to="/dashboard"><FiUser /> Dashboard</Link>
+              <Link to="/settings"><FiSettings /> Settings</Link>
               <button onClick={handleLogout} className="drawer-logout"><FiLogOut /> Logout</button>
             </>
           ) : (
