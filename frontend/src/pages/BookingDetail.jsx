@@ -219,6 +219,17 @@ export default function BookingDetail() {
 
     if (buttons.length === 0) return null;
 
+    // Add reschedule button for active bookings
+    const canReschedule = !['completed', 'cancelled', 'refunded'].includes(s);
+    if (canReschedule) {
+      buttons.push(
+        <button key="reschedule" className="btn btn-outline btn-sm"
+          disabled={actionLoading} onClick={() => setModal({ type: 'reschedule' })}>
+          <FiCalendar /> Reschedule
+        </button>
+      );
+    }
+
     return (
       <div className="bd-actions-card">
         <h2>Actions</h2>
@@ -266,6 +277,7 @@ export default function BookingDetail() {
           {modal.type === 'schedule' && <ScheduleModal onSubmit={(dt, note) => transition('scheduled', { scheduled_for: dt }, note)} loading={actionLoading} onClose={() => setModal(null)} />}
           {modal.type === 'cancel' && <CancelModal onSubmit={(reason) => transition('cancelled', { cancellation_reason: reason })} loading={actionLoading} onClose={() => setModal(null)} />}
           {modal.type === 'complete' && <CompleteModal onSubmit={(amt, note) => transition('completed', { final_amount: amt }, note)} loading={actionLoading} onClose={() => setModal(null)} />}
+          {modal.type === 'reschedule' && <RescheduleModal bookingId={id} onClose={() => setModal(null)} onSuccess={fetchBooking} />}
         </div>
       </div>
     );
@@ -478,6 +490,60 @@ function CompleteModal({ onSubmit, loading, onClose }) {
         <button className="btn btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
         <button className="btn btn-primary" style={{ background: 'var(--success)' }} onClick={() => onSubmit(parseFloat(amount) || undefined, note)} disabled={loading}>
           {loading ? 'Completing...' : 'Mark Complete'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function RescheduleModal({ bookingId, onClose, onSuccess }) {
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit() {
+    if (!newDate) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await post(`/bookings/${bookingId}/reschedule`, {
+        new_date: newDate + (newTime ? `T${newTime}` : ''),
+        new_time: newTime || null,
+        reason: reason || null,
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err?.data?.message || err?.message || 'Failed to reschedule');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  return (
+    <>
+      <h3>Reschedule Booking</h3>
+      {error && <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>{error}</p>}
+      <div className="form-group">
+        <label>New Date *</label>
+        <input type="date" min={tomorrow} value={newDate} onChange={e => setNewDate(e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label>Preferred Time</label>
+        <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} />
+      </div>
+      <div className="form-group">
+        <label>Reason (optional)</label>
+        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2} placeholder="Why are you rescheduling?" />
+      </div>
+      <div className="bd-modal-actions">
+        <button className="btn btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
+        <button className="btn btn-primary" disabled={loading || !newDate} onClick={handleSubmit}>
+          {loading ? 'Rescheduling...' : 'Confirm Reschedule'}
         </button>
       </div>
     </>

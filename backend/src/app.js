@@ -63,6 +63,7 @@ const trackingRoutes = require('./routes/tracking');
 const amcRoutes = require('./routes/amc');
 const demandRoutes = require('./routes/demand');
 const societyRoutes = require('./routes/societies');
+const sprint11Routes = require('./routes/sprint11');
 
 const app = express();
 
@@ -216,6 +217,7 @@ app.use('/api/tracking', trackingRoutes);
 app.use('/api/amc', amcRoutes);
 app.use('/api/demand', demandRoutes);
 app.use('/api/societies', societyRoutes);
+app.use('/api', sprint11Routes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

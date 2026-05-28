@@ -38,12 +38,17 @@ export default function CreateBooking() {
     preferred_date: '',
     preferred_time: '',
     service_id: preselectedServiceId,
+    urgency: 'flexible',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [availableSlots, setAvailableSlots] = useState(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [recurring, setRecurring] = useState(false);
+  const [recurringOptions, setRecurringOptions] = useState({
+    frequency: 'weekly', day_of_week: 1, start_date: '', end_date: ''
+  });
 
   useEffect(() => {
     get('/categories')
@@ -110,37 +115,58 @@ export default function CreateBooking() {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = {
-        ...form,
-        professional_id: form.professional_id || undefined,
-        category_id: parseInt(form.category_id, 10),
-        service_id: form.service_id || undefined,
-        quoted_amount: selectedServiceObj?.price_min ? Number(selectedServiceObj.price_min) : undefined,
-      };
-      const res = await post('/bookings', payload);
-      const bookingData = res.data || res;
-      const bookingId = bookingData.id;
+      if (recurring) {
+        // Create recurring booking
+        const payload = {
+          professional_id: form.professional_id || undefined,
+          category_id: parseInt(form.category_id, 10) || undefined,
+          service_id: form.service_id || undefined,
+          title: form.title,
+          description: form.description || undefined,
+          service_address: form.service_address || undefined,
+          frequency: recurringOptions.frequency,
+          day_of_week: recurringOptions.day_of_week,
+          preferred_time: form.preferred_time || undefined,
+          start_date: recurringOptions.start_date || form.preferred_date,
+          end_date: recurringOptions.end_date || undefined,
+        };
+        await post('/recurring-bookings', payload);
+        setSuccess(true);
+        setTimeout(() => navigate('/bookings'), 1500);
+      } else {
+        // Create single booking
+        const payload = {
+          ...form,
+          professional_id: form.professional_id || undefined,
+          category_id: parseInt(form.category_id, 10),
+          service_id: form.service_id || undefined,
+          quoted_amount: selectedServiceObj?.price_min ? Number(selectedServiceObj.price_min) : undefined,
+        };
+        const res = await post('/bookings', payload);
+        const bookingData = res.data || res;
+        const bookingId = bookingData.id;
 
-      // If a time slot was selected, book it
-      if (form.preferred_time && form.professional_id && bookingId) {
-        const startTime = form.preferred_time;
-        const endHour = parseInt(startTime.split(':')[0]) + 1;
-        const endTime = `${String(endHour).padStart(2, '0')}:00`;
-        try {
-          await post('/schedule/slots/book', {
-            professional_id: form.professional_id,
-            date: form.preferred_date,
-            start_time: startTime,
-            end_time: endTime,
-            booking_id: bookingId,
-          });
-        } catch { /* non-critical — slot booking is optional */ }
+        // If a time slot was selected, book it
+        if (form.preferred_time && form.professional_id && bookingId) {
+          const startTime = form.preferred_time;
+          const endHour = parseInt(startTime.split(':')[0]) + 1;
+          const endTime = `${String(endHour).padStart(2, '0')}:00`;
+          try {
+            await post('/schedule/slots/book', {
+              professional_id: form.professional_id,
+              date: form.preferred_date,
+              start_time: startTime,
+              end_time: endTime,
+              booking_id: bookingId,
+            });
+          } catch { /* non-critical — slot booking is optional */ }
+        }
+
+        setSuccess(true);
+        setTimeout(() => {
+          navigate(`/bookings/${bookingId}`);
+        }, 1500);
       }
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate(`/bookings/${bookingId}`);
-      }, 1500);
     } catch (err) {
       setError(err.message || 'Failed to create booking');
     } finally {
@@ -279,6 +305,26 @@ export default function CreateBooking() {
           {/* ── Step 2: WHEN ── */}
           {step === 1 && (
             <div className="wizard-body">
+              {/* Urgency Level */}
+              <div className="form-group">
+                <label><FiClock size={14} /> Urgency Level</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { value: 'emergency', label: '🚨 Emergency (2hr)', color: '#ef4444' },
+                    { value: 'same_day', label: '⚡ Same Day', color: '#f59e0b' },
+                    { value: 'this_week', label: '📅 This Week', color: '#6366f1' },
+                    { value: 'flexible', label: '🕐 Flexible', color: '#10b981' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      className={`urgency-chip ${form.urgency === opt.value ? 'selected' : ''}`}
+                      style={{ padding: '6px 12px', borderRadius: '20px', border: `2px solid ${form.urgency === opt.value ? opt.color : '#e5e7eb'}`, background: form.urgency === opt.value ? `${opt.color}10` : '#fff', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}
+                      onClick={() => setForm({ ...form, urgency: opt.value })}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label><FiCalendar size={14} /> Preferred date <span className="required">*</span></label>
                 <input
@@ -321,6 +367,48 @@ export default function CreateBooking() {
                   )}
                 </div>
               )}
+
+              {/* Recurring Booking Toggle */}
+              <div className="form-group" style={{ marginTop: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={recurring} onChange={e => setRecurring(e.target.checked)} />
+                  <span style={{ fontWeight: 500 }}>🔄 Make this a recurring booking</span>
+                </label>
+                {recurring && (
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Frequency</label>
+                      <select value={recurringOptions.frequency}
+                        onChange={e => setRecurringOptions({ ...recurringOptions, frequency: e.target.value })}
+                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Every 2 Weeks</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                    </div>
+                    {(recurringOptions.frequency === 'weekly' || recurringOptions.frequency === 'biweekly') && (
+                      <div>
+                        <label style={{ fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Day</label>
+                        <select value={recurringOptions.day_of_week}
+                          onChange={e => setRecurringOptions({ ...recurringOptions, day_of_week: parseInt(e.target.value) })}
+                          style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }}>
+                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                            <option key={i} value={i}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <label style={{ fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>End Date (optional)</label>
+                      <input type="date" value={recurringOptions.end_date}
+                        onChange={e => setRecurringOptions({ ...recurringOptions, end_date: e.target.value })}
+                        min={form.preferred_date || new Date().toISOString().split('T')[0]}
+                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

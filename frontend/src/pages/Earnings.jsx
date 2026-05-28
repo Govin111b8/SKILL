@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiDollarSign, FiTrendingUp, FiClock, FiCalendar, FiArrowUp, FiArrowDown } from 'react-icons/fi';
+import { FiDollarSign, FiTrendingUp, FiClock, FiCalendar, FiArrowUp, FiArrowDown, FiDownload, FiFilter, FiPieChart } from 'react-icons/fi';
 import { get } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './Earnings.css';
@@ -12,6 +12,9 @@ function Earnings() {
   const [data, setData] = useState(null);
   const [payments, setPayments] = useState([]);
   const [error, setError] = useState(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -19,8 +22,14 @@ function Earnings() {
 
   async function fetchData() {
     try {
+      let earningsUrl = '/payments/earnings';
+      const params = [];
+      if (dateFrom) params.push(`from=${dateFrom}`);
+      if (dateTo) params.push(`to=${dateTo}`);
+      if (params.length) earningsUrl += '?' + params.join('&');
+
       const [earningsRes, paymentsRes] = await Promise.all([
-        get('/payments/earnings'),
+        get(earningsUrl),
         get('/payments?limit=10')
       ]);
       setData(earningsRes.data || earningsRes);
@@ -32,19 +41,66 @@ function Earnings() {
     }
   }
 
+  function handleFilterApply() {
+    setLoading(true);
+    fetchData();
+  }
+
+  function handleExportCSV() {
+    const rows = [['Date', 'Description', 'Amount', 'Status']];
+    payments.forEach(p => {
+      rows.push([new Date(p.created_at).toLocaleDateString(), p.booking_title || 'Payment', p.amount, p.status]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `earnings_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="container" style={{ padding: '3rem', textAlign: 'center' }}><p className="text-error">Error: {error}</p></div>;
 
   const summary = data?.summary || {};
   const monthly = data?.monthly || [];
 
+  // Service-wise breakdown (from monthly data or aggregate)
+  const serviceBreakdown = data?.by_service || [];
+
   return (
     <div className="earnings-page">
       <div className="container">
-        <div className="page-header">
-          <h1><FiDollarSign /> Earnings & Payouts</h1>
-          <p className="page-subtitle">Track your earnings, pending payouts, and payment history</p>
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div>
+            <h1><FiDollarSign /> Earnings & Payouts</h1>
+            <p className="page-subtitle">Track your earnings, pending payouts, and payment history</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-sm btn-outline" onClick={() => setShowFilters(!showFilters)}>
+              <FiFilter /> Filter
+            </button>
+            <button className="btn btn-sm btn-outline" onClick={handleExportCSV}>
+              <FiDownload /> Export CSV
+            </button>
+          </div>
         </div>
+
+        {/* Date Range Filter */}
+        {showFilters && (
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', background: '#f9fafb', borderRadius: '10px', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>From:</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+            <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>To:</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.85rem' }} />
+            <button className="btn btn-sm btn-primary" onClick={handleFilterApply}>Apply</button>
+            <button className="btn btn-sm btn-outline" onClick={() => { setDateFrom(''); setDateTo(''); handleFilterApply(); }}>Clear</button>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="earnings-summary">
@@ -77,6 +133,24 @@ function Earnings() {
             </div>
           </div>
         </div>
+
+        {/* Service-Wise Breakdown */}
+        {serviceBreakdown.length > 0 && (
+          <div className="earnings-section">
+            <h2><FiPieChart /> Service-Wise Breakdown</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '1rem' }}>
+              {serviceBreakdown.map((s, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '8px', borderLeft: `4px solid ${['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][i % 5]}` }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{s.service_name || s.category || 'Other'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{s.count || 0} jobs</div>
+                  </div>
+                  <div style={{ fontWeight: 700, color: '#10b981' }}>{fmt(s.total)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Monthly Breakdown */}
         {monthly.length > 0 && (

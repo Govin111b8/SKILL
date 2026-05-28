@@ -30,6 +30,10 @@ function Schedule() {
   const [newBlockDate, setNewBlockDate] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [copySource, setCopySource] = useState(null);
+  const [bufferTime, setBufferTime] = useState(0);
+  const [maxBookingsPerDay, setMaxBookingsPerDay] = useState(0);
+  const [recurringBlocks, setRecurringBlocks] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -479,6 +483,96 @@ function Schedule() {
               <FiCalendar size={32} />
               <p>No blocked dates</p>
               <span>Add dates when you're unavailable (vacation, personal days, etc.)</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Schedule Settings ── */}
+        <div className="schedule-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0 }}>⚙️ Schedule Settings</h2>
+            <button className="btn btn-sm btn-outline" onClick={() => setShowSettings(!showSettings)}>
+              {showSettings ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {showSettings && (
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {/* Buffer Time */}
+              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '10px' }}>
+                <label style={{ fontWeight: 500, display: 'block', marginBottom: '0.5rem' }}>
+                  <FiClock size={14} /> Buffer Time Between Appointments
+                </label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>
+                  Add travel/preparation time between consecutive bookings
+                </p>
+                <select value={bufferTime} onChange={e => setBufferTime(Number(e.target.value))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+                  <option value={0}>No buffer</option>
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={90}>1.5 hours</option>
+                  <option value={120}>2 hours</option>
+                </select>
+              </div>
+
+              {/* Max Bookings Per Day */}
+              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '10px' }}>
+                <label style={{ fontWeight: 500, display: 'block', marginBottom: '0.5rem' }}>
+                  📋 Maximum Bookings Per Day
+                </label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>
+                  Set a daily limit to prevent overbooking (0 = unlimited)
+                </p>
+                <input type="number" min={0} max={20} value={maxBookingsPerDay}
+                  onChange={e => setMaxBookingsPerDay(Number(e.target.value))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', width: '80px' }} />
+              </div>
+
+              {/* Recurring Blocks */}
+              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '10px' }}>
+                <label style={{ fontWeight: 500, display: 'block', marginBottom: '0.5rem' }}>
+                  🔄 Recurring Unavailability
+                </label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)', marginBottom: '0.5rem' }}>
+                  Block specific days every week (e.g., always off on Sundays)
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {DAYS.map((day, i) => (
+                    <button key={i}
+                      onClick={() => {
+                        setRecurringBlocks(prev =>
+                          prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i]
+                        );
+                      }}
+                      style={{
+                        padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem',
+                        border: `2px solid ${recurringBlocks.includes(i) ? '#ef4444' : '#e5e7eb'}`,
+                        background: recurringBlocks.includes(i) ? '#fef2f2' : '#fff',
+                        color: recurringBlocks.includes(i) ? '#ef4444' : '#374151'
+                      }}>
+                      {DAY_SHORT[i]}
+                    </button>
+                  ))}
+                </div>
+                {recurringBlocks.length > 0 && (
+                  <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.5rem' }}>
+                    Blocked every: {recurringBlocks.map(d => DAYS[d]).join(', ')}
+                  </p>
+                )}
+              </div>
+
+              <button className="btn btn-primary btn-sm" onClick={async () => {
+                try {
+                  await post('/schedule/settings', { buffer_time: bufferTime, max_bookings_per_day: maxBookingsPerDay, recurring_blocks: recurringBlocks });
+                  setMessage({ text: 'Settings saved!', type: 'success' });
+                } catch (e) {
+                  setMessage({ text: 'Failed to save settings', type: 'error' });
+                }
+              }}>
+                <FiSave size={14} /> Save Settings
+              </button>
             </div>
           )}
         </div>

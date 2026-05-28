@@ -1,0 +1,108 @@
+.saved-searches-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.ss-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+.ss-header h1 { font-size: 1.5rem; font-weight: 700; }
+.ss-header p { color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem; }
+
+.ss-create-form {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ss-create-form input[type="text"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+.ss-create-options {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.ss-create-options label { display: flex; align-items: center; gap: 4px; }
+.ss-create-options select {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+.ss-create-actions { display: flex; gap: 0.5rem; }
+
+.ss-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #9ca3af;
+}
+.ss-empty h3 { margin-top: 1rem; color: #4b5563; }
+.ss-empty p { font-size: 0.875rem; margin-bottom: 1rem; }
+
+.ss-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ss-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.ss-item:last-child { border-bottom: none; }
+.ss-item:hover { background: #f9fafb; }
+
+.ss-item-left { display: flex; align-items: center; gap: 0.75rem; }
+.ss-item-icon { color: #6366f1; flex-shrink: 0; }
+.ss-item-name { font-weight: 500; display: block; font-size: 0.9rem; }
+.ss-item-meta { font-size: 0.75rem; color: #9ca3af; display: flex; align-items: center; gap: 0.5rem; }
+
+.ss-filter-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.ss-item-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+.ss-alert-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: white;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: #9ca3af;
+}
+.ss-alert-btn.active {
+  background: #f0fdf4;
+  border-color: #10b981;
+  color: #10b981;
+}
+
+@media (max-width: 640px) {
+  .ss-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}

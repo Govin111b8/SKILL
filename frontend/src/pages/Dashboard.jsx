@@ -658,7 +658,133 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
           </div>
         </div>
       </div>
+
+      {/* ── Goal Setting & Progress ── */}
+      <GoalWidget />
+
+      {/* ── Upcoming Calendar ── */}
+      <UpcomingCalendarWidget />
     </>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Goal Setting Widget
+   ───────────────────────────────────────────── */
+function GoalWidget() {
+  const [goals, setGoals] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ type: 'bookings', target_value: '', period: 'monthly' });
+
+  useEffect(() => { fetchGoals(); }, []);
+
+  async function fetchGoals() {
+    try {
+      const res = await get('/goals');
+      setGoals(res.data || []);
+    } catch (e) { /* silent */ }
+  }
+
+  async function handleCreateGoal(e) {
+    e.preventDefault();
+    try {
+      await post('/goals', { ...form, target_value: parseInt(form.target_value) });
+      setShowForm(false);
+      setForm({ type: 'bookings', target_value: '', period: 'monthly' });
+      fetchGoals();
+    } catch (e) { /* silent */ }
+  }
+
+  return (
+    <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+      <div className="card-header">
+        <h2><FiTarget /> Goals & Progress</h2>
+        <button className="btn btn-sm btn-outline" onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Cancel' : <><FiPlus /> Set Goal</>}
+        </button>
+      </div>
+      {showForm && (
+        <form onSubmit={handleCreateGoal} style={{ padding: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: '#f9fafb', borderRadius: '8px', margin: '0 1rem 1rem' }}>
+          <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+            <option value="bookings">Bookings</option>
+            <option value="revenue">Revenue (₹)</option>
+            <option value="rating">Rating</option>
+          </select>
+          <input type="number" placeholder="Target" value={form.target_value}
+            onChange={e => setForm({ ...form, target_value: e.target.value })} required
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db', width: '100px' }} />
+          <select value={form.period} onChange={e => setForm({ ...form, period: e.target.value })}
+            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <button type="submit" className="btn btn-sm btn-primary">Save</button>
+        </form>
+      )}
+      <div style={{ padding: '1rem' }}>
+        {goals.length > 0 ? goals.map(g => {
+          const pct = Math.min(100, Math.round((g.current_value / g.target_value) * 100));
+          return (
+            <div key={g.id} style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{g.type} ({g.period})</span>
+                <span>{g.current_value || 0} / {g.target_value}</span>
+              </div>
+              <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{ background: pct >= 100 ? '#10b981' : '#6366f1', width: `${pct}%`, height: '100%', borderRadius: '999px', transition: 'width 0.3s' }} />
+              </div>
+            </div>
+          );
+        }) : (
+          <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '0.85rem' }}>No goals set yet. Set a target to track your progress!</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Upcoming Calendar Widget
+   ───────────────────────────────────────────── */
+function UpcomingCalendarWidget() {
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    async function fetch7Days() {
+      try {
+        const res = await get('/bookings?status=scheduled&limit=7');
+        setBookings((res.data || []).slice(0, 7));
+      } catch (e) { /* silent */ }
+    }
+    fetch7Days();
+  }, []);
+
+  return (
+    <div className="dashboard-card full-width" style={{ marginBottom: '1.5rem' }}>
+      <div className="card-header"><h2><FiCalendar /> Upcoming Bookings (Next 7)</h2></div>
+      <div style={{ padding: '1rem' }}>
+        {bookings.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {bookings.map(b => (
+              <Link to={`/bookings/${b.id}`} key={b.id}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '8px', textDecoration: 'none', color: 'inherit' }}>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{b.title || b.service_title || 'Booking'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{b.customer_name || b.professional_name || ''}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 500 }}>{b.preferred_date ? new Date(b.preferred_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{b.preferred_time || ''}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: '0.85rem' }}>No upcoming bookings</p>
+        )}
+      </div>
+    </div>
   );
 }
 

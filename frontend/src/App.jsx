@@ -77,6 +77,9 @@ const SocietyDashboard = lazy(() => import('./pages/SocietyDashboard'));
 const QuoteRequest = lazy(() => import('./pages/QuoteRequest'));
 const HomeProfile = lazy(() => import('./pages/HomeProfile'));
 const JobTracker = lazy(() => import('./pages/JobTracker'));
+const CompareProf = lazy(() => import('./pages/CompareProf'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const SavedSearches = lazy(() => import('./pages/SavedSearches'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -387,6 +390,23 @@ function App() {
             element={
               <ProtectedRoute>
                 <FamilyAccount />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/compare" element={<CompareProf />} />
+          <Route
+            path="/payment-history"
+            element={
+              <ProtectedRoute>
+                <PaymentHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved-searches"
+            element={
+              <ProtectedRoute>
+                <SavedSearches />
               </ProtectedRoute>
             }
           />

@@ -86,6 +86,10 @@ function Home() {
   const [nearbyPros, setNearbyPros] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState('idle'); // idle | requesting | granted | denied
+  const [banners, setBanners] = useState([]);
+  const [quickRebook, setQuickRebook] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [activeBanner, setActiveBanner] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem('sc_user_coords');
@@ -159,7 +163,14 @@ function Home() {
     get('/discover/trending?limit=8').then(res => setTrending(res.data || [])).catch((err) => console.error('Trending error:', err.message));
     get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch((err) => console.error('New pros error:', err.message));
     get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch((err) => console.error('Responsive error:', err.message));
-  }, []);
+    // Promotional banners
+    get('/banners').then(res => setBanners(res.data || [])).catch(() => {});
+    // Quick rebooking (recent completed bookings)
+    if (isAuthenticated) {
+      get('/bookings?status=completed&limit=5').then(res => setQuickRebook((res.data || []).slice(0, 4))).catch(() => {});
+      get('/discover/trending?limit=4').then(res => setRecommendations(res.data || [])).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   function handleCityChange(city) {
     setSelectedCity(city);
@@ -247,6 +258,90 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* PROMOTIONAL BANNERS CAROUSEL */}
+      {banners.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="promo-banner-carousel">
+              {banners.map((banner, idx) => (
+                <div key={banner.id} className={`promo-banner ${idx === activeBanner ? 'active' : ''}`}
+                  style={{ display: idx === activeBanner ? 'flex' : 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '12px', padding: '1.5rem 2rem', color: '#fff', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{banner.title}</h3>
+                    {banner.subtitle && <p style={{ fontSize: '0.85rem', opacity: 0.9 }}>{banner.subtitle}</p>}
+                  </div>
+                  {banner.cta_text && banner.link_url && (
+                    <Link to={banner.link_url} style={{ background: '#fff', color: '#6366f1', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
+                      {banner.cta_text}
+                    </Link>
+                  )}
+                </div>
+              ))}
+              {banners.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '0.75rem' }}>
+                  {banners.map((_, idx) => (
+                    <button key={idx} onClick={() => setActiveBanner(idx)}
+                      style={{ width: '8px', height: '8px', borderRadius: '50%', border: 'none', background: idx === activeBanner ? '#6366f1' : '#d1d5db', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* QUICK RE-BOOKING SHORTCUTS */}
+      {isAuthenticated && quickRebook.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="section-header">
+              <h2><FiCalendar /> Book Again</h2>
+            </div>
+            <div className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+              {quickRebook.map(booking => (
+                <Link key={booking.id}
+                  to={`/book?professional_id=${booking.professional_id}&professional_name=${encodeURIComponent(booking.professional_name || '')}&service=${encodeURIComponent(booking.title || '')}`}
+                  style={{ minWidth: '220px', padding: '1rem', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', textDecoration: 'none', color: 'inherit' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{booking.title}</p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>with {booking.professional_name}</p>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', fontSize: '0.75rem', color: '#6366f1', fontWeight: 500 }}>
+                    <FiCalendar size={12} /> Book again
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* AI RECOMMENDATIONS */}
+      {isAuthenticated && recommendations.length > 0 && (
+        <section className="section" style={{ padding: '1rem 0' }}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-eyebrow"><FiAward size={14} /> Recommended for You</span>
+                <h2 className="section-title">Based on Your Activity</h2>
+              </div>
+            </div>
+            <div className="discovery-scroll">
+              {recommendations.map(pro => (
+                <Link key={pro.id} to={`/professionals/${pro.id}/storefront`} className="discovery-card">
+                  <div className="discovery-avatar">
+                    <img src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=6366f1&color=fff&size=64`} alt={pro.name} />
+                  </div>
+                  <strong>{pro.name}</strong>
+                  <span className="discovery-headline">{pro.headline || ''}</span>
+                  <div className="discovery-meta">
+                    {pro.average_rating > 0 && <span><FiStar size={12} fill="#f59e0b" /> {parseFloat(pro.average_rating).toFixed(1)}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* STATS */}
       <section className="stats-bar">

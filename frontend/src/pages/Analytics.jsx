@@ -209,6 +209,89 @@ export default function Analytics() {
             )}
           </div>
         </div>
+
+        {/* ── Response Time Metrics ── */}
+        <div className="analytics-grid" style={{ marginTop: '2rem' }}>
+          <div className="analytics-card">
+            <div className="card-header"><h3><FiActivity /> Response Time</h3></div>
+            <div style={{ padding: '1rem' }}>
+              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary, #6366f1)' }}>
+                  {data?.response_time?.avg ? `${data.response_time.avg} min` : '—'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Avg Response Time</div>
+              </div>
+              {data?.response_time?.trend && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.5rem', background: '#f9fafb', borderRadius: '8px' }}>
+                  <span>This week: <strong>{data.response_time.this_week || '—'} min</strong></span>
+                  <span>Last week: <strong>{data.response_time.last_week || '—'} min</strong></span>
+                </div>
+              )}
+              <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.75rem' }}>
+                💡 Faster response time improves your ranking and booking conversion rate
+              </p>
+            </div>
+          </div>
+
+          {/* Conversion Funnel */}
+          <div className="analytics-card">
+            <div className="card-header"><h3><FiTrendingUp /> Conversion Funnel</h3></div>
+            <div style={{ padding: '1rem' }}>
+              {[
+                { label: 'Profile Views', value: data?.funnel?.views || 0, color: '#6366f1' },
+                { label: 'Contacts', value: data?.funnel?.contacts || 0, color: '#8b5cf6' },
+                { label: 'Bookings', value: data?.funnel?.bookings || 0, color: '#10b981' },
+              ].map((step, i) => {
+                const maxVal = Math.max(data?.funnel?.views || 1, 1);
+                const pct = Math.round((step.value / maxVal) * 100);
+                return (
+                  <div key={i} style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '4px' }}>
+                      <span>{step.label}</span>
+                      <span style={{ fontWeight: 600 }}>{step.value}</span>
+                    </div>
+                    <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: step.color, width: `${Math.max(pct, 3)}%`, height: '100%', borderRadius: '999px' }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {data?.funnel?.views > 0 && (
+                <p style={{ fontSize: '0.75rem', color: '#10b981', textAlign: 'center', marginTop: '0.5rem' }}>
+                  Conversion rate: {Math.round(((data?.funnel?.bookings || 0) / data.funnel.views) * 100)}%
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Peak Hours Heatmap ── */}
+        <div className="analytics-card" style={{ marginTop: '1.5rem' }}>
+          <div className="card-header"><h3><FiCalendar /> Peak Hours</h3></div>
+          <div style={{ padding: '1rem' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)', marginBottom: '1rem' }}>
+              Busiest booking times based on your history
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, di) => (
+                <div key={di}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 600, marginBottom: '4px' }}>{day}</div>
+                  {['Morning', 'Afternoon', 'Evening'].map((slot, si) => {
+                    const intensity = data?.peak_hours?.[di]?.[si] || 0;
+                    const bg = intensity > 5 ? '#6366f1' : intensity > 2 ? '#a5b4fc' : intensity > 0 ? '#e0e7ff' : '#f3f4f6';
+                    return (
+                      <div key={si} style={{ width: '100%', height: '20px', background: bg, borderRadius: '3px', marginBottom: '2px' }}
+                        title={`${day} ${slot}: ${intensity} bookings`} />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--gray-500)' }}>
+              <span>🟦 Morning</span><span>🟦 Afternoon</span><span>🟦 Evening</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
