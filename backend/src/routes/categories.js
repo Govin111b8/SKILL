@@ -10,7 +10,37 @@ const { cacheMiddleware } = require('../middleware/cache');
 const router = Router();
 
 // Categories rarely change — cache for 10 minutes
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: List all categories
+ *     tags: [Categories]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Categories retrieved successfully
+ */
 router.get('/', cacheMiddleware('category', 600), getCategories);
+/**
+ * @swagger
+ * /categories/{id}:
+ *   get:
+ *     summary: Get a category by id
+ *     tags: [Categories]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Category retrieved successfully
+ *       404:
+ *         description: Category not found
+ */
 router.get('/:id', cacheMiddleware('category', 600), getCategory);
 router.get('/:id/professionals', cacheMiddleware('provider', 120), getCategoryProfessionals);
 

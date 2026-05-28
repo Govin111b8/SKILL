@@ -7,8 +7,49 @@ const { getProfile, updateProfile, changePassword, deleteAccount } = require('..
 
 const router = Router();
 
+/**
+ * @swagger
+ * /users/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile data
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/profile', authenticate, getProfile);
 
+/**
+ * @swagger
+ * /users/profile:
+ *   put:
+ *     summary: Update current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
 router.put('/profile', authenticate,
   validate([
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
@@ -17,6 +58,35 @@ router.put('/profile', authenticate,
   updateProfile
 );
 
+/**
+ * @swagger
+ * /users/change-password:
+ *   put:
+ *     summary: Change current user password
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [current_password, new_password]
+ *             properties:
+ *               current_password:
+ *                 type: string
+ *               new_password:
+ *                 type: string
+ *                 minLength: 6
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
 router.put('/change-password', authenticate,
   validate([
     body('current_password').notEmpty().withMessage('Current password is required'),
@@ -25,6 +95,22 @@ router.put('/change-password', authenticate,
   changePassword
 );
 
+/**
+ * @swagger
+ * /users/account:
+ *   delete:
+ *     summary: Delete current user account
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Account not found
+ */
 router.delete('/account', authenticate, deleteAccount);
 
 // Push token management (FCM)

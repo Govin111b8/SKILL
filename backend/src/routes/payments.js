@@ -9,12 +9,196 @@ const router = Router();
 
 router.use(authenticate);
 
+/**
+ * @swagger
+ * /payments:
+ *   post:
+ *     summary: Create a payment for a booking or order
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               booking_id:
+ *                 type: string
+ *               method:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Payment created successfully
+ *       400:
+ *         description: Invalid payment request
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/', createPayment);
+/**
+ * @swagger
+ * /payments/{payment_id}/verify:
+ *   post:
+ *     summary: Verify a payment transaction
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               razorpay_payment_id:
+ *                 type: string
+ *               razorpay_signature:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Payment verified successfully
+ *       400:
+ *         description: Verification failed
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Payment not found
+ */
 router.post('/:payment_id/verify', verifyPayment);
+/**
+ * @swagger
+ * /payments:
+ *   get:
+ *     summary: List payments for the current user
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Payments retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/', getPayments);
+/**
+ * @swagger
+ * /payments/earnings:
+ *   get:
+ *     summary: Get earnings summary for the current professional
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Earnings retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.get('/earnings', getEarnings);
+/**
+ * @swagger
+ * /payments/{payment_id}/release:
+ *   post:
+ *     summary: Release escrow funds for a payment
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Escrow released successfully
+ *       400:
+ *         description: Payment cannot be released
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Payment not found
+ */
 router.post('/:payment_id/release', releaseEscrow);
+/**
+ * @swagger
+ * /payments/{payment_id}/cod-confirm:
+ *   post:
+ *     summary: Confirm a cash on delivery payment
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Cash on delivery payment confirmed
+ *       400:
+ *         description: Invalid COD confirmation
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Payment not found
+ */
 router.post('/:payment_id/cod-confirm', confirmCOD);
+/**
+ * @swagger
+ * /payments/{payment_id}/refund:
+ *   post:
+ *     summary: Refund a payment
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payment_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Payment refunded successfully
+ *       400:
+ *         description: Refund failed
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Payment not found
+ */
 router.post('/:payment_id/refund', refundPayment);
 
 // My Invoices — professional can download their GST invoices
