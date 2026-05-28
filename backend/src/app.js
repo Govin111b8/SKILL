@@ -57,6 +57,10 @@ const householdRoutes = require('./routes/households');
 const countryRoutes = require('./routes/countries');
 const marketplaceRoutes = require('./routes/marketplace');
 const providerBusinessRoutes = require('./routes/providerBusiness');
+const quoteRoutes = require('./routes/quotes');
+const homeProfileRoutes = require('./routes/homeProfiles');
+const trackingRoutes = require('./routes/tracking');
+const amcRoutes = require('./routes/amc');
 
 const app = express();
 
@@ -204,6 +208,10 @@ app.use('/api/households', householdRoutes);
 app.use('/api/countries', countryRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/provider-business', providerBusinessRoutes);
+app.use('/api/quotes', quoteRoutes);
+app.use('/api/home-profiles', homeProfileRoutes);
+app.use('/api/tracking', trackingRoutes);
+app.use('/api/amc', amcRoutes);
 
 // SEO — sitemap.xml and robots.txt (no rate limiting, public)
 app.use('/sitemap.xml', (req, res, next) => { req.url = '/sitemap.xml'; seoRoutes(req, res, next); });

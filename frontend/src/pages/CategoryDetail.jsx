@@ -69,6 +69,23 @@ function CategoryDetail() {
   const [sortBy, setSortBy] = useState('rating');
   const [categoryServices, setCategoryServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [apiCategory, setApiCategory] = useState(null); // service_mode, pricing type from API
+
+  // Fetch API category data (service_mode, pricing type)
+  useEffect(() => {
+    if (category?.name) {
+      get(`/categories?name=${encodeURIComponent(category.name)}`)
+        .then(res => {
+          const cats = res.data || [];
+          const flat = [];
+          const flatten = (list) => list.forEach(c => { flat.push(c); if (c.children?.length) flatten(c.children); });
+          flatten(cats);
+          const match = flat.find(c => c.name.toLowerCase() === category.name.toLowerCase());
+          if (match) setApiCategory(match);
+        })
+        .catch(() => {}); // Optional enrichment — fail silently
+    }
+  }, [category?.name]);
 
   // WebSocket presence data
   let onlineUsers = {};
@@ -217,6 +234,18 @@ function CategoryDetail() {
               <div className="cd-banner-meta">
                 <span className="cd-pill">{category.subcategories.length} Sub-services</span>
                 {category.popular && <span className="cd-pill cd-pill--pop">⭐ Popular</span>}
+                {apiCategory?.service_mode === 'instant_book' && (
+                  <span className="cd-pill cd-pill--instant">⚡ Instant Book</span>
+                )}
+                {apiCategory?.service_mode === 'quote_request' && (
+                  <Link to="/quotes" className="cd-pill cd-pill--quote">📋 Get Quotes</Link>
+                )}
+                {apiCategory?.service_mode === 'subscription' && (
+                  <Link to="/subscriptions" className="cd-pill cd-pill--sub">🔄 Subscribe</Link>
+                )}
+                {apiCategory?.requires_site_visit && (
+                  <span className="cd-pill cd-pill--visit">🏠 Site Visit Required</span>
+                )}
               </div>
             </div>
           </div>

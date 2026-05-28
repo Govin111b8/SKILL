@@ -463,6 +463,55 @@ function Home() {
         </div>
       </section>
 
+      {/* HOME SERVICES SPOTLIGHT */}
+      <section className="section home-services-section">
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-eyebrow">🏠 Most Popular in India</span>
+              <h2 className="section-title">Home Services</h2>
+              <p className="section-subtitle" style={{ marginTop: '0.25rem' }}>
+                Book instantly or get custom quotes — trusted professionals for every home need
+              </p>
+            </div>
+            <Link to="/categories/home-services" className="section-link">View All <FiArrowRight size={14} /></Link>
+          </div>
+          <div className="hs-mode-tabs">
+            <Link to="/categories/home-services" className="hs-mode-tab hs-mode-tab--instant">
+              ⚡ Instant Book <span>AC, Plumbing, Electrical, Cleaning</span>
+            </Link>
+            <Link to="/quotes" className="hs-mode-tab hs-mode-tab--quote">
+              📋 Get Quotes <span>Painting, Renovation, Interior Design</span>
+            </Link>
+            <Link to="/subscriptions" className="hs-mode-tab hs-mode-tab--sub">
+              🔄 Subscribe <span>Maid, Cook, Daily Help</span>
+            </Link>
+          </div>
+          <div className="hs-services-grid">
+            {[
+              { icon: '❄️', name: 'AC Repair & Service', tag: 'From ₹499', path: '/search?q=AC+repair', mode: 'instant' },
+              { icon: '💧', name: 'Water Purifier / RO', tag: 'From ₹299', path: '/search?q=RO+service', mode: 'instant' },
+              { icon: '🪲', name: 'Pest Control', tag: 'From ₹999', path: '/search?q=pest+control', mode: 'instant' },
+              { icon: '🔌', name: 'Electrician', tag: 'From ₹199', path: '/search?q=electrician', mode: 'instant' },
+              { icon: '🚿', name: 'Plumber', tag: 'From ₹199', path: '/search?q=plumber', mode: 'instant' },
+              { icon: '🏠', name: 'Deep Home Cleaning', tag: 'From ₹999', path: '/search?q=home+cleaning', mode: 'instant' },
+              { icon: '🪑', name: 'Sofa / Carpet Cleaning', tag: 'From ₹499', path: '/search?q=sofa+cleaning', mode: 'instant' },
+              { icon: '🔨', name: 'Carpenter', tag: 'From ₹299', path: '/search?q=carpenter', mode: 'instant' },
+              { icon: '🎨', name: 'Home Painting', tag: 'Get Quote', path: '/quotes?category=painting', mode: 'quote' },
+              { icon: '🏗️', name: 'Renovation', tag: 'Get Quote', path: '/quotes?category=renovation', mode: 'quote' },
+              { icon: '🛋️', name: 'Interior Design', tag: 'Get Quote', path: '/quotes?category=interior', mode: 'quote' },
+              { icon: '👩‍🍳', name: 'Maid / Cook', tag: 'Subscribe', path: '/subscriptions', mode: 'sub' },
+            ].map((svc) => (
+              <Link key={svc.name} to={svc.path} className={`hs-service-chip hs-service-chip--${svc.mode}`}>
+                <span className="hs-chip-icon">{svc.icon}</span>
+                <span className="hs-chip-name">{svc.name}</span>
+                <span className="hs-chip-tag">{svc.tag}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ALL SERVICES */}
       <section className="section categories-section">
         <div className="container">

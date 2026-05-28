@@ -34,7 +34,8 @@ const addService = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to manage services for this professional.' });
     }
 
-    const { name, description, category_id, price_min, price_max, duration_minutes } = req.body;
+    const { name, description, category_id, price_min, price_max, duration_minutes,
+            pricing_type, price_per_unit, price_unit, amc_price_annual, includes_materials, service_mode } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -47,13 +48,25 @@ const addService = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'duration_minutes must be > 0.' });
     }
 
+    const VALID_PRICING_TYPES = ['fixed', 'hourly', 'per_sqft', 'custom_quote', 'amc', 'package'];
+    if (pricing_type && !VALID_PRICING_TYPES.includes(pricing_type)) {
+      return res.status(400).json({ success: false, message: `Invalid pricing_type. Valid values: ${VALID_PRICING_TYPES.join(', ')}.` });
+    }
+
     const id = crypto.randomUUID();
 
     const result = await query(
-      `INSERT INTO professional_services (id, professional_id, category_id, name, description, price_min, price_max, duration_minutes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO professional_services
+         (id, professional_id, category_id, name, description, price_min, price_max, duration_minutes,
+          pricing_type, price_per_unit, price_unit, amc_price_annual, includes_materials, service_mode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [id, professionalId, category_id || null, name.trim(), description || null, price_min || null, price_max || null, duration_minutes || null]
+      [
+        id, professionalId, category_id || null, name.trim(), description || null,
+        price_min || null, price_max || null, duration_minutes || null,
+        pricing_type || 'fixed', price_per_unit || null, price_unit || null,
+        amc_price_annual || null, includes_materials || false, service_mode || null,
+      ]
     );
 
     res.status(201).json({
@@ -82,7 +95,8 @@ const updateService = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You can only update your own services.' });
     }
 
-    const { name, description, category_id, price_min, price_max, duration_minutes, is_active, sort_order } = req.body;
+    const { name, description, category_id, price_min, price_max, duration_minutes, is_active, sort_order,
+            pricing_type, price_per_unit, price_unit, amc_price_annual, includes_materials, service_mode } = req.body;
 
     // Validate if provided
     if (name !== undefined && (!name || !name.trim())) {
@@ -93,6 +107,10 @@ const updateService = async (req, res, next) => {
     }
     if (duration_minutes !== undefined && duration_minutes !== null && Number(duration_minutes) <= 0) {
       return res.status(400).json({ success: false, message: 'duration_minutes must be > 0.' });
+    }
+    const VALID_PRICING_TYPES = ['fixed', 'hourly', 'per_sqft', 'custom_quote', 'amc', 'package'];
+    if (pricing_type && !VALID_PRICING_TYPES.includes(pricing_type)) {
+      return res.status(400).json({ success: false, message: `Invalid pricing_type. Valid values: ${VALID_PRICING_TYPES.join(', ')}.` });
     }
 
     // Build dynamic update
@@ -108,6 +126,12 @@ const updateService = async (req, res, next) => {
     if (duration_minutes !== undefined) { fields.push(`duration_minutes = $${idx++}`); values.push(duration_minutes); }
     if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
     if (sort_order !== undefined) { fields.push(`sort_order = $${idx++}`); values.push(sort_order); }
+    if (pricing_type !== undefined) { fields.push(`pricing_type = $${idx++}`); values.push(pricing_type); }
+    if (price_per_unit !== undefined) { fields.push(`price_per_unit = $${idx++}`); values.push(price_per_unit); }
+    if (price_unit !== undefined) { fields.push(`price_unit = $${idx++}`); values.push(price_unit); }
+    if (amc_price_annual !== undefined) { fields.push(`amc_price_annual = $${idx++}`); values.push(amc_price_annual); }
+    if (includes_materials !== undefined) { fields.push(`includes_materials = $${idx++}`); values.push(includes_materials); }
+    if (service_mode !== undefined) { fields.push(`service_mode = $${idx++}`); values.push(service_mode); }
 
     if (fields.length === 0) {
       return res.status(400).json({ success: false, message: 'No fields to update.' });

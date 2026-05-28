@@ -2,13 +2,16 @@ const { query } = require('../config/database');
 
 const getCategories = async (req, res, next) => {
   try {
-    // Include professional counts per category
+    // Include professional counts per category + service metadata
     const result = await query(
       `SELECT c.id, c.name, c.parent_id, c.description, c.icon,
+              c.service_mode, c.default_pricing_type, c.hsn_code,
+              c.women_only_option, c.requires_site_visit,
+              c.typical_duration_hours, c.sort_priority,
               COUNT(DISTINCT pc.professional_id)::int AS pro_count
        FROM categories c
        LEFT JOIN professional_categories pc ON pc.category_id = c.id
-       GROUP BY c.id ORDER BY c.name`
+       GROUP BY c.id ORDER BY c.sort_priority DESC, c.name`
     );
 
     const categories = result.rows;
@@ -45,6 +48,9 @@ const getCategory = async (req, res, next) => {
 
     const result = await query(
       `SELECT c.id, c.name, c.parent_id, c.description, c.icon,
+              c.service_mode, c.default_pricing_type, c.hsn_code,
+              c.women_only_option, c.requires_site_visit,
+              c.typical_duration_hours, c.sort_priority,
               COUNT(DISTINCT pc.professional_id)::int AS pro_count
        FROM categories c
        LEFT JOIN professional_categories pc ON pc.category_id = c.id
@@ -57,14 +63,16 @@ const getCategory = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Category not found.' });
     }
 
-    // Get subcategories with pro counts
+    // Get subcategories with pro counts and service metadata
     const subcategories = await query(
       `SELECT c.id, c.name, c.description, c.icon,
+              c.service_mode, c.default_pricing_type, c.requires_site_visit,
+              c.women_only_option, c.sort_priority,
               COUNT(DISTINCT pc.professional_id)::int AS pro_count
        FROM categories c
        LEFT JOIN professional_categories pc ON pc.category_id = c.id
        WHERE c.parent_id = $1
-       GROUP BY c.id ORDER BY c.name`,
+       GROUP BY c.id ORDER BY c.sort_priority DESC, c.name`,
       [id]
     );
 
