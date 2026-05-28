@@ -58,7 +58,7 @@ export default function Favorites() {
                 <div className="favorite-card-top">
                   <img
                     src={fav.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fav.name)}&background=6366f1&color=fff&size=80`}
-                    alt={fav.name}
+                    alt={fav.name ? `${fav.name} profile` : 'User avatar'}
                     className="favorite-avatar"
                   />
                   <button

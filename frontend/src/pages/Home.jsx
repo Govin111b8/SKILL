@@ -374,7 +374,7 @@ function Home() {
                   <div className="story-avatar-ring">
                     <img
                       src={group.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.professional_name)}&background=6366f1&color=fff&size=56`}
-                      alt={group.professional_name}
+                      alt={group.professional_name ? `${group.professional_name} profile` : 'User avatar'}
                     />
                   </div>
                   <span className="story-name">{group.professional_name?.split(' ')[0]}</span>
@@ -446,7 +446,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -478,7 +478,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=10b981&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -510,7 +510,7 @@ function Home() {
                   <div className="discovery-avatar">
                     <img
                       src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=f97316&color=fff&size=64`}
-                      alt={pro.name}
+                      alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     />
                   </div>
                   <strong>{pro.name}</strong>
@@ -712,7 +712,7 @@ function Home() {
                 >
                   <img
                     src={pro.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff&size=36`}
-                    alt={pro.name}
+                    alt={pro.name ? `${pro.name} profile` : 'User avatar'}
                     style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
                   />
                   <div>

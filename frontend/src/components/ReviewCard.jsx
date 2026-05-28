@@ -10,7 +10,7 @@ function ReviewCard({ review }) {
       <div className="review-card-header">
         <img
           src={avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author || 'User')}&size=40`}
-          alt={author}
+          alt={author ? `${author} profile` : 'User avatar'}
           className="review-card-avatar"
         />
         <div className="review-card-meta">

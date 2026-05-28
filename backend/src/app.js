@@ -16,6 +16,7 @@ const { sentryErrorHandler } = require('./config/sentry');
 const { requestTimeout } = require('./middleware/requestTimeout');
 const { csrfProtection, getCsrfToken } = require('./middleware/csrf');
 const { searchRateLimit, aiRateLimit, analyticsRateLimit } = require('./middleware/perUserRateLimit');
+const { setupSwagger } = require('./config/swagger');
 
 const authRoutes = require('./routes/auth');
 const professionalRoutes = require('./routes/professionals');
@@ -325,6 +326,9 @@ app.get('/', (req, res) => {
 
 // Serve other public static files (excluding index.html at root)
 app.use(express.static(publicPath));
+
+// API Documentation (Swagger UI) — dev/staging only
+setupSwagger(app);
 
 // Sentry error handler — must be BEFORE the app error handler
 app.use(sentryErrorHandler());

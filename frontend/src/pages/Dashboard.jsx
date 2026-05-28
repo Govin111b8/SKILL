@@ -616,7 +616,7 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
                   {item.media_type === 'image' ? (
                     <img
                       src={item.media_url}
-                      alt={item.title || 'Portfolio'}
+                      alt={item.title || 'Portfolio image'}
                       onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || 'P')}&background=eef2ff&color=6366f1&size=200`; }}
                     />
                   ) : (
