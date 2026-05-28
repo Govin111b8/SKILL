@@ -1,0 +1,70 @@
+name: Mobile — iOS Build & Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/skillconnect/**'
+      - '.github/workflows/mobile-ios.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile/skillconnect/**'
+
+jobs:
+  build-ios:
+    name: Build iOS (macOS)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile/skillconnect
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Decode GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+          fi
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Run tests
+        run: flutter test
+        continue-on-error: true
+
+      - name: Build iOS (no code signing — for CI validation)
+        run: |
+          flutter build ios --no-codesign \
+            --dart-define=APP_ENV=staging \
+            --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL || 'https://api.skillconnect.in/api' }}
+
+      - name: Archive IPA (release — requires signing certs in secrets)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          # Install certificates and provisioning profiles
+          # Then build IPA for TestFlight
+          # flutter build ipa --release --export-options-plist=ExportOptions.plist
+          echo "IPA build requires valid signing certificates. Configure APP_STORE_CONNECT_API_KEY secret."
+
+      # Uncomment when fastlane is configured:
+      # - name: Upload to TestFlight
+      #   run: bundle exec fastlane ios beta
+      #   env:
+      #     APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}

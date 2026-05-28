@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class AppLocaleService {
+  static const _key = 'app_language';
+  static final ValueNotifier<Locale?> notifier = ValueNotifier<Locale?>(null);
+
+  static Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    notifier.value = _localeFromCode(prefs.getString(_key));
+  }
+
+  static Future<void> setLanguage(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, code);
+    notifier.value = _localeFromCode(code);
+  }
+
+  static Future<String> getLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_key) ?? 'en';
+  }
+
+  static Locale? _localeFromCode(String? code) {
+    switch (code) {
+      case 'en':
+      case 'hi':
+      case 'te':
+        return Locale(code!);
+      default:
+        return null;
+    }
+  }
+
+  static String labelFor(String code) {
+    switch (code) {
+      case 'hi':
+        return 'हिंदी';
+      case 'te':
+        return 'తెలుగు';
+      case 'en':
+      default:
+        return 'English';
+    }
+  }
+}

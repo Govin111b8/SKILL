@@ -36,7 +36,10 @@ class ApiConfig {
     return _devAndroidUrl;
   }
 
-  /// WebSocket URL derived from the base URL
+  /// Web base URL used by ApiService when running in browser.
+  static String get baseUrl => webBaseUrl;
+
+  // WebSocket URL derived from the base URL
   static String get wsBaseUrl {
     final base = androidBaseUrl;
     return base

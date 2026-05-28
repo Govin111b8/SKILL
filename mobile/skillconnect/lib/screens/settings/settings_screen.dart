@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/app_locale_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/upload_service.dart';
 import '../../services/push_notification_service.dart';
@@ -23,13 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _currentPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
   bool _saving = false;
-  String _selectedLanguage = 'en';
-
-  static const _languages = [
-    {'code': 'en', 'name': 'English', 'native': 'English'},
-    {'code': 'hi', 'name': 'Hindi', 'native': 'हिंदी'},
-    {'code': 'te', 'name': 'Telugu', 'native': 'తెలుగు'},
-  ];
+  String _appLanguage = 'en';
 
   @override
   void initState() {
@@ -41,26 +35,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadLanguage();
   }
 
-  Future<void> _loadLanguage() async {
-    final lang = await PushNotificationService.getLanguage();
-    if (mounted) setState(() => _selectedLanguage = lang);
-  }
-
-  Future<void> _changeLanguage(String code) async {
-    await PushNotificationService.setLanguage(code);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', code);
-    if (mounted) {
-      setState(() => _selectedLanguage = code);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Language updated. Restart the app to apply fully.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -69,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _currentPassCtrl.dispose();
     _newPassCtrl.dispose();
     super.dispose();
-  }
   }
 
   Future<void> _pickAvatar() async {
@@ -102,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'location': _locationCtrl.text.trim(),
       }, auth: true);
       if (mounted) {
-        // Update local user data in AuthService so UI reflects new name immediately
         context.read<AuthService>().updateLocalUser({
           'name': _nameCtrl.text.trim(),
           'phone': _phoneCtrl.text.trim(),
@@ -136,6 +108,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() => _saving = false);
   }
 
+  Future<void> _loadLanguage() async {
+    final language = await AppLocaleService.getLanguage();
+    if (mounted) {
+      setState(() => _appLanguage = language);
+    }
+  }
+
+  Future<void> _applyLanguage(String code) async {
+    await AppLocaleService.setLanguage(code);
+    await PushNotificationService.setLanguage(code);
+    if (!mounted) return;
+    setState(() => _appLanguage = code);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Language updated'),
+        content: const Text('The app language has been updated. Most screens refresh instantly, but restart the app if any text does not change yet.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLanguagePicker() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Choose language'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _applyLanguage('en');
+            },
+            child: Row(
+              children: [
+                const Expanded(child: Text('English')),
+                if (_appLanguage == 'en') const Icon(Icons.check, size: 18),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _applyLanguage('hi');
+            },
+            child: Row(
+              children: [
+                const Expanded(child: Text('हिंदी (Hindi)')),
+                if (_appLanguage == 'hi') const Icon(Icons.check, size: 18),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _applyLanguage('te');
+            },
+            child: Row(
+              children: [
+                const Expanded(child: Text('తెలుగు (Telugu)')),
+                if (_appLanguage == 'te') const Icon(Icons.check, size: 18),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,7 +196,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(children: [
-                // Avatar upload
                 GestureDetector(
                   onTap: _pickAvatar,
                   child: CircleAvatar(
@@ -233,24 +279,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text('Language', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'App & notification language',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                  ),
-                  const SizedBox(height: 12),
-                  ..._languages.map((lang) => _ThemeTile(
-                    icon: Icons.language,
-                    label: '${lang['native']} (${lang['name']})',
-                    selected: _selectedLanguage == lang['code'],
-                    onTap: () => _changeLanguage(lang['code']!),
-                  )),
-                ],
-              ),
+            child: ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text('App Language'),
+              subtitle: Text(AppLocaleService.labelFor(_appLanguage)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _showLanguagePicker,
             ),
           ),
           const SizedBox(height: 24),
@@ -320,6 +354,7 @@ class _ThemeTile extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
   const _ThemeTile({required this.icon, required this.label, required this.selected, required this.onTap});
 
   @override

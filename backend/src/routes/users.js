@@ -27,93 +27,92 @@ router.put('/change-password', authenticate,
 
 router.delete('/account', authenticate, deleteAccount);
 
-// ── Push Token Management (FCM) ───────────────────────────────────────────────
-
-router.post('/me/push-token', authenticate,
-  validate([
-    body('token').notEmpty().withMessage('Token required'),
-    body('platform').optional().isIn(['android', 'ios', 'web']).withMessage('Invalid platform'),
-    body('language').optional().isLength({ min: 2, max: 10 }).withMessage('Invalid language code'),
-  ]),
-  async (req, res, next) => {
-    try {
-      const { token, platform = 'android', language = 'en' } = req.body;
-
-      await query(
-        `INSERT INTO device_push_tokens (user_id, token, platform, language, updated_at)
-         VALUES ($1, $2, $3, $4, NOW())
-         ON CONFLICT (token) DO UPDATE
-         SET user_id = $1, platform = COALESCE($3, device_push_tokens.platform),
-             language = COALESCE($4, device_push_tokens.language), updated_at = NOW()`,
-        [req.user.id, token, platform, language]
-      );
-
-      res.json({ success: true });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-router.post('/me/push-token/remove', authenticate,
-  validate([body('token').notEmpty().withMessage('Token required')]),
-  async (req, res, next) => {
-    try {
-      const { token } = req.body;
-      await query(
-        'DELETE FROM device_push_tokens WHERE token = $1 AND user_id = $2',
-        [token, req.user.id]
-      );
-      res.json({ success: true });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-// ── Notification Preferences ──────────────────────────────────────────────────
-
-const VALID_CATEGORIES = ['behavioral', 'lifecycle', 'promotional']; // transactional always enabled
-
-router.put('/notification-preferences', authenticate, async (req, res, next) => {
+// Push token management (FCM)
+router.post('/me/push-token', authenticate, async (req, res) => {
   try {
-    const updates = [];
-    for (const category of VALID_CATEGORIES) {
-      if (typeof req.body[category] === 'boolean') {
-        updates.push(
-          query(
-            `INSERT INTO user_notification_preferences (user_id, category, enabled, updated_at)
-             VALUES ($1, $2, $3, NOW())
-             ON CONFLICT (user_id, category) DO UPDATE SET enabled = $3, updated_at = NOW()`,
-            [req.user.id, category, req.body[category]]
-          )
-        );
-      }
+    const { token, platform, language } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+
+    const validPlatforms = ['android', 'ios', 'web'];
+    if (platform && !validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
     }
-    await Promise.all(updates);
+
+    await query(
+      `INSERT INTO device_push_tokens (user_id, token, platform, language, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (token) DO UPDATE
+       SET user_id = $1, platform = COALESCE($3, platform), language = COALESCE($4, language), updated_at = NOW()`,
+      [req.user.id, token, platform || 'android', language || 'en']
+    );
+
     res.json({ success: true });
   } catch (err) {
-    next(err);
+    console.error('push-token register error:', err);
+    res.status(500).json({ error: 'Failed to register push token' });
   }
 });
 
-const VALID_LANGUAGES = ['en', 'hi', 'te', 'ta', 'kn', 'ml', 'mr', 'gu', 'bn'];
+router.post('/me/push-token/remove', authenticate, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
 
-router.put('/notification-language', authenticate,
-  validate([
-    body('language').isIn(VALID_LANGUAGES).withMessage('Invalid language code'),
-  ]),
-  async (req, res, next) => {
-    try {
-      await query(
-        'UPDATE device_push_tokens SET language = $1, updated_at = NOW() WHERE user_id = $2',
-        [req.body.language, req.user.id]
-      );
-      res.json({ success: true });
-    } catch (err) {
-      next(err);
-    }
+    await query(
+      `DELETE FROM device_push_tokens WHERE token = $1 AND user_id = $2`,
+      [token, req.user.id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('push-token remove error:', err);
+    res.status(500).json({ error: 'Failed to remove push token' });
   }
-);
+});
+
+// Notification preferences
+router.put('/notification-preferences', authenticate, async (req, res) => {
+  try {
+    const { transactional, behavioral, lifecycle, promotional } = req.body;
+    const categories = { transactional, behavioral, lifecycle, promotional };
+
+    for (const [category, enabled] of Object.entries(categories)) {
+      if (typeof enabled !== 'boolean') continue;
+      if (category === 'transactional') continue;
+
+      await query(
+        `INSERT INTO user_notification_preferences (user_id, category, enabled, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (user_id, category) DO UPDATE SET enabled = $3, updated_at = NOW()`,
+        [req.user.id, category, enabled]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('notification preferences error:', err);
+    res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
+router.put('/notification-language', authenticate, async (req, res) => {
+  try {
+    const { language } = req.body;
+    const validLanguages = ['en', 'hi', 'te', 'ta', 'kn', 'ml', 'mr', 'gu', 'bn'];
+    if (!validLanguages.includes(language)) {
+      return res.status(400).json({ error: 'Invalid language code' });
+    }
+
+    await query(
+      `UPDATE device_push_tokens SET language = $1, updated_at = NOW() WHERE user_id = $2`,
+      [language, req.user.id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('notification language error:', err);
+    res.status(500).json({ error: 'Failed to update notification language' });
+  }
+});
 
 module.exports = router;

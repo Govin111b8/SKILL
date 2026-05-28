@@ -9,6 +9,7 @@ import 'services/smart_location_service.dart';
 import 'services/analytics_service.dart';
 import 'services/performance_monitor.dart';
 import 'services/offline/offline_services.dart';
+import 'services/app_locale_service.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -56,7 +57,7 @@ void main() async {
 
   final authService = AuthService();
   final themeService = ThemeService();
-  await Future.wait([authService.init(), themeService.init()]);
+  await Future.wait([authService.init(), themeService.init(), AppLocaleService.init()]);
   runApp(
     MultiProvider(
       providers: [
@@ -200,22 +201,25 @@ class SkillConnectApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeService>().mode;
-    return MaterialApp(
-      title: 'SkillConnect',
-      debugShowCheckedModeBanner: false,
-      theme: _buildTheme(Brightness.light),
-      darkTheme: _buildTheme(Brightness.dark),
-      themeMode: themeMode,
-      // i18n: Regional language support (Telugu-first)
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Consumer<AuthService>(
-        builder: (_, auth, __) {
-          final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
-          return SplashScreen(nextScreen: dest);
-        },
-      ),
-      routes: {
+    return ValueListenableBuilder<Locale?>(
+      valueListenable: AppLocaleService.notifier,
+      builder: (_, locale, __) => MaterialApp(
+        title: 'SkillConnect',
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(Brightness.light),
+        darkTheme: _buildTheme(Brightness.dark),
+        themeMode: themeMode,
+        locale: locale,
+        // i18n: Regional language support (Telugu-first)
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Consumer<AuthService>(
+          builder: (_, auth, __) {
+            final dest = auth.isLoggedIn ? const MainShell() : const WelcomeScreen();
+            return SplashScreen(nextScreen: dest);
+          },
+        ),
+        routes: {
         '/login': (_) => const WelcomeScreen(),
         '/register': (_) => const RegisterScreen(),
         '/home': (_) => const MainShell(),
@@ -227,51 +231,52 @@ class SkillConnectApp extends StatelessWidget {
         '/schedule': (_) => const ScheduleManagementScreen(),
         '/earnings': (_) => const EarningsScreen(),
       },
-      onGenerateRoute: (settings) {
-        if (settings.name == '/professional') {
-          final id = settings.arguments as String;
-          return MaterialPageRoute(builder: (_) => ProfessionalProfileScreen(professionalId: id));
-        }
-        if (settings.name == '/search') {
-          final args = settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (_) => SearchScreen(
-            categoryId: args?['categoryId'],
-            categoryName: args?['categoryName'],
-          ));
-        }
-        if (settings.name == '/category') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => CategoryDetailScreen(
-            categoryId: args['categoryId'] as int,
-            categoryName: args['categoryName']?.toString() ?? '',
-            categoryDescription: args['description']?.toString(),
-            isRoot: args['isRoot'] == true,
-          ));
-        }
-        if (settings.name == '/payment') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => PaymentScreen(
-            bookingId: args['bookingId'] as String,
-            amount: (args['amount'] as num).toDouble(),
-            professionalName: args['professionalName'] as String? ?? 'Professional',
-          ));
-        }
-        if (settings.name == '/tracking') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => LiveTrackingScreen(
-            bookingId: args['bookingId'] as String,
-            professionalName: args['professionalName'] as String? ?? 'Professional',
-          ));
-        }
-        if (settings.name == '/dispute') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(builder: (_) => DisputeScreen(
-            bookingId: args['bookingId'] as String,
-            bookingTitle: args['bookingTitle'] as String? ?? 'Booking',
-          ));
-        }
-        return null;
-      },
+        onGenerateRoute: (settings) {
+          if (settings.name == '/professional') {
+            final id = settings.arguments as String;
+            return MaterialPageRoute(builder: (_) => ProfessionalProfileScreen(professionalId: id));
+          }
+          if (settings.name == '/search') {
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(builder: (_) => SearchScreen(
+              categoryId: args?['categoryId'],
+              categoryName: args?['categoryName'],
+            ));
+          }
+          if (settings.name == '/category') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => CategoryDetailScreen(
+              categoryId: args['categoryId'] as int,
+              categoryName: args['categoryName']?.toString() ?? '',
+              categoryDescription: args['description']?.toString(),
+              isRoot: args['isRoot'] == true,
+            ));
+          }
+          if (settings.name == '/payment') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => PaymentScreen(
+              bookingId: args['bookingId'] as String,
+              amount: (args['amount'] as num).toDouble(),
+              professionalName: args['professionalName'] as String? ?? 'Professional',
+            ));
+          }
+          if (settings.name == '/tracking') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => LiveTrackingScreen(
+              bookingId: args['bookingId'] as String,
+              professionalName: args['professionalName'] as String? ?? 'Professional',
+            ));
+          }
+          if (settings.name == '/dispute') {
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(builder: (_) => DisputeScreen(
+              bookingId: args['bookingId'] as String,
+              bookingTitle: args['bookingTitle'] as String? ?? 'Booking',
+            ));
+          }
+          return null;
+        },
+      ),
     );
   }
 }

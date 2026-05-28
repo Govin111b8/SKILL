@@ -1,4 +1,57 @@
-const { query } = require('../config/database');
+const { pool, query } = require('../config/database');
+
+/**
+ * Send FCM push notification to a user's registered devices.
+ * 
+ * NOTE: When firebase-admin is installed, replace the console.log stub with:
+ * const admin = require('firebase-admin');
+ * await admin.messaging().sendEachForMulticast({ tokens, notification, data });
+ * 
+ * To install: npm install firebase-admin
+ * Initialize in app.js: admin.initializeApp({ credential: admin.credential.applicationDefault() });
+ */
+async function sendFCMToUser(userId, { title, body, data = {}, category = 'transactional' }) {
+  try {
+    const result = await pool.query(
+      `SELECT dt.token, dt.platform, dt.language,
+              COALESCE(np.enabled, true) AS category_enabled
+       FROM device_push_tokens dt
+       LEFT JOIN user_notification_preferences np 
+         ON np.user_id = dt.user_id AND np.category = $2
+       WHERE dt.user_id = $1`,
+      [userId, category]
+    );
+
+    const enabledTokens = result.rows
+      .filter((r) => r.category_enabled)
+      .map((r) => r.token);
+
+    if (enabledTokens.length === 0) return;
+
+    // FCM Admin SDK send (uncomment when firebase-admin is installed):
+    // const message = {
+    //   tokens: enabledTokens,
+    //   notification: { title, body },
+    //   data: { ...data, category },
+    //   android: { priority: category === 'transactional' ? 'high' : 'normal',
+    //              notification: { channelId: category } },
+    //   apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+    // };
+    // const response = await admin.messaging().sendEachForMulticast(message);
+    // console.log(`FCM sent: ${response.successCount} success, ${response.failureCount} failed`);
+
+    // Clean up invalid tokens after sending
+    // response.responses.forEach((resp, i) => {
+    //   if (!resp.success && resp.error?.code === 'messaging/registration-token-not-registered') {
+    //     pool.query('DELETE FROM device_push_tokens WHERE token = $1', [enabledTokens[i]]);
+    //   }
+    // });
+
+    console.log(`[FCM] Would send "${title}" to ${enabledTokens.length} devices for user ${userId}`);
+  } catch (err) {
+    console.error('[FCM] Send error:', err.message);
+  }
+}
 
 exports.list = async (req, res, next) => {
   try {
@@ -66,10 +119,20 @@ exports.toggleFavorite = async (req, res, next) => {
 // Device token (push)
 exports.registerDevice = async (req, res, next) => {
   try {
-    const { token, platform } = req.body;
+    const { token, platform, language } = req.body;
     if (!token || !platform) return res.status(400).json({ success: false, message: 'token & platform required' });
-    const { registerDeviceToken } = require('../services/pushNotification');
-    await registerDeviceToken(req.user.id, token, platform);
+
+    await pool.query(
+      `INSERT INTO device_push_tokens (user_id, token, platform, language, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (token) DO UPDATE
+       SET user_id = $1,
+           platform = COALESCE($3, device_push_tokens.platform),
+           language = COALESCE($4, device_push_tokens.language),
+           updated_at = NOW()`,
+      [req.user.id, token, platform, language || 'en']
+    );
+
     res.json({ success: true });
   } catch (e) { next(e); }
 };
@@ -78,8 +141,10 @@ exports.deregisterDevice = async (req, res, next) => {
   try {
     const { token } = req.body;
     if (!token) return res.status(400).json({ success: false, message: 'token required' });
-    const { deregisterDeviceToken } = require('../services/pushNotification');
-    await deregisterDeviceToken(req.user.id, token);
+
+    await pool.query('DELETE FROM device_push_tokens WHERE token = $1 AND user_id = $2', [token, req.user.id]);
     res.json({ success: true });
   } catch (e) { next(e); }
 };
+
+exports.sendFCMToUser = sendFCMToUser;

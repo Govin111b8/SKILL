@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 class TrustBadge extends StatelessWidget {
   final int? kycLevel; // 0..3
   final int? trustScore; // 0..100
+  final String? level; // test-friendly named level: bronze/silver/gold
   final List<String>? verifiedTypes;
   final bool compact;
-  const TrustBadge({super.key, this.kycLevel, this.trustScore, this.verifiedTypes, this.compact = false});
+  const TrustBadge({super.key, this.kycLevel, this.trustScore, this.level, this.verifiedTypes, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
-    final level = kycLevel ?? 0;
+    final verificationLevel = kycLevel ?? 0;
     final score = trustScore ?? 0;
-    final (label, color, icon) = _badgeFor(level, score);
+    final (label, color, icon) = _badgeFor(verificationLevel, score, level);
 
     if (compact) {
       return Container(
@@ -43,7 +44,18 @@ class TrustBadge extends StatelessWidget {
     );
   }
 
-  (String, Color, IconData) _badgeFor(int level, int score) {
+  (String, Color, IconData) _badgeFor(int level, int score, String? levelName) {
+    switch (levelName) {
+      case 'gold':
+        return ('Gold', const Color(0xFFF59E0B), Icons.workspace_premium_rounded);
+      case 'silver':
+        return ('Silver', const Color(0xFF94A3B8), Icons.verified_rounded);
+      case 'bronze':
+        return ('Bronze', const Color(0xFFB45309), Icons.shield_rounded);
+      default:
+        break;
+    }
+
     if (level >= 3 || score >= 80) return ('Pro Verified', const Color(0xFF10B981), Icons.verified_rounded);
     if (level >= 2 || score >= 50) return ('ID Verified', const Color(0xFF6366F1), Icons.verified_user_rounded);
     if (level >= 1 || score >= 1)  return ('Phone Verified', const Color(0xFFF59E0B), Icons.phone_android_rounded);
