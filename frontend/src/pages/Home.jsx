@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiSearch, FiShield, FiStar, FiArrowRight, FiCheck, FiTool, FiMapPin, FiClock,
-  FiTrendingUp, FiZap, FiPlay,
+  FiTrendingUp, FiZap, FiPlay, FiMessageSquare, FiAward, FiCalendar,
 } from 'react-icons/fi';
 import { categoriesData } from '../data/categories';
 import SearchBar from '../components/SearchBar';
@@ -601,6 +601,7 @@ function Home() {
           <div className="container">
             <div className="section-header">
               <h2 className="section-title"><FiClock size={18} style={{ marginRight: 6 }} />Recently Viewed</h2>
+              <Link to="/favorites" className="section-link">My Favorites <FiArrowRight size={14} /></Link>
             </div>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }}>
               {recentlyViewed.slice(0, 5).map(pro => (
@@ -627,6 +628,43 @@ function Home() {
                   </div>
                 </Link>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ENGAGEMENT CTAs for authenticated users */}
+      {isAuthenticated && (
+        <section className="section" style={{ padding: '20px 0 40px' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+              <Link to="/bookings" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderRadius: '14px', border: '1px solid #a7f3d0' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiCalendar size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>My Bookings</p>
+                  <p style={{ fontSize: '0.8rem', color: '#065f46', margin: '2px 0 0' }}>Track active & past bookings</p>
+                </div>
+              </Link>
+              <Link to="/messages" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)', borderRadius: '14px', border: '1px solid #c7d2fe' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiMessageSquare size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>Messages</p>
+                  <p style={{ fontSize: '0.8rem', color: '#3730a3', margin: '2px 0 0' }}>Chat with your professionals</p>
+                </div>
+              </Link>
+              <Link to="/referrals" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', borderRadius: '14px', border: '1px solid #fcd34d' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FiAward size={20} color="#fff" />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>Refer & Earn</p>
+                  <p style={{ fontSize: '0.8rem', color: '#92400e', margin: '2px 0 0' }}>Invite friends, get rewards</p>
+                </div>
+              </Link>
             </div>
           </div>
         </section>

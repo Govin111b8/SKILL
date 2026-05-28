@@ -6,7 +6,7 @@ import {
   FiToggleRight, FiEye, FiPhone, FiCheckCircle, FiClock, FiTrendingUp,
   FiDollarSign, FiCalendar, FiPieChart, FiActivity, FiAward,
   FiHeart, FiShoppingBag, FiBookOpen, FiZap, FiArrowUp, FiArrowDown,
-  FiTarget, FiBell, FiRepeat,
+  FiTarget, FiBell, FiRepeat, FiArrowRight,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { get, put, post, del } from '../api/client';
@@ -39,7 +39,14 @@ function Dashboard() {
   }
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}><p>Error: {error}</p></div>;
+  if (error) return (
+    <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>
+      <p style={{ color: 'var(--danger, #ef4444)', marginBottom: '1rem' }}>Error: {error}</p>
+      <button className="btn btn-primary btn-sm" onClick={() => { setLoading(true); setError(null); fetchDashboard(); }}>
+        Try Again
+      </button>
+    </div>
+  );
 
   const isProfessional = user?.role === 'professional';
 
@@ -290,10 +297,15 @@ function ProfessionalDashboard({ data, refresh, navigate }) {
 
   if (needsProfile) {
     return (
-      <div className="needs-profile-card">
-        <FiBriefcase size={48} />
-        <h2>Complete Your Professional Profile</h2>
-        <p>Set up your profile to appear in search results and receive customer inquiries.</p>
+      <div className="needs-profile-card" style={{ textAlign: 'center', padding: '3rem 2rem', background: 'linear-gradient(135deg, #eef2ff, #e0e7ff)', borderRadius: '16px', border: '1px solid #c7d2fe' }}>
+        <FiBriefcase size={48} style={{ color: '#6366f1', marginBottom: '1rem' }} />
+        <h2 style={{ marginBottom: '0.5rem' }}>Complete Your Professional Profile</h2>
+        <p style={{ color: '#4b5563', marginBottom: '1.5rem', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
+          Set up your profile to appear in search results and start receiving customer inquiries.
+        </p>
+        <Link to="/onboarding/professional" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <FiArrowRight size={16} /> Start Onboarding
+        </Link>
       </div>
     );
   }
