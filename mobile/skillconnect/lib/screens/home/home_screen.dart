@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/availability_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/professional_card.dart';
-import '../../widgets/review_prompt.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/nearby_providers_section.dart';
 import '../../widgets/promotions_banner.dart';
@@ -14,7 +14,12 @@ import '../../widgets/app_components.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
-import '../search/search_screen.dart';
+import '../delivery/delivery_screen.dart';
+import '../rides/my_ride_screen.dart';
+import '../food/food_screen.dart';
+import '../groceries/groceries_screen.dart';
+import '../shopping/shopping_screen.dart';
+import '../jobs/job_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,11 +32,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<Professional> _topProfessionals = [];
   bool _loading = true;
   String? _error;
+  bool _available = false;
+  bool _updatingAvailability = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadAvailability();
+  }
+
+  Future<void> _loadAvailability() async {
+    try {
+      final status = await AvailabilityService.getStatus();
+      if (mounted) setState(() => _available = status == 'available');
+    } catch (_) {}
+  }
+
+  Future<void> _toggleAvailability(bool val) async {
+    if (_updatingAvailability) return;
+    HapticFeedback.mediumImpact();
+    setState(() { _updatingAvailability = true; _available = val; });
+    try {
+      await AvailabilityService.setAvailable(val);
+    } catch (_) {
+      // Revert on failure
+      if (mounted) setState(() => _available = !val);
+    }
+    if (mounted) setState(() => _updatingAvailability = false);
   }
 
   Future<void> _load() async {
@@ -81,18 +109,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       body: RefreshIndicator(
-        color: AppColors.primary,
+        color: AppColors.superBlue,
         onRefresh: _load,
         child: CustomScrollView(
           slivers: [
-            // ── Personalized Header (like sample image) ─────────────
+            // ── Personalized Header (Grab/Gojek-style) ──────────────
             SliverToBoxAdapter(
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                    colors: AppColors.superAppGradient,
                   ),
                 ),
                 child: SafeArea(
@@ -109,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Greeting + availability toggle
                                   Row(children: [
                                     Text(
                                       '${_getGreeting()} ${_getGreetingEmoji()}',
@@ -118,20 +147,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    // Available badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.success.withAlpha(40),
-                                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                                        border: Border.all(color: AppColors.success.withAlpha(80)),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Available',
+                                      style: TextStyle(
+                                        color: Colors.white.withAlpha(200),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                                        Icon(Icons.circle, size: 6, color: AppColors.success),
-                                        SizedBox(width: 4),
-                                        Text('Online', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
-                                      ]),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Transform.scale(
+                                      scale: 0.80,
+                                      child: Switch(
+                                        value: _available,
+                                        onChanged: _updatingAvailability ? null : _toggleAvailability,
+                                        activeColor: Colors.white,
+                                        activeTrackColor: AppColors.success,
+                                        inactiveThumbColor: Colors.white,
+                                        inactiveTrackColor: Colors.white.withAlpha(60),
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
                                     ),
                                   ]),
                                   const SizedBox(height: 4),
@@ -165,40 +201,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.xl),
-                        // Search bar
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
-                          },
-                          child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              boxShadow: AppShadows.md(Colors.black),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Search services or professionals...',
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                ),
-                                child: const Text('Go', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                              ),
-                            ]),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -209,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             // ── Promotions Banner Carousel ──────────────────────────
             const SliverToBoxAdapter(child: PromotionsBanner()),
 
-            // ── Quick Actions (expanded 8-icon grid) ────────────────
+            // ── Quick Actions (8-icon super-app grid) ────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
@@ -227,65 +229,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       childAspectRatio: 0.85,
                       children: [
                         _QuickActionIcon(
+                          icon: Icons.local_shipping_rounded,
+                          label: 'Delivery',
+                          color: AppColors.tileDelivery,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.directions_car_rounded,
+                          label: 'MyRide',
+                          color: AppColors.tileRide,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRideScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.restaurant_rounded,
+                          label: 'Food',
+                          color: AppColors.tileFood,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FoodScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.shopping_cart_rounded,
+                          label: 'Groceries',
+                          color: AppColors.tileGroceries,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GroceriesScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.shopping_bag_rounded,
+                          label: 'Shopping',
+                          color: AppColors.tileShopping,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())),
+                        ),
+                        _QuickActionIcon(
                           icon: Icons.home_repair_service_rounded,
                           label: 'Services',
-                          color: const Color(0xFF6366F1),
+                          color: AppColors.tileServices,
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
                         ),
                         _QuickActionIcon(
-                          icon: Icons.emergency_rounded,
-                          label: 'Emergency',
-                          color: const Color(0xFFEF4444),
-                          onTap: () => Navigator.pushNamed(context, '/emergency'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.event_note_rounded,
-                          label: 'Bookings',
-                          color: const Color(0xFFF59E0B),
-                          onTap: () {}, // Navigate handled by bottom nav
+                          icon: Icons.work_rounded,
+                          label: 'Job',
+                          color: AppColors.tileJob,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.account_balance_wallet_rounded,
                           label: 'Wallet',
-                          color: const Color(0xFF10B981),
+                          color: AppColors.tileWallet,
                           onTap: () => Navigator.pushNamed(context, '/earnings'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.camera_alt_rounded,
-                          label: 'Photo Quote',
-                          color: const Color(0xFF06B6D4),
-                          onTap: () => Navigator.pushNamed(context, '/instant-quote'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.people_rounded,
-                          label: 'Referrals',
-                          color: const Color(0xFF8B5CF6),
-                          onTap: () => Navigator.pushNamed(context, '/contacts'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.verified_user_rounded,
-                          label: 'Warranty',
-                          color: const Color(0xFF059669),
-                          onTap: () => Navigator.pushNamed(context, '/warranty'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.local_offer_rounded,
-                          label: 'Offers',
-                          color: const Color(0xFFEC4899),
-                          onTap: () {}, // Placeholder for offers
                         ),
                       ],
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            // ── Review prompt (only if pending) ──────────────────
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
-                child: ReviewPromptBanner(),
               ),
             ),
 
@@ -448,19 +442,19 @@ class _QuickActionIcon extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
-              color: color.withAlpha(25),
+              color: color,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: color.withAlpha(50)),
+              boxShadow: AppShadows.sm(color),
             ),
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

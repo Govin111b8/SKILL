@@ -37,7 +37,13 @@
   "noConnection": "ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ",
   "connecting": "ਕੁਨੈਕਟ ਹੋ ਰਿਹਾ ਹੈ...",
   "pendingSync": "{count} ਬਾਕੀ ਸਿੰਕ",
-  "@pendingSync": { "placeholders": { "count": { "type": "int" } } },
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notificationSettings": "ਸੂਚਨਾ ਸੈਟਿੰਗਾਂ",
   "bookingUpdates": "ਬੁਕਿੰਗ ਅਪਡੇਟ",
   "smartSuggestions": "ਸਮਾਰਟ ਸੁਝਾਅ",
@@ -129,5 +135,22 @@
   "b2bEnquiry": "B2B ਪੁੱਛ-ਗਿੱਛ",
   "demandForecast": "ਮੰਗ ਪੂਰਵਾਨੁਮਾਨ",
   "peakDemandHours": "ਪੀਕ ਮੰਗ ਘੰਟੇ",
-  "predictedBookings": "ਅਨੁਮਾਨਿਤ ਬੁਕਿੰਗ"
+  "predictedBookings": "ਅਨੁਮਾਨਿਤ ਬੁਕਿੰਗ",
+  "delivery": "Delivery",
+  "myRide": "MyRide",
+  "food": "Food",
+  "groceries": "Groceries",
+  "shopping": "Shopping",
+  "job": "Job",
+  "scanQr": "Scan QR",
+  "quickActions": "Quick Actions",
+  "promotionsAndUpdates": "Promotions & Updates",
+  "available": "Available",
+  "requests": "Requests",
+  "scan": "Scan",
+  "bookDelivery": "Book Delivery",
+  "requestRide": "Request Ride",
+  "postJob": "Post Job",
+  "browseJobs": "Browse Jobs",
+  "buyForMe": "Buy For Me"
 }

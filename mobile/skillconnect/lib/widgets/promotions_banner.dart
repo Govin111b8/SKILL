@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/design_tokens.dart';
+import '../services/api_service.dart';
 
 /// Auto-scrolling promotional banner carousel for the home screen.
-/// Shows seasonal offers, featured professionals, and campaigns.
+/// Fetches banners from GET /api/promotions; falls back to static banners
+/// if the API is unavailable.
 class PromotionsBanner extends StatefulWidget {
   const PromotionsBanner({super.key});
 
@@ -15,8 +18,9 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
   final _controller = PageController();
   int _currentPage = 0;
   Timer? _timer;
+  List<_BannerData> _banners = _kDefaultBanners;
 
-  static const _banners = [
+  static const _kDefaultBanners = [
     _BannerData(
       title: 'Summer Special',
       subtitle: 'AC servicing at 20% off — verified technicians near you',
@@ -46,12 +50,47 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
   @override
   void initState() {
     super.initState();
+    _fetchBanners();
     _startAutoScroll();
+  }
+
+  Future<void> _fetchBanners() async {
+    try {
+      final res = await ApiService.get('/promotions');
+      final list = res['data'] as List? ?? [];
+      if (list.isEmpty) return;
+      final fetched = list.map((item) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(item as Map);
+        return _BannerData(
+          title: m['title']?.toString() ?? '',
+          subtitle: m['subtitle']?.toString() ?? '',
+          emoji: m['emoji']?.toString() ?? '🎁',
+          imageUrl: m['image_url']?.toString(),
+          gradient: [
+            _parseColor(m['gradient_from']?.toString(), const Color(0xFF6366F1)),
+            _parseColor(m['gradient_to']?.toString(), const Color(0xFF8B5CF6)),
+          ],
+        );
+      }).toList();
+      if (mounted) setState(() => _banners = fetched);
+    } catch (_) {
+      // Silently keep default banners
+    }
+  }
+
+  Color _parseColor(String? hex, Color fallback) {
+    if (hex == null) return fallback;
+    try {
+      final cleaned = hex.replaceFirst('#', '');
+      return Color(int.parse('FF$cleaned', radix: 16));
+    } catch (_) {
+      return fallback;
+    }
   }
 
   void _startAutoScroll() {
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
+      if (!mounted || _banners.isEmpty) return;
       final next = (_currentPage + 1) % _banners.length;
       _controller.animateToPage(next, duration: AppDurations.slow, curve: Curves.easeInOut);
     });
@@ -66,6 +105,7 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
 
   @override
   Widget build(BuildContext context) {
+    if (_banners.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -79,7 +119,7 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
         ),
         // Carousel
         SizedBox(
-          height: 150,
+          height: 160,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (i) => setState(() => _currentPage = i),
@@ -88,23 +128,41 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
               final banner = _banners[i];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: banner.gradient,
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadius.xl),
-                    boxShadow: AppShadows.md(banner.gradient.first),
-                  ),
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Row(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Expanded(
+                      // Background: network image or gradient
+                      if (banner.imageUrl != null)
+                        CachedNetworkImage(
+                          imageUrl: banner.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => _GradientBg(gradient: banner.gradient),
+                          placeholder: (_, __) => _GradientBg(gradient: banner.gradient),
+                        )
+                      else
+                        _GradientBg(gradient: banner.gradient),
+
+                      // Dark overlay for text readability
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black.withAlpha(160)],
+                          ),
+                        ),
+                      ),
+
+                      // Text overlay (bottom-left, matching design image)
+                      Positioned(
+                        left: AppSpacing.lg,
+                        right: AppSpacing.lg,
+                        bottom: AppSpacing.lg,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               banner.title,
@@ -113,16 +171,18 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.3,
+                                shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.sm),
+                            const SizedBox(height: 4),
                             Text(
                               banner.subtitle,
                               style: TextStyle(
-                                color: Colors.white.withAlpha(210),
+                                color: Colors.white.withAlpha(220),
                                 fontSize: 13,
                                 height: 1.4,
                                 fontWeight: FontWeight.w500,
+                                shadows: const [Shadow(color: Colors.black38, blurRadius: 3)],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -130,8 +190,14 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.lg),
-                      Text(banner.emoji, style: const TextStyle(fontSize: 48)),
+
+                      // Emoji (top-right, only if no image)
+                      if (banner.imageUrl == null)
+                        Positioned(
+                          right: 16,
+                          top: 16,
+                          child: Text(banner.emoji, style: const TextStyle(fontSize: 48)),
+                        ),
                     ],
                   ),
                 ),
@@ -151,7 +217,7 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
               width: active ? 22 : 7,
               height: 7,
               decoration: BoxDecoration(
-                color: active ? AppColors.primary : AppColors.primary.withAlpha(40),
+                color: active ? AppColors.superBlue : AppColors.superBlue.withAlpha(60),
                 borderRadius: BorderRadius.circular(4),
               ),
             );
@@ -162,16 +228,36 @@ class _PromotionsBannerState extends State<PromotionsBanner> {
   }
 }
 
+class _GradientBg extends StatelessWidget {
+  final List<Color> gradient;
+  const _GradientBg({required this.gradient});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
+        ),
+      ),
+    );
+  }
+}
+
 class _BannerData {
   final String title;
   final String subtitle;
   final String emoji;
+  final String? imageUrl;
   final List<Color> gradient;
 
   const _BannerData({
     required this.title,
     required this.subtitle,
     required this.emoji,
+    this.imageUrl,
     required this.gradient,
   });
 }
