@@ -48,6 +48,11 @@ import '../screens/admin/admin_disputes_screen.dart';
 import '../screens/admin/admin_complaints_screen.dart';
 import '../screens/admin/admin_featured_slots_screen.dart';
 import '../screens/search/map_search_screen.dart';
+// New screens
+import '../screens/trust/neighbourhood_trust_screen.dart';
+import '../screens/quotes/quote_bid_management_screen.dart';
+import '../screens/amc/amc_visits_screen.dart';
+import '../screens/society/society_screen.dart';
 
 /// Application router using go_router.
 ///
@@ -186,6 +191,11 @@ class AppRouter {
         GoRoute(path: '/admin/disputes', builder: (_, __) => const AdminDisputesScreen()),
         GoRoute(path: '/admin/complaints', builder: (_, __) => const AdminComplaintsScreen()),
         GoRoute(path: '/admin/featured-slots', builder: (_, __) => const AdminFeaturedSlotsScreen()),
+        // New screens
+        GoRoute(path: '/trust/neighbourhood', builder: (_, __) => const NeighbourhoodTrustScreen()),
+        GoRoute(path: '/quotes/bids', builder: (_, __) => const QuoteBidManagementScreen()),
+        GoRoute(path: '/amc/visits', builder: (_, __) => const AmcVisitsScreen()),
+        GoRoute(path: '/society', builder: (_, __) => const SocietyScreen()),
       ],
     );
   }

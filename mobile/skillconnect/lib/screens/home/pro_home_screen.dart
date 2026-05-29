@@ -12,6 +12,10 @@ import '../profile/edit_professional_profile_screen.dart';
 import '../schedule/schedule_management_screen.dart';
 import '../earnings/earnings_screen.dart';
 import '../../widgets/availability_toggle.dart';
+import '../quotes/quote_bid_management_screen.dart';
+import '../amc/amc_visits_screen.dart';
+import '../society/society_screen.dart';
+import '../analytics/provider_analytics_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -148,10 +152,38 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
                 )),
                 const SizedBox(width: 12),
                 Expanded(child: _QuickAction(
+                  icon: Icons.gavel_outlined,
+                  label: 'Quotes',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuoteBidManagementScreen())),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickAction(
+                  icon: Icons.event_repeat_outlined,
+                  label: 'AMC Visits',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AmcVisitsScreen())),
+                )),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _QuickAction(
+                  icon: Icons.apartment_outlined,
+                  label: 'Society',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SocietyScreen())),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickAction(
+                  icon: Icons.analytics_outlined,
+                  label: 'Analytics',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProviderAnalyticsScreen())),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickAction(
                   icon: Icons.emergency,
                   label: 'Emergency',
                   onTap: () => Navigator.pushNamed(context, '/emergency'),
                 )),
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox()),
               ]),
               const SizedBox(height: 20),
 

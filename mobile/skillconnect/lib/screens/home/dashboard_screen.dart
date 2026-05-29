@@ -10,6 +10,7 @@ import '../profile/edit_professional_profile_screen.dart';
 import '../portfolio/portfolio_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../bookings/service_history_screen.dart';
+import '../trust/neighbourhood_trust_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -262,7 +263,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _statCard('Rating', '${stats['rating'] ?? '0.0'}', Icons.star, Colors.amber),
           _statCard('Reviews', '${stats['reviews'] ?? 0}', Icons.rate_review, Colors.pink),
           _statCard('Jobs', '${stats['completedJobs'] ?? 0}', Icons.check_circle, Colors.indigo),
-          _statCard('Trust', '${profile?['trust_score'] ?? 0}', Icons.verified_user, Colors.teal),
+          _statCard('Trust', '${profile?['trust_score'] ?? 0}', Icons.verified_user, Colors.teal,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NeighbourhoodTrustScreen()))),
         ],
       ),
       const SizedBox(height: 16),
@@ -425,16 +427,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _statCard(String label, String value, IconData icon, Color color) {
+  Widget _statCard(String label, String value, IconData icon, Color color, {VoidCallback? onTap}) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        ]),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            if (onTap != null) const Icon(Icons.chevron_right, size: 12, color: Colors.grey),
+          ]),
+        ),
       ),
     );
   }
