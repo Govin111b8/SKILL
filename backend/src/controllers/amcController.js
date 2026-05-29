@@ -6,6 +6,8 @@
  */
 
 const { query } = require('../config/database');
+const logger = require('../config/logger');
+const razorpayService = require('../services/razorpay');
 
 // ── List available AMC plans ──────────────────────────────────────────────────
 
@@ -102,6 +104,32 @@ const subscribeAmcPlan = async (req, res, next) => {
         validPaymentMode,
       ]
     );
+
+    // Create Razorpay recurring subscription for auto-renewal
+    let razorpaySubId = null;
+    try {
+      if (razorpayService && typeof razorpayService.createRecurringSubscription === 'function') {
+        const razorpaySub = await razorpayService.createRecurringSubscription({
+          plan_id: plan.razorpay_plan_id,
+          total_count: validPaymentMode === 'annual' ? 1 : 12,
+          quantity: 1,
+          customer_notify: 1,
+        });
+        razorpaySubId = razorpaySub?.id || null;
+        if (razorpaySubId) {
+          try {
+            await query(
+              `UPDATE amc_subscriptions SET razorpay_subscription_id = $1 WHERE id = $2`,
+              [razorpaySubId, result.rows[0].id]
+            );
+          } catch (updateErr) {
+            logger.warn({ err: updateErr }, 'AMC: Unable to persist Razorpay subscription ID (non-critical)');
+          }
+        }
+      }
+    } catch (rzErr) {
+      logger.warn({ err: rzErr }, 'AMC: Razorpay subscription creation failed (non-critical)');
+    }
 
     res.status(201).json({
       success: true,

@@ -1,0 +1,17 @@
+{{ define "slack.title" -}}
+  [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+{{- end }}
+
+{{ define "slack.text" -}}
+  {{ range .Alerts -}}
+  *Alert:* {{ .Labels.alertname }}{{ if .Labels.severity }} — `{{ .Labels.severity }}`{{ end }}
+  *Summary:* {{ .Annotations.summary }}{{ if .Annotations.description }}
+  *Details:* {{ .Annotations.description }}{{ end }}
+  *Since:* {{ .StartsAt | since }}
+  {{ if .GeneratorURL }}*Graph:* <{{ .GeneratorURL }}|View in Prometheus>{{ end }}
+  {{ end -}}
+{{- end }}
+
+{{ define "pagerduty.description" -}}
+  [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}
+{{- end }}

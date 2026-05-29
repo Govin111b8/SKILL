@@ -32,7 +32,8 @@ const BADGE_CONFIG = {
 };
 
 function Storefront() {
-  const { id } = useParams();
+  const { id, slug } = useParams();
+  const professionalId = id || slug;
   const { isAuthenticated, user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,22 +45,27 @@ function Storefront() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [proServices, setProServices] = useState([]);
 
-  useEffect(() => { fetchStorefront(); }, [id]);
+  useEffect(() => { fetchStorefront(); }, [professionalId]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      get(`/favorites/check/${id}`).then(res => setSaved(res.favorited || false)).catch((err) => console.error('Favorites check failed:', err.message));
-      get(`/social/check/${id}`).then(res => setFollowing(res.following || false)).catch((err) => console.error('Follow check failed:', err.message));
+    if (isAuthenticated && professionalId) {
+      get(`/favorites/check/${professionalId}`).then(res => setSaved(res.favorited || false)).catch((err) => console.error('Favorites check failed:', err.message));
+      get(`/social/check/${professionalId}`).then(res => setFollowing(res.following || false)).catch((err) => console.error('Follow check failed:', err.message));
     }
-  }, [id, isAuthenticated]);
+  }, [professionalId, isAuthenticated]);
 
   async function fetchStorefront() {
+    if (!professionalId) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await get(`/storefront/${id}`);
+      const res = await get(`/storefront/${professionalId}`);
       setData(res.data || res);
       // Fetch professional services
       try {
-        const svcRes = await get(`/services/${id}`);
+        const svcRes = await get(`/services/${professionalId}`);
         setProServices((svcRes.data || svcRes) || []);
       } catch (err) { console.error('Failed to load services:', err.message); }
     } catch (err) {
@@ -70,29 +76,30 @@ function Storefront() {
   }
 
   async function toggleFavorite() {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !professionalId) return;
     try {
-      const res = await post('/favorites/toggle', { professional_id: id });
+      const res = await post('/favorites/toggle', { professional_id: professionalId });
       setSaved(res.favorited);
     } catch (err) { console.error('Favorite toggle failed:', err.message); }
   }
 
   async function toggleFollow() {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !professionalId) return;
     try {
       if (following) {
-        await del(`/social/unfollow/${id}`);
+        await del(`/social/unfollow/${professionalId}`);
         setFollowing(false);
       } else {
-        await post(`/social/follow/${id}`);
+        await post(`/social/follow/${professionalId}`);
         setFollowing(true);
       }
     } catch (err) { console.error('Follow toggle failed:', err.message); }
   }
 
   async function loadTrustExplanation() {
+    if (!professionalId) return;
     try {
-      const res = await get(`/trust/${id}/explain`);
+      const res = await get(`/trust/${professionalId}/explain`);
       setTrustData(res.data || res);
       setShowTrustModal(true);
     } catch (err) { console.error('Failed to load trust data:', err.message); }
@@ -439,7 +446,7 @@ function Storefront() {
                         <span style={{ display: 'inline-block', fontSize: '0.75rem', background: 'var(--sf-accent-light, #eef2ff)', color: 'var(--sf-primary, #6366f1)', padding: '2px 8px', borderRadius: '12px', marginBottom: '0.75rem' }}>{svc.category_name}</span>
                       )}
                       <Link
-                        to={`/bookings/create?professional_id=${id}&professional_name=${encodeURIComponent(data.name)}&service=${encodeURIComponent(svc.name)}&service_id=${svc.id}`}
+                        to={`/bookings/create?professional_id=${professionalId}&professional_name=${encodeURIComponent(data.name)}&service=${encodeURIComponent(svc.name)}&service_id=${svc.id}`}
                         className="package-book-btn"
                         style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem' }}
                       >
@@ -471,7 +478,7 @@ function Storefront() {
                       </ul>
                     )}
                     <Link
-                      to={`/bookings/create?professional_id=${id}&professional_name=${encodeURIComponent(data.name)}`}
+                      to={`/bookings/create?professional_id=${professionalId}&professional_name=${encodeURIComponent(data.name)}`}
                       className="package-book-btn"
                     >
                       Book This Package <FiChevronRight size={14} />
@@ -560,7 +567,7 @@ function Storefront() {
                 <p>{data.return_policy}</p>
               </div>
             )}
-            <TrustTimeline professionalId={id} />
+            <TrustTimeline professionalId={professionalId} />
           </div>
         )}
 
@@ -605,7 +612,7 @@ function Storefront() {
           {avgRating > 0 && <span className="sticky-cta-rating"><FiStar size={12} /> {avgRating.toFixed(1)}</span>}
         </div>
         <Link
-          to={`/bookings/create?professional_id=${id}&professional_name=${encodeURIComponent(data.name)}`}
+          to={`/bookings/create?professional_id=${professionalId}&professional_name=${encodeURIComponent(data.name)}`}
           className="sticky-cta-btn"
         >
           Book Now
@@ -635,7 +642,7 @@ function Storefront() {
       {showSaveModal && (
         <SaveToCollectionModal
           itemType="professional"
-          itemId={id}
+          itemId={professionalId}
           onClose={() => setShowSaveModal(false)}
         />
       )}

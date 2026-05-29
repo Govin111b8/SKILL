@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const hub = require('../realtime/hub');
 const { notify } = require('../utils/notifier');
+const { sendWhatsApp } = require('../services/whatsapp');
 const { completeReferral } = require('./referralController');
 const { awardPoints } = require('./gamificationController');
 
@@ -232,6 +233,25 @@ exports.transition = async (req, res, next) => {
     });
     hub.sendTo(otherUser, { type: 'booking', action: 'updated', data: updated });
     hub.sendTo(req.user.id, { type: 'booking', action: 'updated', data: updated });
+
+    // WhatsApp notification on key booking events
+    try {
+      const waTransitions = ['accepted', 'scheduled', 'in_progress', 'completed', 'cancelled'];
+      if (waTransitions.includes(to)) {
+        const recipientRes = await query('SELECT phone FROM users WHERE id = $1', [otherUser]);
+        const phone = recipientRes.rows[0]?.phone;
+        if (phone) {
+          const waMessages = {
+            accepted: `✅ Your booking "${b.title}" has been accepted! We'll confirm the schedule soon.`,
+            scheduled: `📅 Your booking "${b.title}" is scheduled for ${updated.scheduled_for ? new Date(updated.scheduled_for).toLocaleString('en-IN') : 'soon'}. Get ready!`,
+            in_progress: `🔧 Your service for "${b.title}" has started. The professional is on the job!`,
+            completed: `🎉 Service for "${b.title}" is complete! Please rate your experience on SkillConnect.`,
+            cancelled: `❌ Booking "${b.title}" was cancelled. Book again at skillconnect.in`,
+          };
+          await sendWhatsApp({ to: phone, message: waMessages[to] }).catch(() => {});
+        }
+      }
+    } catch (_) { /* non-critical */ }
 
     // Auto-calculate response_time_hours for professional (average time from 'requested' to first pro action)
     if (isPro && b.status === 'requested' && (to === 'quoted' || to === 'cancelled')) {

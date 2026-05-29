@@ -1,0 +1,27 @@
+.city-landing-page { min-height: 100vh; }
+.city-landing-hero { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff; padding: 60px 20px; text-align: center; }
+.city-landing-hero-content { max-width: 640px; margin: 0 auto; }
+.city-landing-location { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+.city-landing-hero h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; margin: 0 0 12px; }
+.city-landing-hero h1 span { opacity: 0.85; }
+.city-landing-hero p { font-size: 16px; opacity: 0.85; margin-bottom: 28px; }
+.city-landing-cta { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #4f46e5; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; text-decoration: none; transition: transform 0.2s; }
+.city-landing-cta:hover { transform: translateY(-2px); }
+.city-landing-body { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+.city-landing-why { margin-bottom: 48px; }
+.city-landing-why h2, .city-landing-pros h2, .city-landing-faq h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.city-landing-why ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.city-landing-why li { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #374151; }
+.city-landing-pros { margin-bottom: 48px; }
+.city-landing-pro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.city-landing-pro-card { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #f3f4f6; border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; transition: box-shadow 0.2s; }
+.city-landing-pro-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.city-landing-pro-card img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+.pro-card-name { font-weight: 600; font-size: 14px; }
+.pro-card-rating { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #6b7280; margin-top: 2px; }
+.pro-card-trust { font-size: 11px; font-weight: 700; text-transform: capitalize; margin-top: 4px; }
+.trust-gold { color: #f59e0b; } .trust-platinum { color: #6366f1; } .trust-silver { color: #9ca3af; } .trust-bronze { color: #cd7f32; }
+.no-pros-yet { grid-column: 1/-1; text-align: center; padding: 40px; color: #6b7280; }
+.city-landing-faq details { border-bottom: 1px solid #f3f4f6; padding: 16px 0; }
+.city-landing-faq summary { font-weight: 600; cursor: pointer; font-size: 15px; }
+.city-landing-faq p { color: #6b7280; margin-top: 10px; font-size: 14px; line-height: 1.6; }
