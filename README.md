@@ -6403,3 +6403,1326 @@ in all copies.
 *Last updated: May 2026 • [Back to top](#%EF%B8%8F-skillconnect)*
 
 </div>
+
+---
+
+## 👤 User Roles — Complete Reference
+
+SkillConnect has **four distinct user roles**, each with their own onboarding flow, screens, permissions, and app experience.
+
+| Role | Description | Access Level |
+|:---|:---|:---|
+| **Customer** | End-consumer who books services | Standard user — browse, book, pay, review |
+| **Professional** | Skilled service provider who accepts jobs | Provider — manage jobs, earnings, schedule, storefront |
+| **Agent** | Field representative who onboards providers and customers | Hybrid — referrals, wallet, leaderboard |
+| **Admin** | Platform operator with full control | Superuser — KYC, disputes, categories, analytics, users |
+
+---
+
+## 🔵 Role 1 — Customer (Consumer)
+
+### Who is a Customer?
+A Customer is anyone who uses SkillConnect to discover and book a skilled professional for home services, repairs, beauty, wellness, or any of the 50+ supported categories. Customers can be individuals, families, housing societies, or B2B enterprises.
+
+### Customer Onboarding Flow
+
+```
+App Launch → Splash Screen
+     ↓
+Onboarding Intro (3 slides — only on first launch)
+     ↓
+Welcome Screen → [Sign Up] or [Log In]
+     ↓
+Customer Registration:
+  • Full Name
+  • Phone Number (OTP-verified)
+  • Email (optional)
+  • City / Location (GPS or manual)
+  • Password
+     ↓
+JWT token issued → Redirected to Home Screen
+```
+
+### Customer — Full App Flow (Step by Step)
+
+**1. Discovery & Search**
+- Open Home Screen → sees personalized greeting with avatar
+- Views quick-action tiles: Delivery, MyRide, Food, Groceries, Shopping, Services, Job, Wallet
+- Taps "Services" → navigates to Categories screen (50+ categories)
+- OR taps the Search bar → goes to Search screen (full-text + voice + map search)
+- Browses Flash Deals carousel and promotional banners
+- Applies filters: distance, price, rating, availability, gender, verified-only
+- Toggles map view to see nearby professionals on Leaflet/OpenStreetMap
+- Taps a professional card → Professional Profile screen
+
+**2. Professional Profile & Booking**
+- Views professional's storefront: photo gallery, bio, rating, trust badge, services offered, portfolio, reviews, response time
+- Views trust level badge (Bronze / Silver / Gold / Platinum)
+- Taps "Book Now" → Create Booking screen
+  - Selects service from the professional's service list (with per-service price)
+  - Picks date & time from the availability calendar
+  - Enters job address (pre-filled from saved addresses or GPS)
+  - Adds notes / special instructions
+  - Selects payment method: UPI, Card, Net Banking, COD, Wallet, EMI (≥₹3000)
+  - Reviews quoted amount + GST
+  - Confirms booking
+- Booking created with status: `requested`
+
+**3. Booking Lifecycle (Customer's View)**
+```
+requested → (Professional quotes) → quoted → (Customer accepts) → accepted
+→ (Scheduled) → scheduled → (Pro starts) → in_progress
+→ (Pro completes) → completed → Review window opens
+```
+- Customer can: cancel pre-start, accept/reject quote, raise a dispute after start
+
+**4. Real-Time Tracking**
+- On Live Tracking screen: sees professional's GPS location on map in real-time (WebSocket-powered)
+- Can call or message provider directly from the tracking screen
+- Tracks ETA and status updates
+
+**5. Payments**
+- Wallet screen: add funds via Razorpay, view transaction history
+- Payment screen: pay for completed bookings
+- EMI screen: select 3/6/9/12/18/24 month EMI plans for bookings ≥ ₹3,000
+- COD (Cash on Delivery): confirm cash payment upon job completion
+- Razorpay AMC recurring subscriptions: auto-debit for scheduled maintenance
+
+**6. Post-Service**
+- Review & Rating: star rating (1–5) + text review + photo upload
+- Warranty screen: view active warranties on completed services
+- Dispute screen: raise dispute (with reason, evidence photos, description)
+- Referral screen: share referral code, earn points/cash rewards
+
+**7. Account & Settings**
+- Dashboard screen: booking stats, spending summary, active bookings, insights
+- My Bookings screen: list of all bookings (filterable by status)
+- Booking Detail screen: full booking info, invoice download, re-book
+- Saved/Favorites screen: bookmarked professionals
+- Collections screen: curated thematic collections of professionals
+- Notifications screen: all push/SMS/email alerts in one inbox
+- Notification Preferences: toggle email, SMS, push per event type
+- Settings screen: language (EN/HI/TE/8 Indian languages), dark mode, privacy
+- Data Export (DPDPA): download all personal data as JSON/CSV
+- Account Deletion: soft-delete + anonymization within 30 days
+
+**8. Advanced Customer Features**
+- Family Account: manage services for multiple family members under one login
+- Society/B2B Dashboard: manage bookings for housing societies
+- Instant Quote: get 3 competing bids from different professionals (48-hour window)
+- Subscriptions: monthly/annual recurring service packages (e.g., weekly cleaning)
+- Emergency Booking: 24/7 emergency service request with immediate response
+- Community Feed: read/post in local neighbourhood service community
+- Stories: view 24-hour provider stories
+- Reels Feed: swipeable short video feed of professionals in action
+- Neighbourhood Trust: see trust scores of professionals in your pin code
+- Saved Searches: save search filters and get alerts on new matches
+
+---
+
+## 🟠 Role 2 — Professional (Service Provider)
+
+### Who is a Professional?
+A Professional is a verified, KYC-cleared skilled service provider — a plumber, electrician, beautician, tutor, driver, chef, etc. They accept bookings from customers, manage their schedule, and build their reputation on the platform.
+
+### Professional Onboarding Flow
+
+```
+Welcome Screen → [Join as Professional]
+     ↓
+Professional Registration:
+  • Full Name, Phone, Email
+  • Service Category (primary + secondary)
+  • Years of Experience
+  • City / Service Area (radius in km)
+  • Password
+     ↓
+6-Step Professional Onboarding Wizard:
+  Step 1: Basic Info (name, bio, tagline)
+  Step 2: Skills & Services (add services with pricing per unit/hour/job)
+  Step 3: Portfolio (upload photos, videos of past work)
+  Step 4: Availability (set weekly schedule, block dates)
+  Step 5: KYC Documents (Aadhaar OTP / Company docs / PAN)
+  Step 6: Storefront Setup (theme, brand colour, cover photo)
+     ↓
+Admin reviews KYC → Approved → Profile goes live
+     ↓
+JWT token issued → Redirected to Pro Home Screen
+```
+
+### Professional — Full App Flow
+
+**1. Pro Home Screen (Dashboard Hub)**
+- Dark slate gradient hero card with today's earnings pill
+- KPI metric cards: today's bookings, this week's earnings, response rate, rating
+- Quick action buttons: View Schedule, Manage Quotes, AMC Visits, Analytics
+- Availability toggle (online/offline switch visible to customers)
+- Real-time incoming booking notifications
+
+**2. Managing Incoming Bookings**
+- Booking request arrives → push notification + in-app alert
+- Pro Home or Bookings List shows new `requested` booking
+- Taps booking → Booking Detail screen
+  - Views customer info, service required, date, address, budget
+  - Options: Accept with quoted price, Send counter-quote, Decline
+- On acceptance → status moves to `accepted`
+- Sets schedule date/time → status moves to `scheduled`
+- On arrival → taps "Start Job" → status `in_progress`
+- On completion → taps "Complete" → status `completed`, payment released from escrow
+
+**3. Schedule Management**
+- Schedule Management screen: weekly/monthly calendar view
+- Set available days and time slots
+- Block dates for holidays or off-days
+- View all scheduled bookings at a glance
+- Booking Calendar: rich calendar with colour-coded booking status
+
+**4. Earnings**
+- Earnings Screen: indigo hero banner with total earnings
+  - Weekly earnings bar chart (visual)
+  - Monthly earnings breakdown
+  - Per-booking payout history
+  - GST invoice downloads
+- Wallet screen: view payouts, request withdrawal to bank account
+
+**5. Storefront & Branding**
+- 8 storefront themes (Classic, Modern, Minimal, Bold, Elegant, Playful, Corporate, Warm)
+- Custom brand colours
+- Custom cover photo and profile photo
+- Service packages with bundled pricing
+- Media gallery (photos and videos of past work)
+- Hero experience with bio/tagline
+- Company section (for company/enterprise service providers)
+- Company KYC: GSTIN, CIN, Udyam, PAN 4-step verification wizard
+
+**6. Quote & Bid Management**
+- Quote/Bid Management screen: all open quote requests from customers
+- View quote request details (service needed, budget, location)
+- Submit competitive bid (price + timeline + message)
+- Customers see up to 3 bids and choose
+- Auto-assigned if no bid in 24 hours (based on category + proximity)
+
+**7. AMC (Annual Maintenance Contract) Visits**
+- AMC Visits screen: all scheduled recurring maintenance visits
+- View upcoming AMC appointments calendar
+- Mark visits as complete
+- Track subscription status per customer
+
+**8. Analytics & Growth**
+- Provider Analytics screen:
+  - Demand heatmap: which areas have highest service demand
+  - Benchmarking: compare earnings/rating vs. similar professionals
+  - Revenue chart: daily/weekly/monthly trend
+  - Booking conversion rate
+  - Response time stats
+  - Customer repeat rate
+- Growth module: growth tips, profile completeness score, ranking position
+
+**9. KYC Verification**
+- KYC Screen: upload/view verification documents
+  - Individual: Aadhaar (OTP eKYC via HyperVerge), PAN card
+  - Company: GSTIN, CIN, Udyam registration, PAN
+- KYC status badge shown on profile: Pending / Verified / Rejected
+- Re-upload on rejection with admin feedback
+
+**10. Community & Social**
+- Stories screen: post 24-hour promotional stories
+- Followers screen: view followers, follow customers/other pros
+- Community Feed: post tips, showcase work, ask questions
+- Reels: upload short-form video content of service demonstrations
+- Collections: appear in curated platform collections
+
+**11. Neighbourhood Trust**
+- Neighbourhood Trust screen: view your trust score in each pin code area
+- Multi-factor trust score (0–100): verification, experience, rating, repeat bookings, responsiveness, reliability
+- Bronze / Silver / Gold / Platinum trust tiers
+- Trust timeline: see how score changed over time
+
+**12. Settings & Profile**
+- Edit Professional Profile screen: update bio, skills, rates, languages spoken
+- Notification Preferences: toggle per-event notifications
+- Language settings: switch app language
+- Referral program: refer other professionals, earn commission
+
+---
+
+## 🟢 Role 3 — Agent (Field Representative)
+
+### Who is an Agent?
+An Agent is a field-level representative who physically onboards new professionals and customers in their geographic area. They earn commission on every booking made by people they have onboarded.
+
+### Agent Onboarding Flow
+
+```
+Welcome Screen → [Join as Agent]
+     ↓
+Agent Registration:
+  • Full Name, Phone, Email
+  • City / Service Area
+  • Password
+     ↓
+Agent Onboarding screen (web + mobile):
+  • Personal info & ID verification
+  • Bank details for payout
+  • Training acknowledgment
+     ↓
+Admin approves agent
+     ↓
+Agent Home Screen (role-specific dashboard)
+```
+
+### Agent — Full App Flow
+
+**1. Agent Home Screen**
+- Personalized dashboard showing:
+  - Total professionals onboarded
+  - Total customers onboarded
+  - Commission earned this month
+  - Pending approvals
+  - Leaderboard rank
+
+**2. Onboarding Professionals**
+- Agent uses mobile app to capture:
+  - Professional's basic details (name, phone, skills, city)
+  - Documents (Aadhaar / PAN photo)
+  - Availability info
+- Submits for admin KYC review
+- Agent earns commission once professional completes first booking
+
+**3. Onboarding Customers**
+- Agent registers customers on their behalf:
+  - Name, phone, address, preferred services
+- Customer gets OTP to set own password
+- Agent earns referral credit per customer activated
+
+**4. Agent Wallet**
+- Agent Wallet screen: full earnings ledger
+  - Per-referral commission breakdown
+  - Pending vs. settled payouts
+  - Bank transfer history
+  - Razorpay linked account for payouts
+
+**5. Agent Leaderboard**
+- Agent Leaderboard screen: ranked agents by:
+  - Professionals onboarded
+  - Customers onboarded
+  - Total GMV generated
+  - Monthly commission
+- Top agents featured on the platform
+- Gamification: badges, streak rewards, milestone bonuses
+
+---
+
+## 🔴 Role 4 — Admin (Platform Operator)
+
+### Who is an Admin?
+The Admin has full platform control. They manage KYC approvals, disputes, content moderation, category management, featured slot assignments, A/B experiments, and all user accounts.
+
+### Admin Access
+
+**Web Admin Panel (Frontend: `/admin/*` routes)**
+- Admin Login: separate admin login page with 2FA
+- Admin Dashboard: real-time revenue chart + WebSocket live booking feed
+- Admin Users screen: view/search/edit/ban all users
+- Admin KYC screen: review and approve/reject professional KYC submissions
+- Admin Disputes screen: arbitrate customer-professional disputes
+- Admin Complaints screen: handle reported content and users
+- Admin Featured Slots screen: assign/remove premium storefront slots
+- Admin Countries screen: manage supported countries and currencies
+- Admin Analytics: platform-wide metrics, user growth, GMV, category breakdowns
+- Admin Category Requests: review and approve new service categories
+- Admin A/B Experiments: create and monitor split tests
+- Admin Waitlist: manage waitlisted cities/categories
+
+**Mobile Admin Screens**
+- Admin Dashboard Screen (mobile): revenue chart + live WebSocket booking feed
+- Admin Users Screen (mobile): search, view, edit, ban users
+- Admin KYC Screen (mobile): approve/reject KYC in the field
+- Admin Disputes Screen (mobile): view and resolve disputes
+- Admin Complaints Screen (mobile): moderate reported content
+- Admin Featured Slots Screen (mobile): manage premium placement
+
+### Admin — Full App Flow
+
+**1. KYC Queue**
+- New professional submits KYC → appears in Admin KYC queue
+- Admin views submitted documents, selfie, Aadhaar data
+- Actions: Approve (profile goes live) | Reject (with reason, professional notified) | Request Re-submission
+
+**2. Dispute Resolution**
+- Dispute created by customer or professional → appears in Admin Disputes
+- Admin views booking details, dispute reason, evidence photos
+- Contacts both parties via in-app messaging
+- Actions: Side with customer (refund) | Side with professional (release payment) | Partial refund | Escalate
+
+**3. Fraud & Safety**
+- Fraud Prevention dashboard: flagged accounts, velocity alerts, suspicious transactions
+- One-click account suspension
+- Permanent ban with reason logged
+- IP-level rate limiting override
+
+**4. Content Moderation**
+- Review reported community posts, reels, stories
+- Remove violating content
+- Issue warnings to accounts
+- Content Moderation Policy enforcement (6 legal pages)
+
+**5. Platform Analytics**
+- Real-time GMV, bookings, new users, cancellation rate
+- City-wise and category-wise heatmaps
+- Provider demand prediction charts
+- Alert rules (Prometheus/Alertmanager): Slack + PagerDuty notifications on anomalies
+
+**6. Featured Slots & Promotions**
+- Admin Featured Slots: assign premium homepage placement to top professionals
+- A/B experiments: test different homepage layouts, pricing displays, CTA text
+- Promotions API: create/manage banner promotions by city, category, date range
+
+---
+
+## 📱 Mobile App — Complete Screen-by-Screen Reference
+
+The SkillConnect mobile app is built in **Flutter 3.8** targeting Android and iOS. It is **offline-first** with local SQLite caching, supports **9 Indian languages**, and has **Play Store-level UI** with gradient designs.
+
+### 🔑 Authentication Screens
+
+#### 1. Splash Screen (`/splash`)
+- **Purpose**: App entry point, shown for ~2 seconds on launch
+- **Design**: Full-screen gradient with SkillConnect logo + animated loading indicator
+- **Logic**: Checks SharedPreferences for `onboarding_complete` flag and JWT token
+  - First-time user → Onboarding Intro
+  - Returning logged-out user → Welcome Screen
+  - Returning logged-in user → Home Screen (customer/pro/admin/agent by role)
+
+#### 2. Onboarding Intro Screen (`/onboarding`)
+- **Purpose**: First-run tutorial, shown only once per device
+- **Design**: Per-page full-screen gradient + illustration circle (3 pages)
+- **Pages**:
+  1. "Find trusted professionals near you" — value prop for customers
+  2. "Grow your business" — value prop for professionals
+  3. "Safe, verified, and backed by SkillConnect" — trust message
+- **Actions**: Next, Skip, Get Started → marks onboarding complete in SharedPreferences
+
+#### 3. Welcome Screen (`/login`)
+- **Purpose**: Role-selection + login/signup entry point
+- **Design**: Gradient hero banner with white card overlaid
+- **Options**:
+  - "I need a service" (Customer) → Customer Login or Register
+  - "I offer a service" (Professional) → Professional Login or Register
+  - "I'm an Agent" → Agent Login
+  - "Admin Login" (hidden link at bottom)
+- **Social Login**: Google Sign-In button (OAuth flow)
+
+#### 4. Register Screen (`/register`)
+- **Purpose**: New user registration for all roles
+- **Fields**: Name, Phone, Email, Password, Confirm Password, Role selection
+- **Validation**: Phone format (Indian 10-digit), password strength, email format
+- **OTP**: Phone OTP verification step before account creation
+- **Post-register**: JWT issued, redirected to onboarding wizard (pro) or home (customer)
+
+#### 5. Login Screen (`/login` — role-specific)
+- **Purpose**: Returning user authentication
+- **Design**: Gradient hero + white login card
+- **Fields**: Phone or Email, Password
+- **Features**: Remember Me, Forgot Password (OTP reset), Face ID / Fingerprint (biometrics)
+- **Error states**: Wrong password, account suspended, account not verified
+
+---
+
+### 🏠 Home / Main Navigation Screens
+
+#### 6. Home Screen (`/home`) — Consumer
+- **Purpose**: Consumer's main hub and super-app entry point
+- **Design**: Blue gradient header with personalized greeting + avatar (like Grab/Gojek)
+- **Header**: "Good morning, [Name]" + city selector + notification bell
+- **Availability toggle**: Turn on/off for professionals
+- **Quick-action tiles (8 animated gradient tiles with scale-on-tap)**:
+  - 🚚 Delivery, 🚗 MyRide, 🍔 Food, 🛒 Groceries, 🛍️ Shopping, 🔧 Services, 💼 Job, 💳 Wallet
+- **Flash Deals Carousel**: horizontal scrollable promotional cards
+- **Promotions Banner**: city+category-specific promo banners (API-driven)
+- **BottomAppBar + Orange FAB**: FAB opens Services quick-book; bottom bar for Home/Search/Bookings/Wallet/Profile
+- **Navigation**: BottomNavigationBar with 5 tabs
+
+#### 7. Pro Home Screen (`/pro-home`) — Professional
+- **Purpose**: Professional's operational hub
+- **Design**: Dark slate gradient hero + today-earnings pill at top
+- **Hero section**: Total earnings today (₹ live), quick status (online/offline toggle)
+- **KPI metric cards (2×2 grid)**:
+  - Today's Bookings, Week's Earnings, My Rating, Response Rate
+- **Gradient quick-action buttons**:
+  - New Quote Requests, My Schedule, AMC Visits, Provider Analytics
+- **Live feed**: Incoming booking notifications appear as banners
+
+#### 8. Agent Home Screen (`/agent-home`) — Agent
+- **Purpose**: Agent's performance and onboarding hub
+- **Sections**: Earnings summary, onboarded count (pros + customers), leaderboard rank, quick actions (Add Professional, Add Customer, View Wallet)
+
+#### 9. Admin Dashboard Screen (`/admin/dashboard`) — Admin
+- **Purpose**: Platform operations centre
+- **Sections**:
+  - Revenue chart (interactive line graph, daily/weekly/monthly toggle)
+  - Live WebSocket booking feed (real-time new bookings scroll)
+  - KPI cards: Total GMV, New Users Today, Active Bookings, Open Disputes
+  - Quick navigation to sub-modules
+
+#### 10. Dashboard Screen (`/dashboard`) — Consumer
+- **Purpose**: Consumer's personal stats and activity overview
+- **Design**: Hero gradient avatar card at top, 2-column gradient stat tiles
+- **Stat tiles**: Total bookings, Amount spent, Saved professionals, Reviews given
+- **Sections**: Active bookings (inline), Customer insights, Quick actions (Re-book, Add to Favorites)
+
+#### 11. Service Hub Screen
+- **Purpose**: Super-category home linking to Delivery, Rides, Food, Groceries, Shopping, Services verticals
+
+---
+
+### 🔍 Search & Discovery Screens
+
+#### 12. Search Screen (`/search`)
+- **Purpose**: Full-featured professional and service discovery
+- **Design**: Search bar at top, filters row, results grid
+- **Features**:
+  - Full-text search (name, skill, service, category)
+  - Voice search (regional language recognition: EN/HI/TE + 6 more)
+  - Real-time search debounce (300ms)
+  - Trending / New / Top-Rated / Responsive filter chips
+  - Distance slider (1–50 km)
+  - Price range filter
+  - Gender filter
+  - Verified-only toggle
+  - Category filter chips
+
+#### 13. Map Search Screen (`/search/map`)
+- **Purpose**: Geospatial professional discovery
+- **Map**: Leaflet / OpenStreetMap with professional location pins
+- **Interaction**: Tap pin → mini profile card with "Book Now" CTA
+- **Toggle**: List view ↔ Map view switch
+
+#### 14. Instant Quote Screen (`/quote`)
+- **Purpose**: Get 3 competing bids from professionals within 48 hours
+- **Flow**: Describe service needed → set budget → submit → 3 professionals bid → customer picks best
+
+#### 15. Categories Screen (`/categories`)
+- **Purpose**: Browse all 50+ service categories
+- **Design**: 2×3 grid of category cards with icons and names
+- **Categories**: Plumbing, Electrical, Cleaning, Beauty & Wellness, Tutoring, Appliance Repair, Carpentry, Painting, AC Service, Pest Control, Moving & Packing, Laundry, Photography, Personal Training, Driving, Cooking, Gardening, Security, IT Support, and 30+ more
+
+#### 16. Category Detail Screen (`/categories/:id`)
+- **Purpose**: Browse professionals within a category
+- **Sections**:
+  - Category hero banner
+  - Service chips (sub-category filters)
+  - Professional list/grid with ratings, price, distance, trust badge
+  - Sort: Nearest, Highest Rated, Price Low-High, Most Reviewed
+
+---
+
+### 📅 Booking Screens
+
+#### 17. Bookings List Screen (`/bookings`)
+- **Purpose**: All customer or professional bookings in one place
+- **Design**: WhatsApp-style status chips (requested, accepted, in_progress, completed, disputed)
+- **Filters**: Status tabs (Active, Completed, Cancelled, Disputed)
+- **Items**: Each booking shows professional/customer name, service, date, amount, status chip
+
+#### 18. Booking Detail Screen (`/booking/:id`)
+- **Purpose**: Full booking information and action centre
+- **Sections**:
+  - Status timeline (step indicator: Requested → Accepted → Scheduled → In Progress → Completed)
+  - Professional info card (with tap-to-call)
+  - Service details (name, price, duration)
+  - Date & time
+  - Address with map pin
+  - Payment summary (amount, GST, platform fee)
+  - Invoice download (GST-compliant PDF)
+  - Action buttons (contextual by status and role):
+    - Customer: Cancel, Accept Quote, Raise Dispute, Leave Review, Re-book
+    - Professional: Accept, Quote, Start, Complete, Raise Dispute
+
+#### 19. Booking Calendar Screen (`/schedule/calendar`)
+- **Purpose**: Calendar view of all bookings for professionals
+- **Design**: Monthly/weekly calendar with colour-coded booking dots
+- **Interaction**: Tap date → see bookings for that day
+
+#### 20. Re-book Sheet (Bottom Sheet)
+- **Purpose**: Quick re-booking of a past service
+- **Pre-fills**: Professional, service, last address
+- **User selects**: New date/time → Confirm
+
+#### 21. Service History Screen
+- **Purpose**: Consumer's completed service log with receipt history
+
+---
+
+### 💬 Messaging Screens
+
+#### 22. Threads Screen (`/messages`)
+- **Purpose**: All active message threads (customers and professionals)
+- **Design**: Gradient AppBar + WhatsApp-style thread tiles
+- **Items**: Contact avatar, name, last message preview, timestamp, unread count badge
+
+#### 23. Chat Screen (`/messages/:id`)
+- **Purpose**: Real-time 1:1 messaging between customer and professional
+- **Design**: Gradient AppBar + gradient message bubbles (sent = indigo, received = white)
+- **Features**:
+  - Real-time delivery via WebSocket
+  - Image sharing (tap to upload/view full-screen)
+  - Read receipts (single/double tick)
+  - Booking context card (pinned at top of relevant chat)
+  - Voice message recording
+
+---
+
+### 💳 Payment Screens
+
+#### 24. Payment Screen (`/payment`)
+- **Purpose**: Complete payment for a booking
+- **Methods**: UPI, Card (Razorpay), Net Banking, Wallet balance, COD (Cash on Delivery)
+- **EMI**: Available for amounts ≥ ₹3,000 with plans: 3/6/9/12/18/24 months
+- **Escrow**: Payment held in escrow until job completion (dispute-aware release)
+- **Flow**: Order summary → Select method → Razorpay SDK → Payment confirmed
+
+#### 25. Wallet Screen (`/wallet`)
+- **Purpose**: SkillConnect in-app wallet management
+- **Design**: Play Store-level gradient hero with wallet balance
+- **Sections**:
+  - Current balance (large display)
+  - Add funds (Razorpay)
+  - Transaction history (credit/debit with timestamps)
+  - Cashback & rewards earned
+  - Bank transfer (professionals/agents)
+
+---
+
+### 📍 Tracking Screen
+
+#### 26. Live Tracking Screen (`/tracking/:bookingId`)
+- **Purpose**: Real-time professional location tracking during active booking
+- **Map**: Full-screen OpenStreetMap with professional's live GPS pin (WebSocket-updated every 5 seconds)
+- **Info panel**: Professional name, ETA, booking status
+- **Actions**: Call professional, Message professional, Cancel booking (if pre-start)
+
+---
+
+### ⭐ Reviews Screens
+
+#### 27. Write Review Screen (`/review/write`)
+- **Purpose**: Post-service rating and review submission
+- **Fields**: Star rating (1–5 taps), text review, photo upload (up to 5 photos)
+- **Validation**: Minimum 10-character review
+- **Timing**: Only available after booking status = `completed`
+
+#### 28. Post-Service Rating Screen
+- **Purpose**: Quick post-service rating prompt (bottom sheet shown automatically after completion)
+- **Quick rating**: 5 stars + single-tap submit
+
+---
+
+### 🔔 Notification Screens
+
+#### 29. Notifications Screen (`/notifications`)
+- **Purpose**: Unified inbox for all platform notifications
+- **Types**: New booking, booking accepted, payment received, review received, dispute update, KYC status, promotional offers
+- **Actions**: Mark as read, Delete, Tap to navigate to relevant screen
+
+#### 30. Notification Preferences Screen (`/notifications/preferences`)
+- **Purpose**: Granular notification control
+- **Toggles per event type**:
+  - Push notifications (FCM)
+  - SMS notifications (MSG91)
+  - Email notifications (SendGrid)
+- **Events**: Booking updates, Payment alerts, Promotional offers, Community activity, System alerts
+
+---
+
+### 👤 Profile Screens
+
+#### 31. Professional Profile Screen (`/professional/:id`)
+- **Purpose**: Public-facing professional storefront / profile page
+- **Sections**:
+  - Cover photo + profile photo + verified badge
+  - Name, tagline, category, city
+  - Trust badge tier (Bronze/Silver/Gold/Platinum)
+  - Rating stars + review count
+  - Services offered (cards with price per unit)
+  - Portfolio gallery (photos + videos)
+  - Reviews (sorted: Newest / Highest rated / Most helpful)
+  - "Book Now" sticky CTA button
+  - "Save to Favorites" heart button
+  - Follow / Unfollow button
+  - Share profile button
+
+#### 32. Edit Professional Profile Screen
+- **Purpose**: Professional edits their own profile
+- **Editable fields**: Name, bio, tagline, skills, languages spoken, years of experience, hourly rate, service radius, portfolio photos/videos, cover photo
+
+---
+
+### ⚙️ Settings Screen
+
+#### 33. Settings Screen (`/settings`)
+- **Sections**:
+  - Account (name, phone, email, avatar, password change)
+  - Language (EN / HI / TE / KN / ML / TA / BN / MR / GU)
+  - Dark Mode toggle
+  - Privacy (data export, delete account)
+  - Legal (ToS, Privacy Policy, Refund Policy, Cookie Policy)
+  - Help & Support
+  - App Version info
+  - Logout
+
+---
+
+### 🔐 KYC Screen
+
+#### 34. KYC Screen (`/kyc`)
+- **Purpose**: Document verification submission
+- **Individual flow**: Upload Aadhaar (OTP via HyperVerge for eKYC), PAN card front
+- **Company flow**: GSTIN, CIN, Udyam number, PAN — 4-step wizard with live validation
+- **Status display**: Pending / Under Review / Verified (green badge) / Rejected (with reason)
+- **Re-upload**: If rejected, shows admin feedback and re-upload button
+
+---
+
+### �� Subscription & Marketplace Screens
+
+#### 35. Subscriptions Screen (`/subscriptions`)
+- **Purpose**: Manage recurring service subscriptions
+- **Items**: Active subscriptions with professional name, service, next visit date, billing amount
+- **Actions**:
+  - Pause subscription (vacation mode)
+  - Replace professional (auto-assigns substitute)
+  - Cancel subscription
+  - Download invoice
+
+#### 36. Marketplace Screen (`/marketplace`)
+- **Purpose**: Browse and purchase project-based service bundles (one-time packages)
+- **Items**: Project milestones with progress bar
+- **Actions**: Accept bid, Pay milestone, Mark complete, Raise dispute
+
+---
+
+### ⭐ Favorites Screen
+
+#### 37. Favorites Screen (`/favorites`)
+- **Purpose**: Saved/bookmarked professionals
+- **Items**: Professional card with photo, name, rating, category
+- **Actions**: Tap to view profile, Un-save, Quick-book
+
+---
+
+### 📦 Collections Screen
+
+#### 38. Collections Screen (`/collections`)
+- **Purpose**: Curated thematic lists of professionals
+- **Examples**: "Top Electricians in Hyderabad", "Verified AC Technicians", "Best Tutors Near You"
+- **Items**: Collection card with title, count, thumbnail grid
+- **Interaction**: Tap to browse professionals within the collection
+
+---
+
+### 🏘️ Community & Social Screens
+
+#### 39. Community Screen (`/community`)
+- **Purpose**: Hyperlocal community hub for service-related discussions
+- **Feed**: Posts by professionals and customers in your city/neighbourhood
+- **Post types**: Tips, service showcase, questions, recommendations
+- **Actions**: Like, Comment, Share, Report
+
+#### 40. Community Feed Screen
+- **Purpose**: Scrollable community feed with real-time updates
+- **Design**: Card-based feed with author avatar, post content, engagement metrics
+
+#### 41. Stories Screen (`/stories`)
+- **Purpose**: 24-hour ephemeral stories by professionals
+- **Design**: Instagram-style story circles at the top of feed
+- **View**: Full-screen with progress bar, auto-advance after 5 seconds
+
+#### 42. Followers Screen (`/followers`)
+- **Purpose**: View who you follow and who follows you
+- **Tabs**: Following, Followers
+- **Items**: User/professional cards with follow/unfollow button
+
+#### 43. Loyalty Screen (`/loyalty`)
+- **Purpose**: Gamification points and rewards hub
+- **Sections**:
+  - Total points balance
+  - Points history (earned/redeemed)
+  - Available rewards (discount vouchers, cashback)
+  - Badges earned (milestones)
+  - Referral points
+
+---
+
+### 🔧 Service-Specific Screens
+
+#### 44. Emergency Booking Screen (`/emergency`)
+- **Purpose**: 24/7 urgent service request
+- **Flow**: Select emergency type (Plumbing burst, Power failure, etc.) → confirm location → immediate assignment to nearest available professional
+- **SLA**: Platform guarantees response within 15–60 minutes
+- **Payment**: Upfront via wallet/card required for emergency bookings
+
+#### 45. Dispute Screen (`/dispute/:bookingId`)
+- **Purpose**: Raise and track a booking dispute
+- **Fields**: Reason (dropdown), Description (text), Evidence photos (up to 5)
+- **Status**: Open → Under Review → Resolved (Refunded / Released)
+- **Timeline**: Shows dispute status changes with timestamps
+
+#### 46. Warranty Screen (`/warranty`)
+- **Purpose**: View active service warranties
+- **Items**: Warranty card with service name, professional, date of service, warranty period (30/60/90 days), expiry date
+- **Claim**: "File Warranty Claim" button (opens dispute flow with warranty context)
+
+#### 47. Referrals Screen (`/referrals`)
+- **Purpose**: Referral program hub
+- **Your code**: Unique alphanumeric referral code with share button
+- **Stats**: Total referrals, Pending, Completed, Total earned
+- **Rewards**: Cash credited to wallet on referral completion
+
+---
+
+### 🗺️ Quote & AMC Screens
+
+#### 48. Quote Bid Management Screen (`/quotes`)
+- **Purpose**: Professionals manage incoming quote requests
+- **Items**: Quote request card with service description, customer budget, location, deadline
+- **Actions**: Submit bid (price + message + ETA), Decline, View accepted bids
+
+#### 49. AMC Visits Screen (`/amc`)
+- **Purpose**: Annual Maintenance Contract visit management
+- **Items**: AMC subscription card with customer name, service, next visit date, contract period
+- **Calendar**: Monthly visit schedule view
+- **Actions**: Mark visit complete, Reschedule, Add notes
+
+---
+
+### 🏘️ Society & Neighbourhood Screens
+
+#### 50. Society Screen (`/society`)
+- **Purpose**: Housing society / gated community service management hub
+- **Roles within society**: Admin (full control), Manager (partial), Member (booking only)
+- **Features**: Society-wide bookings, bulk service requests, shared professional pool, common area maintenance
+
+#### 51. Neighbourhood Trust Screen (`/trust`)
+- **Purpose**: View local professional trust landscape
+- **Map**: Pin-code area view with trust score heatmap
+- **Professional cards**: Sorted by trust score in your neighbourhood
+- **Score breakdown**: Verification weight, experience weight, rating weight, repeat booking weight
+
+---
+
+### 📊 Professional Analytics Screen
+
+#### 52. Provider Analytics Screen (`/analytics`)
+- **Purpose**: Business intelligence for professionals
+- **Sections**:
+  - Demand heatmap: areas of highest booking demand (by pin code)
+  - Earnings benchmarking: your earnings vs. similar professionals in your city
+  - Monthly revenue chart (bar + line overlay)
+  - Booking conversion rate funnel
+  - Customer repeat rate
+  - Response time stats
+
+---
+
+### 🏠 Professional Onboarding Screen
+
+#### 53. Professional Onboarding Screen (`/onboarding/professional`)
+- **Purpose**: 6-step wizard for new professionals to complete their profile
+- **Steps** (progress indicator shown):
+  1. Basic Info (name, bio, tagline, profile photo)
+  2. Skills & Services (category, sub-skills, per-service pricing)
+  3. Portfolio (upload photos/videos, add captions)
+  4. Availability (day-of-week toggles, time range sliders)
+  5. KYC (Aadhaar OTP, PAN upload)
+  6. Storefront Setup (choose theme, brand colour, cover photo)
+
+---
+
+### 🤝 Agent Screens
+
+#### 54. Agent Onboarding Screen (`/agent/onboard`)
+- **Purpose**: Agent registration and training acknowledgment
+- **Steps**: Personal info → Bank details → Training modules → Submit
+
+#### 55. Agent Wallet Screen (`/agent/wallet`)
+- **Purpose**: Commission earnings and payout management for agents
+- **Sections**: Total earned, pending, settled, per-referral breakdown, bank transfer history
+
+#### 56. Agent Leaderboard Screen (`/agent/leaderboard`)
+- **Purpose**: Competitive ranking of all agents
+- **Metrics**: Pros onboarded, Customers onboarded, GMV generated, Commission earned
+- **Visual**: Podium for top 3, ranked list for rest
+
+---
+
+### 🛒 Super-App Vertical Screens
+
+#### 57. Delivery Screen (`/delivery`)
+- **Purpose**: On-demand delivery service booking
+- **Flow**: Select item type → pickup address → drop address → schedule or immediate → confirm
+
+#### 58. My Ride Screen (`/rides`)
+- **Purpose**: Ride booking (cab/auto)
+- **Flow**: Enter destination → select vehicle type → see fare → confirm → track driver
+
+#### 59. Food Screen (`/food`)
+- **Purpose**: Food ordering from local restaurants/home chefs
+- **Flow**: Browse nearby restaurants → add items to cart → checkout → track delivery
+
+#### 60. Groceries Screen (`/groceries`)
+- **Purpose**: Online grocery ordering
+- **Flow**: Browse categories or search items → add to cart → select delivery slot → checkout
+
+#### 61. Shopping Screen (`/shopping`)
+- **Purpose**: Local store online shopping
+- **Flow**: Browse local shops → select products → cart → checkout → delivery or pickup
+
+#### 62. Jobs Screen (`/jobs`)
+- **Purpose**: Job board for gig workers and permanent positions
+- **Flow**: Browse job listings → apply → track application → accept offer
+
+#### 63. Scan Screen (`/scan`)
+- **Purpose**: QR code scanner for booking confirmation, professional ID verification, and loyalty card scanning
+
+#### 64. Schedule Management Screen (`/schedule`)
+- **Purpose**: Professional's comprehensive availability management
+- **Features**: Weekly grid with time slots, bulk edit, public holiday blocking, vacation mode, sync to Google Calendar
+
+#### 65. Family Account Screen (`/family`)
+- **Purpose**: Manage services for multiple family members
+- **Features**: Add family members (name, phone, relationship), book on behalf, consolidated billing
+
+---
+
+### 📋 Admin-Specific Mobile Screens
+
+#### 66. Admin Users Screen (`/admin/users`)
+- **Purpose**: User management (search, view, edit, ban, delete)
+- **Filters**: By role, city, status (active/suspended/banned), KYC status
+- **Actions**: View profile, Send notification, Suspend, Permanently ban, Export data
+
+#### 67. Admin KYC Screen (`/admin/kyc`)
+- **Purpose**: KYC document review queue
+- **Items**: Pending verification cards with professional name, document type, submitted date
+- **Actions**: View document full-screen, Approve, Reject (with reason text), Request re-submission
+
+#### 68. Admin Disputes Screen (`/admin/disputes`)
+- **Purpose**: Dispute arbitration queue
+- **Items**: Dispute card with booking ID, parties, dispute reason, amount, days open
+- **Actions**: View full booking + dispute details, contact parties, Issue ruling (refund/release/partial)
+
+#### 69. Admin Complaints Screen (`/admin/complaints`)
+- **Purpose**: Content moderation queue (reported posts, reels, users)
+- **Items**: Complaint card with reported content, reporter, reason
+- **Actions**: Remove content, Warn user, Suspend account, Dismiss complaint
+
+#### 70. Admin Featured Slots Screen (`/admin/featured`)
+- **Purpose**: Premium placement management
+- **Items**: Featured slot grid (homepage/category page placements)
+- **Actions**: Assign professional to slot, Set duration, Remove from slot, Charge featured fee
+
+---
+
+## 🌐 Web App — Complete Page-by-Page Reference
+
+The SkillConnect web frontend is a **React 19 + Vite** application with **react-helmet-async** SEO, **JSON-LD** schema markup, **i18n** via react-i18next, and **code-split** lazy-loaded routes.
+
+### 🔑 Authentication Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **RoleLogin** | `/login` | Role selector (Customer/Professional/Agent/Admin) |
+| **CustomerLogin** | `/customer/login` | Customer email/phone + password login |
+| **CustomerRegister** | `/register` | Customer self-registration |
+| **ProfessionalLogin** | `/professional/login` | Professional login |
+| **ProfessionalRegister** | `/professional/register` | Professional self-registration |
+| **AgentLogin** | `/agent/login` | Agent login |
+| **AgentRegister** | `/agent/register` | Agent self-registration |
+| **AdminLogin** | `/admin/login` | Admin 2FA login |
+
+### 🏠 Home & Discovery Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Home** | `/` | Super-app home: hero, category grid, promotions, flash deals, neighbourhood trust, reels preview, how-it-works |
+| **Categories** | `/categories` | All 50+ service categories grid |
+| **CategoryDetail** | `/categories/:id` | Professionals in a category + service-level filters |
+| **SearchResults** | `/search` | Full-text search results with filters, sorting, map toggle |
+| **ProfessionalProfile** | `/professional/:id` | Full professional storefront page |
+| **CompareProf** | `/compare` | Side-by-side comparison of up to 3 professionals |
+| **ProviderLeaderboard** | `/leaderboard` | Top-rated professionals platform-wide |
+| **CityServiceLanding** | `/services/:city/:service` | SEO landing page for city+service combos (e.g. /services/hyderabad/plumber) |
+| **ReelsFeed** | `/reels` | Full-screen vertical swipeable video feed |
+| **SavedSearches** | `/searches` | Saved search filters with alert management |
+
+### 📅 Booking Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Bookings** | `/bookings` | All bookings list with status filters |
+| **BookingDetail** | `/bookings/:id` | Full booking detail, timeline, invoice |
+| **CreateBooking** | `/book/:professionalId` | Booking creation wizard (service → date → address → payment) |
+| **Schedule** | `/schedule` | Professional's schedule calendar management |
+| **QuoteRequest** | `/quotes/new` | 3-bid quote request form for customers |
+| **JobTracker** | `/jobs/:id/track` | Real-time job progress tracking (map + status) |
+
+### 💬 Communication Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Messages** | `/messages` | All message threads list |
+| **Chat** | `/messages/:id` | 1:1 real-time chat |
+
+### 💳 Payment Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Payment** | `/payment/:bookingId` | Razorpay payment checkout |
+| **PaymentHistory** | `/payment/history` | All payment transactions |
+| **Earnings** | `/earnings` | Professional earnings dashboard |
+| **Referrals** | `/referrals` | Referral program hub |
+| **Subscriptions** | `/subscriptions` | Recurring subscription management |
+| **Marketplace** | `/marketplace` | Project marketplace + milestone management |
+| **Warranties** | `/warranties` | Active warranties list |
+| **Disputes** | `/disputes` | Dispute filing and tracking |
+
+### 👤 Profile & Account Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Dashboard** | `/dashboard` | Consumer or professional personal dashboard |
+| **ProfessionalOnboarding** | `/onboarding/professional` | 6-step professional registration wizard |
+| **StorefrontSetup** | `/storefront/setup` | Storefront theme and branding configuration |
+| **Storefront** | `/storefront` | Professional's public web storefront |
+| **HomeProfile** | `/home-profile` | Professional's home service profile (service mode, pricing type) |
+| **CompanyKYC** | `/kyc/company` | Company KYC 4-step wizard (GSTIN/CIN/Udyam/PAN) |
+| **Settings** | `/settings` | Account settings, language, privacy |
+| **Favorites** | `/favorites` | Saved professionals |
+| **Collections** | `/collections` | Curated professional collections |
+| **Notifications** | `/notifications` | Notification inbox |
+| **Analytics** | `/analytics` | Professional analytics dashboard |
+| **FamilyAccount** | `/family` | Family member management |
+| **SocietyDashboard** | `/society` | Housing society service management |
+
+### 📱 Social & Community Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **CommunityFeed** | `/community` | Hyperlocal community discussion feed |
+| **Emergency** | `/emergency` | 24/7 emergency service request |
+
+### 🤝 Agent Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **AgentDashboard** | `/agent/dashboard` | Agent performance + earnings overview |
+| **AgentOnboard** | `/agent/onboard` | Agent registration and training |
+| **AgentWallet** | `/agent/wallet` | Agent commission and payout ledger |
+| **AgentLeaderboard** | `/agent/leaderboard` | Ranked agent competition board |
+
+### 🔴 Admin Pages (`/admin/*`)
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **Admin Dashboard** | `/admin` | Revenue chart, live booking feed, KPI cards |
+| **Admin Users** | `/admin/users` | Search/view/edit/ban all users |
+| **Admin Professionals** | `/admin/professionals` | Manage professional listings |
+| **Admin KYC** | `/admin/kyc` | KYC document review and approval queue |
+| **Admin Disputes** | `/admin/disputes` | Dispute arbitration dashboard |
+| **Admin Complaints** | `/admin/complaints` | Content moderation queue |
+| **Admin Categories** | `/admin/categories` | Category management (add/edit/remove) |
+| **Admin Featured Slots** | `/admin/featured` | Premium placement assignment |
+| **Admin Countries** | `/admin/countries` | Supported countries and currency management |
+| **Admin Analytics** | `/admin/analytics` | Platform-wide metrics and reporting |
+
+### 📄 Legal Pages
+
+| Page | Route | Description |
+|:---|:---|:---|
+| **TermsOfService** | `/terms` | Full terms of service |
+| **PrivacyPolicy** | `/privacy` | Privacy policy (DPDPA compliant) |
+| **RefundPolicy** | `/refund` | Refund and cancellation policy |
+| **CookiePolicy** | `/cookies` | Cookie usage disclosure |
+| **ProfessionalTerms** | `/professional/terms` | Professional-specific terms |
+| **ContentModerationPolicy** | `/moderation` | Community content rules |
+| **Legal** | `/legal` | Legal hub with links to all policies |
+
+---
+
+## 🔄 Complete App Flow — End-to-End Scenarios
+
+### Scenario A: Customer Books a Plumber
+
+```
+1. Customer opens app → Splash (2s) → Home Screen
+2. Taps "Services" quick-action tile
+3. Selects "Plumbing" category
+4. Sees professionals sorted by distance
+5. Filters: Rating ≥ 4.5, Distance ≤ 5 km, Verified only
+6. Taps "Ravi's Plumbing" (Gold trust badge, ₹350/hr)
+7. Views storefront: 4.8 stars, 143 reviews, portfolio photos, "Leaking pipe" and "Tap installation" services
+8. Taps "Book Now"
+9. Selects "Leaking Pipe Repair" service (₹350/hr, estimated 1 hour)
+10. Picks tomorrow 10:00 AM
+11. Confirms address (auto-filled from GPS)
+12. Selects UPI payment
+13. Taps "Confirm Booking"
+14. Booking created → Status: requested → Push notification sent to Ravi
+15. Ravi accepts → Status: accepted → Customer gets push/SMS notification
+16. Ravi sets 10:00 AM → Status: scheduled
+17. Day of service: Customer gets reminder notification at 9:00 AM
+18. Ravi taps "Start Job" → Status: in_progress
+19. Customer sees live tracking map with Ravi's location
+20. Ravi completes job → taps "Complete" → Status: completed
+21. Razorpay payment released from escrow → Ravi paid ₹350
+22. Customer shown "Rate Ravi" bottom sheet
+23. Customer gives 5 stars + writes "Excellent work!"
+24. Review published → Ravi's trust score updates
+25. Warranty created: 30-day workmanship warranty
+```
+
+### Scenario B: Professional Receives and Fulfils a Booking
+
+```
+1. Pro Home Screen → Notification banner: "New booking from Priya"
+2. Taps notification → Booking Detail screen
+3. Views: Leaking Pipe Repair, tomorrow 10 AM, 12 Raj Nagar Colony
+4. Taps "Accept" → Booking status: accepted
+5. Schedule updates automatically
+6. Day of booking: Route to customer address (external maps app)
+7. Taps "Start Job" on booking detail → Status: in_progress
+8. Customer's tracking screen shows Ravi's live location
+9. Job complete → taps "Complete"
+10. Earnings screen updates: +₹350 added to this week's total
+11. Push notification: "Payment received ₹350"
+12. Wallet shows ₹350 credit (ready for withdrawal)
+```
+
+### Scenario C: Admin Resolves a Dispute
+
+```
+1. Customer raises dispute: "Electrician didn't fix the issue"
+2. Admin Disputes screen shows new dispute (orange badge)
+3. Admin views: Booking #4521, Dispute reason: "Work incomplete", Evidence: 2 photos
+4. Admin messages both parties via in-app chat
+5. Professional responds: "Issue was outside scope"
+6. Admin reviews photos + booking notes
+7. Admin issues partial refund: ₹200 of ₹500
+8. Customer gets ₹200 refund to wallet
+9. Professional gets ₹300 released from escrow
+10. Dispute status: Resolved
+```
+
+### Scenario D: Agent Onboards a Professional
+
+```
+1. Agent opens Agent Home → taps "Add Professional"
+2. Enters professional's details on mobile form
+3. Captures Aadhaar photo, PAN photo on-site
+4. Submits → Professional account created, KYC queued
+5. Admin approves KYC → Professional gets OTP to set password
+6. Professional makes first booking (customer books them)
+7. Agent earns commission: ₹150 credited to Agent Wallet
+8. Agent leaderboard rank updates
+```
+
+### Scenario E: Instant Quote / 3-Bid Flow
+
+```
+1. Customer goes to Search → taps "Get Quotes"
+2. Describes job: "Paint 2BHK apartment, 900 sq ft"
+3. Sets budget: ₹8,000 – ₹15,000
+4. Submits → 3 professional painters receive notification
+5. Painter 1 bids ₹10,000 (3-day turnaround)
+6. Painter 2 bids ₹9,500 (4-day, includes primer)
+7. Painter 3 bids ₹11,000 (2-day, premium paint)
+8. Customer views bid comparison with trust badges
+9. Customer selects Painter 2 → booking created → standard flow begins
+```
+
+### Scenario F: Subscription Recurring Service
+
+```
+1. Customer browses Subscriptions page
+2. Selects "Weekly Home Cleaning" package (₹1,200/month)
+3. Picks preferred day: Saturday 9 AM
+4. Selects professional: "CleanPro Services"
+5. Pays ₹1,200 via Razorpay subscription (auto-debit monthly)
+6. Every Saturday: booking auto-created → professional notified
+7. If professional unavailable: vacation mode → system assigns substitute
+8. Customer can pause/cancel anytime from Subscriptions screen
+```
+
+---
+
+## 🗺️ Navigation Flow Diagrams
+
+### Mobile App Navigation Tree (Consumer)
+
+```
+Splash Screen
+    └── Onboarding Intro (first launch only)
+           └── Welcome Screen
+                  ├── Register Screen
+                  └── Login Screen
+                         └── Home Screen (Consumer) ←─────────────────────────┐
+                                ├── Search Screen                              │
+                                │       └── Map Search Screen                  │
+                                │       └── Professional Profile Screen        │
+                                │               └── Create Booking / Book Now  │
+                                ├── Categories Screen                           │
+                                │       └── Category Detail Screen             │
+                                │               └── Professional Profile       │
+                                ├── Bookings List Screen                       │
+                                │       └── Booking Detail Screen              │
+                                │               ├── Live Tracking Screen       │
+                                │               ├── Chat Screen                │
+                                │               ├── Payment Screen             │
+                                │               ├── Dispute Screen             │
+                                │               └── Write Review Screen        │
+                                ├── Threads Screen                             │
+                                │       └── Chat Screen                        │
+                                ├── Wallet Screen                              │
+                                ├── Notifications Screen                       │
+                                │       └── Notification Preferences           │
+                                ├── Dashboard Screen                           │
+                                ├── Favorites Screen                           │
+                                │       └── Professional Profile ──────────────┘
+                                ├── Collections Screen
+                                ├── Subscriptions Screen
+                                ├── Marketplace Screen
+                                ├── Community Screen
+                                │       └── Community Feed Screen
+                                ├── Stories Screen
+                                ├── Emergency Booking Screen
+                                ├── Referrals Screen
+                                ├── Loyalty Screen
+                                ├── Family Account Screen
+                                ├── Society Screen
+                                ├── Neighbourhood Trust Screen
+                                ├── Warranty Screen
+                                └── Settings Screen
+                                        └── KYC Screen
+```
+
+### Mobile App Navigation Tree (Professional)
+
+```
+Welcome Screen → Login → Pro Home Screen
+    ├── Bookings List Screen
+    │       └── Booking Detail Screen
+    │               ├── Quote/Counter-quote
+    │               ├── Start / Complete Job
+    │               └── Raise Dispute
+    ├── Quote Bid Management Screen
+    ├── Schedule Management Screen
+    │       └── Booking Calendar Screen
+    ├── Earnings Screen
+    │       └── Wallet Screen
+    ├── Provider Analytics Screen
+    ├── AMC Visits Screen
+    ├── Threads Screen → Chat Screen
+    ├── Storefront (Professional Profile Screen)
+    │       └── Edit Professional Profile Screen
+    ├── Neighbourhood Trust Screen
+    ├── Notifications Screen
+    ├── KYC Screen
+    └── Settings Screen
+```
+
+### Mobile App Navigation Tree (Admin)
+
+```
+Welcome Screen → Admin Login → Admin Dashboard Screen
+    ├── Admin Users Screen
+    ├── Admin KYC Screen
+    ├── Admin Disputes Screen
+    ├── Admin Complaints Screen
+    └── Admin Featured Slots Screen
+```
+
+### Mobile App Navigation Tree (Agent)
+
+```
+Welcome Screen → Agent Login → Agent Home Screen
+    ├── Agent Onboarding Screen (registration only)
+    ├── Agent Wallet Screen
+    └── Agent Leaderboard Screen
+```
+
+---
+
+## 🔔 Notification Events — Complete Reference
+
+Every action in SkillConnect triggers one or more notifications across channels (Push/SMS/Email). Here is the complete notification event map:
+
+| Event | Recipient | Push | SMS | Email |
+|:---|:---|:---:|:---:|:---:|
+| New booking request | Professional | ✅ | ✅ | ✅ |
+| Booking accepted | Customer | ✅ | ✅ | ✅ |
+| Booking scheduled | Customer | ✅ | ✅ | — |
+| Job started | Customer | ✅ | ✅ | — |
+| Job completed | Customer | ✅ | ✅ | ✅ |
+| Payment received | Professional | ✅ | ✅ | ✅ |
+| Booking cancelled | Both | ✅ | ✅ | ✅ |
+| New review received | Professional | ✅ | — | ✅ |
+| Dispute raised | Both + Admin | ✅ | ✅ | ✅ |
+| Dispute resolved | Both | ✅ | ✅ | ✅ |
+| KYC approved | Professional | ✅ | ✅ | ✅ |
+| KYC rejected | Professional | ✅ | ✅ | ✅ |
+| New message | Both | ✅ | — | — |
+| Quote bid received | Customer | ✅ | ✅ | — |
+| Referral completed | Referrer | ✅ | — | ✅ |
+| Subscription renewal | Customer | ✅ | ✅ | ✅ |
+| Subscription payment failed | Customer | ✅ | ✅ | ✅ |
+| Abandoned onboarding reminder | Professional | ✅ | ✅ | ✅ |
+| Review reminder (post-service) | Customer | ✅ | ✅ | — |
+| Promotional offer | Customer | ✅ | — | ✅ |
+| Warranty expiry warning | Customer | ✅ | ✅ | ✅ |
+| Emergency booking assigned | Professional | ✅ | ✅ | — |
+
+---
+
+## 💡 Key Business Rules & Constraints
+
+### Booking Rules
+- Only **Customers** can create bookings (role-checked server-side)
+- Booking date cannot be more than **90 days** in the future
+- Booking amount capped at **₹10,00,000** per booking
+- Quote window: professional must respond within **48 hours** or booking auto-expires
+- Pre-start cancellation: free by either party
+- Post-start cancellation: triggers dispute flow
+- Review window: opens only after booking status = `completed`, closes after 14 days
+
+### Payment Rules
+- All payments go through **Razorpay escrow** (held until completion or dispute resolution)
+- EMI available only for bookings **≥ ₹3,000** with 6 duration options (3/6/9/12/18/24 months)
+- COD: professional confirms cash received in-app; triggers release without Razorpay
+- Platform fee: percentage deducted before professional payout (configurable per category)
+- GST: automatically calculated and included in invoice
+
+### Trust Score Rules
+- Trust score (0–100) is recalculated after every booking completion
+- Factors: KYC verification (weight: 20), years of experience (15), avg rating (25), repeat customers (20), response rate (10), reliability/no-shows (10)
+- Trust tiers: Bronze (0–39), Silver (40–59), Gold (60–79), Platinum (80–100)
+- Trust timeline logged for auditability
+
+### Rate Limiting
+- Authentication: 5 attempts per 15 minutes per IP
+- API calls: 100 req/min per authenticated user, 20 req/min unauthenticated
+- File upload: max 10 MB per file, video uploads allowed
+- Emergency bookings: max 3 per 24 hours per customer
+
+### Security Rules
+- All passwords: minimum 8 chars, must include uppercase, lowercase, digit, special char
+- JWT tokens expire in 7 days; refresh token valid 30 days
+- Aadhaar numbers masked in logs (last 4 digits only)
+- PII fields (phone, email, Aadhaar) never logged in raw form
+- All uploads scanned for path traversal (whitelist of allowed file types)
+- SQL injection: all queries parameterized (no string interpolation)
+- XSS: input sanitized via sanitize.js middleware on all POST/PUT endpoints
+
+---
+
+*Last updated: May 2026 — Added: User Roles Reference, Screen-by-Screen Reference (Mobile + Web), End-to-End App Flow Scenarios, Notification Events Map, Business Rules & Constraints*
