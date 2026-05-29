@@ -87,6 +87,13 @@ exports.compareProfessionals = async (req, res, next) => {
 
     const professionalIds = ids.split(',').slice(0, 5); // Max 5 at a time
 
+    // Validate each id is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invalidIds = professionalIds.filter(id => !uuidRegex.test(id.trim()));
+    if (invalidIds.length > 0) {
+      return res.status(400).json({ success: false, message: 'Invalid professional id(s) — must be UUIDs' });
+    }
+
     const r = await query(
       `SELECT p.id, p.provider_type, p.company_name, p.team_size, p.experience_years,
               p.pricing_estimate, p.availability_status, p.total_bookings, p.repeat_client_rate,
@@ -245,7 +252,10 @@ exports.createQuickReply = async (req, res, next) => {
 exports.deleteQuickReply = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await query('DELETE FROM quick_replies WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    const r = await query('DELETE FROM quick_replies WHERE id = $1 AND user_id = $2 RETURNING id', [id, req.user.id]);
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Quick reply not found' });
+    }
     res.json({ success: true, message: 'Deleted' });
   } catch (e) { next(e); }
 };
@@ -377,7 +387,10 @@ exports.updateAddress = async (req, res, next) => {
 exports.deleteAddress = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await query('DELETE FROM user_addresses WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    const r = await query('DELETE FROM user_addresses WHERE id = $1 AND user_id = $2 RETURNING id', [id, req.user.id]);
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Address not found' });
+    }
     res.json({ success: true, message: 'Deleted' });
   } catch (e) { next(e); }
 };

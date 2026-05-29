@@ -619,7 +619,7 @@ async function sendReviewReminders() {
         body: `Please rate your experience for "${booking.title}". Your feedback helps other customers!`,
         link_url: `/bookings/${booking.id}?review=1`,
         related_id: booking.id,
-      }).catch(() => {});
+      }).catch((err) => { logger.warn({ err, bookingId: booking.id }, 'CRON: review_reminder — notify failed'); });
     }
     if (bookings.rows.length > 0) {
       logger.info({ count: bookings.rows.length }, 'CRON: review_reminder — sent review prompts');
@@ -651,7 +651,7 @@ async function remindAbandonedOnboarding() {
         body: `Hi ${pro.name || 'there'}! You're almost set up on SkillConnect. Complete your KYC and start earning today.`,
         link_url: '/onboarding/professional',
         related_id: pro.user_id,
-      }).catch(() => {});
+      }).catch((err) => { logger.warn({ err, userId: pro.user_id }, 'CRON: abandoned_onboarding — notify failed'); });;
     }
     if (abandoned.rows.length > 0) {
       logger.info({ count: abandoned.rows.length }, 'CRON: abandoned_onboarding — reminders sent');

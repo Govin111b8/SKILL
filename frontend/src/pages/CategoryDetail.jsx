@@ -83,7 +83,7 @@ function CategoryDetail() {
           const match = flat.find(c => c.name.toLowerCase() === category.name.toLowerCase());
           if (match) setApiCategory(match);
         })
-        .catch(() => {}); // Optional enrichment — fail silently
+        .catch((err) => { console.warn('[CategoryDetail] service enrichment failed:', err); }); // Optional enrichment — fail silently
     }
   }, [category?.name]);
 

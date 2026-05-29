@@ -31,7 +31,7 @@ function AgentDashboard() {
         try {
           const zRes = await get('/agents/zones');
           setZones((zRes.data || zRes).zones || []);
-        } catch (_) {}
+        } catch (zErr) { console.warn('[AgentDashboard] failed to load zones:', zErr); }
       } else {
         setError(err.data?.error || err.message || 'Failed to load dashboard');
       }

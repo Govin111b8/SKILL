@@ -30,8 +30,22 @@ exports.createRecurring = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid frequency' });
     }
 
-    // Calculate next booking date
+    // Calculate next booking date based on frequency
     const nextDate = new Date(start_date);
+    if (frequency === 'weekly' && day_of_week != null) {
+      // Advance to the next matching day_of_week (0=Sun … 6=Sat)
+      const diff = (day_of_week - nextDate.getDay() + 7) % 7;
+      if (diff > 0) nextDate.setDate(nextDate.getDate() + diff);
+    } else if (frequency === 'biweekly' && day_of_week != null) {
+      const diff = (day_of_week - nextDate.getDay() + 7) % 7;
+      if (diff > 0) nextDate.setDate(nextDate.getDate() + diff);
+    } else if (frequency === 'monthly' && day_of_month != null) {
+      nextDate.setDate(day_of_month);
+      if (nextDate < new Date(start_date)) nextDate.setMonth(nextDate.getMonth() + 1);
+    } else if (frequency === 'quarterly' && day_of_month != null) {
+      nextDate.setDate(day_of_month);
+      if (nextDate < new Date(start_date)) nextDate.setMonth(nextDate.getMonth() + 3);
+    }
 
     const r = await query(
       `INSERT INTO recurring_bookings
@@ -86,6 +100,11 @@ exports.updateRecurring = async (req, res, next) => {
     );
     if (!existing.rows.length) {
       return res.status(404).json({ success: false, message: 'Recurring booking not found' });
+    }
+
+    const validStatuses = ['active', 'paused', 'cancelled', 'completed'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
     const updates = [];
