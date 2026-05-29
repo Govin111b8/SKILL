@@ -164,11 +164,11 @@ function Home() {
     get('/discover/new?limit=8').then(res => setNewPros(res.data || [])).catch((err) => console.error('New pros error:', err.message));
     get('/discover/responsive?limit=8').then(res => setResponsive(res.data || [])).catch((err) => console.error('Responsive error:', err.message));
     // Promotional banners
-    get('/banners').then(res => setBanners(res.data || [])).catch(() => {});
+    get('/banners').then(res => setBanners(res.data || [])).catch((err) => console.error('Banners error:', err.message));
     // Quick rebooking (recent completed bookings)
     if (isAuthenticated) {
-      get('/bookings?status=completed&limit=5').then(res => setQuickRebook((res.data || []).slice(0, 4))).catch(() => {});
-      get('/discover/trending?limit=4').then(res => setRecommendations(res.data || [])).catch(() => {});
+      get('/bookings?status=completed&limit=5').then(res => setQuickRebook((res.data || []).slice(0, 4))).catch((err) => console.error('Quick rebook error:', err.message));
+      get('/discover/trending?limit=4').then(res => setRecommendations(res.data || [])).catch((err) => console.error('Recommendations error:', err.message));
     }
   }, [isAuthenticated]);
 

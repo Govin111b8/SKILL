@@ -125,8 +125,10 @@ exports.compareProfessionals = async (req, res, next) => {
 
 exports.getPaymentHistory = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, from, to, status } = req.query;
-    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const { from, to, status } = req.query;
+    const offset = (pageNum - 1) * limitNum;
     const params = [req.user.id];
     let where = '(pm.payer_id = $1 OR pm.payee_id = $1)';
     let idx = 2;
@@ -135,7 +137,10 @@ exports.getPaymentHistory = async (req, res, next) => {
     if (to) { where += ` AND pm.created_at <= $${idx++}`; params.push(to); }
     if (status) { where += ` AND pm.status = $${idx++}`; params.push(status); }
 
-    params.push(parseInt(limit) || 20);
+    // Capture count params before appending LIMIT/OFFSET
+    const countParams = [...params];
+
+    params.push(limitNum);
     params.push(offset);
 
     const r = await query(
@@ -151,17 +156,17 @@ exports.getPaymentHistory = async (req, res, next) => {
 
     const countR = await query(
       `SELECT COUNT(*) FROM payments pm WHERE ${where}`,
-      params.slice(0, idx - 3)
+      countParams
     );
 
     res.json({
       success: true,
       data: r.rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total: parseInt(countR.rows[0].count),
-        total_pages: Math.ceil(parseInt(countR.rows[0].count) / parseInt(limit))
+        total_pages: Math.ceil(parseInt(countR.rows[0].count) / limitNum)
       }
     });
   } catch (e) { next(e); }
