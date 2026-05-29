@@ -74,64 +74,158 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
     final user = auth.user;
     final cs = Theme.of(context).colorScheme;
 
+    final proName = (user?['name'] ?? 'Pro').toString().split(' ').first;
+    final todayEarnings = (_dash?['earnings']?['last7d'] as num?)?.toDouble() ?? 0;
+    final availStatus = _dash?['profile']?['availability_status']?.toString() ?? 'offline';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.handyman_rounded, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 10),
-          const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
-        ]),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
-          const SizedBox(width: 40), // space for floating notification bell
-        ],
-      ),
+      backgroundColor: const Color(0xFFF1F5F9),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Greeting header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  colors: [Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFF6366F1)],
+        color: const Color(0xFF6366F1),
+        child: CustomScrollView(
+          slivers: [
+            // ── Dark gradient hero header ─────────────────────────────
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E1B4B)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(28),
+                    bottomRight: Radius.circular(28),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withAlpha(80), blurRadius: 24, offset: const Offset(0, 10))],
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top bar
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.handyman_rounded,
+                                      color: Colors.white, size: 18),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('SkillConnect Pro',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 16)),
+                              ],
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+                              onPressed: _load,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Greeting + status badge
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Good ${_greeting()} 👋',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(160), fontSize: 13),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    proName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _availBadge(availStatus),
+                                ],
+                              ),
+                            ),
+                            // Today earnings pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(12),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                    color: Colors.white.withAlpha(20)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Today',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(140),
+                                        fontSize: 10),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₹${_fmt(todayEarnings)}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Earned',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(140),
+                                        fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Good ${_greeting()}, ${(user?['name'] ?? 'Pro').toString().split(' ').first}!',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    const Text('Your business today', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 12),
-                    _availBadge(_dash?['profile']?['availability_status']?.toString() ?? 'offline'),
-                  ]),
-                ),
-                _earningsPill(),
-              ]),
             ),
 
-            const SizedBox(height: 20),
-
-            if (_loading)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
-            else if (_error != null)
-              _errorCard()
-            else ...[
+            // ── Body content ─────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+              if (_loading)
+                const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+              else if (_error != null)
+                _errorCard()
+              else ...[
 
               // Availability toggle
               const AvailabilityToggle(),
@@ -230,7 +324,12 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
               // Profile completeness nudge
               if ((_dash?['completeness'] ?? 0) < 80)
                 _completenessNudge(context, cs, (_dash?['completeness'] ?? 0) as int),
+              const SizedBox(height: 32),
             ],
+          ],
+        ),
+      ),
+    ),
           ],
         ),
       ),

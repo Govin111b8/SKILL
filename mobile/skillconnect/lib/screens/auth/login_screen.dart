@@ -134,275 +134,325 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_gradient.first.withAlpha(20), Colors.white],
-            stops: const [0, 0.3],
+      backgroundColor: _gradient.last,
+      body: Stack(
+        children: [
+          // Full gradient background
+          Container(
+            width: double.infinity,
+            height: size.height * 0.45,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_gradient.first, _gradient.last],
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 16),
 
-                  // Back button + role badge
-                  Row(children: [
-                    InkWell(
-                      onTap: () => Navigator.pop(context),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
+          // Decorative circles on gradient background
+          Positioned(
+            top: -40,
+            right: -40,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(18),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 60,
+            right: 60,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(18),
+              ),
+            ),
+          ),
+
+          // Main scrollable content
+          SafeArea(
+            child: Column(
+              children: [
+                // Top section — gradient area
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(30),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white.withAlpha(30),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: Colors.white.withAlpha(60)),
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(_roleIcon, size: 14, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text(
+                            _roleLabel,
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ]),
                       ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: _gradient),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(_roleIcon, size: 14, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          _roleLabel,
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                    ],
+                  ),
+                ),
+
+                // Logo + title
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(255),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 20, offset: const Offset(0, 8))],
                         ),
-                      ]),
-                    ),
-                  ]),
-
-                  const SizedBox(height: 32),
-
-                  // Logo
-                  Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: _gradient),
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [BoxShadow(color: _gradient.first.withAlpha(60), blurRadius: 20, offset: const Offset(0, 8))],
+                        child: Icon(_logoIcon, size: 36, color: _gradient.first),
                       ),
-                      child: Icon(_logoIcon, size: 38, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _loginTitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _loginSubtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Error
-                  if (_error != null)
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.red.shade100),
-                      ),
-                      child: Row(children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade700, fontSize: 13))),
-                      ]),
-                    ),
-
-                  // Email
-                  TextFormField(
-                    controller: _emailCtl,
-                    decoration: const InputDecoration(
-                      hintText: 'Email address',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Password
-                  TextFormField(
-                    controller: _passwordCtl,
-                    decoration: InputDecoration(
-                      hintText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                    ),
-                    obscureText: _obscure,
-                    validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Sign In button
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _gradient.first,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
-                      onPressed: auth.loading ? null : _submit,
-                      child: auth.loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Text(
-                              _buttonLabel,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Demo credentials — prominent one-tap login button
-                  if (_hasDemoCredentials) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 56,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: _gradient.first.withAlpha(60), width: 2, style: BorderStyle.solid),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          backgroundColor: _gradient.first.withAlpha(12),
+                      const SizedBox(height: 14),
+                      Text(
+                        _loginTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
                         ),
-                        onPressed: auth.loading ? null : _demoLogin,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _loginSubtitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // White card slides up from bottom
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text('🚀 ', style: TextStyle(fontSize: 20)),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Try Demo — Instant $_roleLabel Login',
-                                  style: TextStyle(
-                                    color: _gradient.first,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                  ),
+                            // Error banner
+                            if (_error != null)
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                margin: const EdgeInsets.only(bottom: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: Colors.red.shade100),
                                 ),
-                                Text(
-                                  _isAgent ? 'agent@demo.com'
-                                    : _isPro ? 'pro1@demo.com'
-                                    : _isAdmin ? 'admin@demo.com'
-                                    : 'customer@demo.com',
-                                  style: TextStyle(
-                                    color: _gradient.first.withAlpha(150),
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                child: Row(children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade700, fontSize: 13))),
+                                ]),
+                              ),
+
+                            // Email
+                            _buildLabel('Email Address'),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _emailCtl,
+                              decoration: _inputDecor('Enter your email', Icons.email_outlined),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Password
+                            _buildLabel('Password'),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _passwordCtl,
+                              decoration: _inputDecor('Enter your password', Icons.lock_outlined).copyWith(
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: Colors.grey.shade400),
+                                  onPressed: () => setState(() => _obscure = !_obscure),
                                 ),
-                              ],
+                              ),
+                              obscureText: _obscure,
+                              validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
+                            ),
+                            const SizedBox(height: 28),
+
+                            // Sign In button
+                            _GradientButton(
+                              label: _buttonLabel,
+                              gradient: _gradient,
+                              loading: auth.loading,
+                              onTap: _submit,
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Demo button
+                            if (_hasDemoCredentials)
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: _gradient.first.withAlpha(80), width: 1.5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: auth.loading ? null : _demoLogin,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text('🚀', style: TextStyle(fontSize: 16)),
+                                    const SizedBox(width: 8),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Try Demo Login',
+                                          style: TextStyle(color: _gradient.first, fontWeight: FontWeight.w700, fontSize: 13),
+                                        ),
+                                        Text(
+                                          _isAgent ? 'agent@demo.com' : _isPro ? 'pro1@demo.com' : _isAdmin ? 'admin@demo.com' : 'customer@demo.com',
+                                          style: TextStyle(color: _gradient.first.withAlpha(150), fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            if (!_isAdmin) ...[
+                              const SizedBox(height: 20),
+                              Row(children: [
+                                Expanded(child: Divider(color: Colors.grey.shade200)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text('or', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                                ),
+                                Expanded(child: Divider(color: Colors.grey.shade200)),
+                              ]),
+                              const SizedBox(height: 16),
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: _gradient.first.withAlpha(80), width: 1.5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: () => Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => RegisterScreen(selectedRole: widget.selectedRole)),
+                                ),
+                                child: Text(
+                                  'Create $_roleLabel Account',
+                                  style: TextStyle(color: _gradient.first, fontWeight: FontWeight.w600, fontSize: 14),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 24),
+
+                            // What you get section
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: _gradient.first.withAlpha(8),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: _gradient.first.withAlpha(30)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'As a $_roleLabel, you get:',
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _gradient.first),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ..._featuresForRole(),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  Row(children: [
-                    Expanded(child: Divider(color: Colors.grey.shade200)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('or', style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
-                    ),
-                    Expanded(child: Divider(color: Colors.grey.shade200)),
-                  ]),
-
-                  const SizedBox(height: 20),
-
-                  // Register button (not shown for admin — admin accounts are created by existing admins)
-                  if (!_isAdmin)
-                    SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: _gradient.first.withAlpha(80), width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => RegisterScreen(selectedRole: widget.selectedRole)),
-                        ),
-                        child: Text(
-                          'Create $_roleLabel Account',
-                          style: TextStyle(
-                            color: _gradient.first,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // What you get section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade100),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'As a $_roleLabel, you get:',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                        const SizedBox(height: 10),
-                        ..._featuresForRole(),
-                      ],
-                    ),
                   ),
-                  const SizedBox(height: 32),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+
+  Widget _buildLabel(String text) => Text(
+        text,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+      );
+
+  InputDecoration _inputDecor(String hint, IconData icon) => InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        prefixIcon: Icon(icon, size: 20, color: Colors.grey.shade400),
+        filled: true,
+        fillColor: const Color(0xFFF9FAFB),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _gradient.first, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFEF4444)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+        ),
+      );
 
   List<Widget> _featuresForRole() {
     switch (widget.selectedRole) {
@@ -445,6 +495,45 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(width: 10),
         Expanded(child: Text(text, style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700))),
       ]),
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  final String label;
+  final List<Color> gradient;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  const _GradientButton({
+    required this.label,
+    required this.gradient,
+    required this.loading,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: loading ? null : onTap,
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: loading ? null : LinearGradient(colors: gradient),
+          color: loading ? Colors.grey.shade200 : null,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: loading
+              ? []
+              : [BoxShadow(color: gradient.first.withAlpha(80), blurRadius: 16, offset: const Offset(0, 6))],
+        ),
+        alignment: Alignment.center,
+        child: loading
+            ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey))
+            : Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+      ),
     );
   }
 }

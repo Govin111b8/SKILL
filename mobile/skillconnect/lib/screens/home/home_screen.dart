@@ -130,52 +130,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Greeting + Avatar row
+                        // ── Top bar: greeting + notification + avatar ──
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Greeting + availability toggle
-                                  Row(children: [
-                                    Text(
-                                      '${_getGreeting()} ${_getGreetingEmoji()}',
-                                      style: TextStyle(
-                                        color: Colors.white.withAlpha(200),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  Text(
+                                    '${_getGreeting()} ${_getGreetingEmoji()}',
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha(180),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'Available',
-                                      style: TextStyle(
-                                        color: Colors.white.withAlpha(200),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Transform.scale(
-                                      scale: 0.80,
-                                      child: Switch(
-                                        value: _available,
-                                        onChanged: _updatingAvailability ? null : _toggleAvailability,
-                                        activeColor: Colors.white,
-                                        activeTrackColor: AppColors.success,
-                                        inactiveThumbColor: Colors.white,
-                                        inactiveTrackColor: Colors.white.withAlpha(60),
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    ),
-                                  ]),
-                                  const SizedBox(height: 4),
+                                  ),
+                                  const SizedBox(height: 2),
                                   Text(
                                     userName,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 28,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: -0.5,
                                     ),
@@ -183,24 +159,178 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ],
                               ),
                             ),
+                            // Notification bell
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(20),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.notifications_rounded,
+                                      color: Colors.white, size: 22),
+                                ),
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: const Color(0xFF1B6EF3), width: 1.5),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 10),
                             // User Avatar
                             Container(
-                              width: 52,
-                              height: 52,
+                              width: 42,
+                              height: 42,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withAlpha(80), width: 3),
+                                border: Border.all(color: Colors.white.withAlpha(100), width: 2.5),
                                 gradient: const LinearGradient(colors: AppColors.primaryGradient),
                               ),
                               child: Center(
                                 child: Text(
                                   userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                                 ),
                               ),
                             ),
                           ],
                         ),
+
+                        const SizedBox(height: 16),
+
+                        // ── Location pill ──
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_rounded, color: Colors.white.withAlpha(200), size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Hyderabad, Telangana',
+                              style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withAlpha(160), size: 16),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Hero Search Bar ──
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/search'),
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(30),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 14),
+                                const Icon(Icons.search_rounded, color: Color(0xFF1B6EF3), size: 22),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Search for services, pros...',
+                                  style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  margin: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                        colors: [Color(0xFF1B6EF3), Color(0xFF4F46E5)]),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.tune_rounded, color: Colors.white, size: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Suggestion Pills ──
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _SuggestionPill(label: '🔧 Plumbing', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '⚡ Electrician', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '🏠 Cleaning', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '💇 Salon', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '🎓 Tutor', onTap: () {}),
+                            ],
+                          ),
+                        ),
+
+                        // ── Availability toggle (only for professionals) ──
+                        if (auth.isProfessional)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withAlpha(30)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: _available ? const Color(0xFF10B981) : Colors.grey,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _available ? 'You\'re available for bookings' : 'You\'re offline',
+                                    style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12, fontWeight: FontWeight.w500),
+                                  ),
+                                  const Spacer(),
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: Switch(
+                                      value: _available,
+                                      onChanged: _updatingAvailability ? null : _toggleAvailability,
+                                      activeColor: Colors.white,
+                                      activeTrackColor: AppColors.success,
+                                      inactiveThumbColor: Colors.white,
+                                      inactiveTrackColor: Colors.white.withAlpha(40),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -643,6 +773,41 @@ class _ErrorWidget extends StatelessWidget {
           label: const Text('Try again'),
         ),
       ]),
+    );
+  }
+}
+
+// ─── Suggestion Pill ─────────────────────────────────────────────────────────
+
+class _SuggestionPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SuggestionPill({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(20),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withAlpha(40)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withAlpha(220),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 }
