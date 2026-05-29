@@ -205,6 +205,94 @@ async function createTransfer(paymentId, { account, amount }) {
   });
 }
 
+
+/**
+ * Create a recurring billing plan
+ * @param {object} params - { period, interval, item, notes }
+ */
+async function createPlan({ period = 'monthly', interval = 1, item, notes = {} }) {
+  if (!KEY_ID || !KEY_SECRET) {
+    logger.warn('Razorpay keys not configured — returning simulated plan');
+    return {
+      id: `plan_sim_${Date.now()}`,
+      period,
+      interval,
+      item,
+      notes,
+      status: 'created',
+      simulated: true,
+    };
+  }
+
+  return apiRequest('POST', '/plans', {
+    period,
+    interval,
+    item,
+    notes,
+  });
+}
+
+/**
+ * Create a recurring subscription
+ * @param {object} params - { planId, totalCount, quantity, customerNotify, notes, startAt, expireBy }
+ */
+async function createSubscription({ planId, totalCount = 12, quantity = 1, customerNotify = 1, notes = {}, startAt, expireBy }) {
+  if (!KEY_ID || !KEY_SECRET) {
+    logger.warn('Razorpay keys not configured — returning simulated subscription');
+    return {
+      id: `sub_sim_${Date.now()}`,
+      plan_id: planId,
+      status: 'created',
+      total_count: totalCount,
+      notes,
+      simulated: true,
+    };
+  }
+
+  const payload = {
+    plan_id: planId,
+    total_count: totalCount,
+    quantity,
+    customer_notify: customerNotify,
+    notes,
+  };
+
+  if (startAt) payload.start_at = Math.floor(new Date(startAt).getTime() / 1000);
+  if (expireBy) payload.expire_by = Math.floor(new Date(expireBy).getTime() / 1000);
+
+  return apiRequest('POST', '/subscriptions', payload);
+}
+
+async function pauseSubscription(subscriptionId, pauseAt = 'now') {
+  if (!KEY_ID || !KEY_SECRET) {
+    return { id: subscriptionId, status: 'paused', pause_at: pauseAt, simulated: true };
+  }
+
+  return apiRequest('POST', `/subscriptions/${subscriptionId}/pause`, {
+    pause_at: pauseAt,
+  });
+}
+
+async function resumeSubscription(subscriptionId, resumeAt = 'now') {
+  if (!KEY_ID || !KEY_SECRET) {
+    return { id: subscriptionId, status: 'active', resume_at: resumeAt, simulated: true };
+  }
+
+  return apiRequest('POST', `/subscriptions/${subscriptionId}/resume`, {
+    resume_at: resumeAt,
+  });
+}
+
+async function cancelSubscription(subscriptionId, { cancelAtCycleEnd = false } = {}) {
+  if (!KEY_ID || !KEY_SECRET) {
+    return { id: subscriptionId, status: 'cancelled', cancel_at_cycle_end: cancelAtCycleEnd, simulated: true };
+  }
+
+  return apiRequest('POST', `/subscriptions/${subscriptionId}/cancel`, {
+    cancel_at_cycle_end: cancelAtCycleEnd,
+  });
+}
+
 module.exports = {
   createOrder,
   createEMIOrder,
@@ -214,5 +302,10 @@ module.exports = {
   initiateRefund,
   verifyWebhookSignature,
   createTransfer,
+  createPlan,
+  createSubscription,
+  pauseSubscription,
+  resumeSubscription,
+  cancelSubscription,
   KEY_ID, // Exported so frontend can use it for checkout
 };

@@ -31,7 +31,7 @@ import '../screens/referrals/referrals_screen.dart';
 import '../screens/subscriptions/subscriptions_screen.dart';
 import '../screens/marketplace/marketplace_screen.dart';
 import '../screens/collections/collections_screen.dart';
-import '../screens/community/community_feed_screen.dart';
+import '../screens/community/community_screen.dart';
 import '../screens/family/family_account_screen.dart';
 import '../screens/analytics/provider_analytics_screen.dart';
 import '../screens/social/followers_screen.dart';
@@ -175,7 +175,7 @@ class AppRouter {
         GoRoute(path: '/subscriptions', builder: (_, __) => const SubscriptionsScreen()),
         GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
         GoRoute(path: '/collections', builder: (_, __) => const CollectionsScreen()),
-        GoRoute(path: '/community', builder: (_, __) => const CommunityFeedScreen()),
+        GoRoute(path: '/community', builder: (_, __) => const CommunityScreen()),
         GoRoute(path: '/followers', builder: (_, __) => const FollowersScreen()),
         GoRoute(path: '/stories', builder: (_, state) => StoriesScreen(professionalId: state.uri.queryParameters['professionalId'] ?? '', storyId: state.uri.queryParameters['storyId'])),
         GoRoute(path: '/loyalty', builder: (_, __) => const LoyaltyScreen()),

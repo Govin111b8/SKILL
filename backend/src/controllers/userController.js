@@ -1,5 +1,6 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const { query } = require('../config/database');
+const { pool, query } = require('../config/database');
 
 const getProfile = async (req, res, next) => {
   try {
@@ -78,12 +79,51 @@ const changePassword = async (req, res, next) => {
 };
 
 const deleteAccount = async (req, res, next) => {
+  const client = await pool.connect();
   try {
     const userId = req.user.id;
-    await query('DELETE FROM users WHERE id = $1', [userId]);
-    res.status(200).json({ success: true, message: 'Account deleted successfully.' });
+    const deletedEmail = `deleted+${crypto.randomUUID()}@deleted.skillconnect.invalid`;
+    const deletedPhone = `deleted${Date.now().toString().slice(-10)}`;
+    const disabledPasswordHash = crypto.randomBytes(32).toString('hex');
+
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE users
+       SET name = 'Deleted User',
+           email = $2,
+           phone = $3,
+           password_hash = $4,
+           avatar_url = NULL,
+           location = NULL,
+           phone_verified = FALSE,
+           government_id_verified = FALSE,
+           selfie_verified = FALSE,
+           is_active = FALSE,
+           deleted_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id`,
+      [userId, deletedEmail, deletedPhone, disabledPasswordHash]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    try {
+      await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+    } catch (refreshErr) {
+      if (refreshErr.code !== '42P01') throw refreshErr;
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, message: 'Account anonymized successfully.' });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     next(error);
+  } finally {
+    client.release();
   }
 };
 

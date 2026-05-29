@@ -11,6 +11,98 @@ const razorpay = require('../services/razorpay');
 const gstInvoice = require('../services/gstInvoice');
 const emailService = require('../services/email');
 
+
+let subscriptionsMetadataColumn = null;
+
+function subscriptionStatusExpr(preferredStatus, fallbackStatus) {
+  return `CASE WHEN '${preferredStatus}' = ANY(enum_range(NULL::subscription_status)::text[]) THEN '${preferredStatus}'::subscription_status ELSE '${fallbackStatus}'::subscription_status END`;
+}
+
+function toIsoTimestamp(value) {
+  if (!value) return null;
+  if (typeof value === 'number') return new Date(value * 1000).toISOString();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+async function hasSubscriptionsMetadataColumn() {
+  if (subscriptionsMetadataColumn !== null) return subscriptionsMetadataColumn;
+  const result = await pool.query(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM information_schema.columns
+       WHERE table_name = 'subscriptions' AND column_name = 'metadata'
+     ) AS exists`
+  );
+  subscriptionsMetadataColumn = result.rows[0]?.exists === true;
+  return subscriptionsMetadataColumn;
+}
+
+async function findSubscriptionByRazorpayId(razorpaySubscriptionId) {
+  if (!razorpaySubscriptionId) return null;
+
+  if (await hasSubscriptionsMetadataColumn()) {
+    const result = await pool.query(
+      `SELECT * FROM subscriptions
+       WHERE metadata->>'razorpay_subscription_id' = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [razorpaySubscriptionId]
+    );
+    return result.rows[0] || null;
+  }
+
+  const fallback = await pool.query(
+    `SELECT * FROM subscriptions
+     WHERE payment_id = $1 OR razorpay_order_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [razorpaySubscriptionId]
+  );
+  return fallback.rows[0] || null;
+}
+
+async function updateSubscriptionRecord(subscriptionId, { statusExpr, endDate = null, paymentId = null, metadata = null }) {
+  const values = [subscriptionId, endDate, paymentId];
+
+  if (await hasSubscriptionsMetadataColumn()) {
+    values.push(JSON.stringify(metadata || {}));
+    return pool.query(
+      `UPDATE subscriptions
+       SET status = ${statusExpr},
+           end_date = COALESCE($2::timestamptz, end_date),
+           payment_id = COALESCE($3, payment_id),
+           metadata = COALESCE(metadata, '{}'::jsonb) || $4::jsonb,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      values
+    );
+  }
+
+  return pool.query(
+    `UPDATE subscriptions
+     SET status = ${statusExpr},
+         end_date = COALESCE($2::timestamptz, end_date),
+         payment_id = COALESCE($3, payment_id),
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    values
+  );
+}
+
+async function getProfessionalContact(professionalId) {
+  const result = await pool.query(
+    `SELECT u.name, u.email
+     FROM professionals p
+     JOIN users u ON u.id = p.user_id
+     WHERE p.id = $1`,
+    [professionalId]
+  );
+  return result.rows[0] || null;
+}
+
 // Razorpay sends raw body — we need to capture it before JSON parsing
 router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -167,6 +259,150 @@ router.post('/razorpay', express.raw({ type: 'application/json' }), async (req, 
            WHERE transaction_ref = $1`,
           [paymentId, JSON.stringify({ refund_id: refund.id, refunded_at: new Date().toISOString() })]
         );
+        break;
+      }
+
+
+      case 'subscription.charged': {
+        const subscription = payload.subscription?.entity || {};
+        const payment = payload.payment?.entity || {};
+        const currentEnd = toIsoTimestamp(subscription.current_end || subscription.charge_at || payment.created_at);
+        const subscriptionRecord = await findSubscriptionByRazorpayId(subscription.id);
+
+        if (!subscriptionRecord) {
+          logger.warn({ razorpaySubscriptionId: subscription.id }, 'Subscription charged webhook could not find local subscription');
+          break;
+        }
+
+        await updateSubscriptionRecord(subscriptionRecord.id, {
+          statusExpr: subscriptionStatusExpr('active', 'active'),
+          endDate: currentEnd,
+          paymentId: payment.id || subscriptionRecord.payment_id,
+          metadata: {
+            razorpay_subscription_id: subscription.id,
+            last_charge_payment_id: payment.id || null,
+            charged_at: new Date().toISOString(),
+            current_start: toIsoTimestamp(subscription.current_start),
+            current_end: currentEnd,
+          },
+        });
+
+        await pool.query(
+          `UPDATE professionals SET
+             subscription_plan = $1::subscription_plan,
+             subscription_expires_at = COALESCE($2::timestamptz, subscription_expires_at),
+             updated_at = NOW()
+           WHERE id = $3`,
+          [subscriptionRecord.plan, currentEnd, subscriptionRecord.professional_id]
+        );
+
+        const professional = await getProfessionalContact(subscriptionRecord.professional_id);
+        if (professional?.email) {
+          await emailService.sendEmail({
+            to: professional.email,
+            subject: 'SkillConnect subscription payment received',
+            text: `Hi ${professional.name},
+
+Your SkillConnect ${subscriptionRecord.plan} subscription payment was received successfully. Your plan remains active.${currentEnd ? `
+
+Active until: ${currentEnd}` : ''}
+
+The SkillConnect Team`,
+          }).catch((err) => logger.error({ err, professionalId: subscriptionRecord.professional_id }, 'Failed to send subscription charged email'));
+        }
+        break;
+      }
+
+      case 'subscription.pending': {
+        const subscription = payload.subscription?.entity || {};
+        const payment = payload.payment?.entity || {};
+        const subscriptionRecord = await findSubscriptionByRazorpayId(subscription.id);
+
+        if (!subscriptionRecord) {
+          logger.warn({ razorpaySubscriptionId: subscription.id }, 'Subscription pending webhook could not find local subscription');
+          break;
+        }
+
+        await updateSubscriptionRecord(subscriptionRecord.id, {
+          statusExpr: subscriptionStatusExpr('past_due', 'grace'),
+          paymentId: payment.id || subscriptionRecord.payment_id,
+          metadata: {
+            razorpay_subscription_id: subscription.id,
+            payment_status: 'pending',
+            last_payment_error: payment.error_description || subscription.auth_attempts || null,
+            pending_at: new Date().toISOString(),
+          },
+        });
+
+        const professional = await getProfessionalContact(subscriptionRecord.professional_id);
+        if (professional?.email) {
+          await emailService.sendEmail({
+            to: professional.email,
+            subject: 'SkillConnect subscription payment pending',
+            text: `Hi ${professional.name},
+
+We could not complete the latest payment for your SkillConnect ${subscriptionRecord.plan} subscription. Please update your payment method to avoid interruption to your plan.
+
+The SkillConnect Team`,
+          }).catch((err) => logger.error({ err, professionalId: subscriptionRecord.professional_id }, 'Failed to send subscription pending email'));
+        }
+        break;
+      }
+
+      case 'subscription.halted':
+      case 'subscription.cancelled':
+      case 'subscription.completed': {
+        const subscription = payload.subscription?.entity || {};
+        const subscriptionRecord = await findSubscriptionByRazorpayId(subscription.id);
+
+        if (!subscriptionRecord) {
+          logger.warn({ razorpaySubscriptionId: subscription.id, eventName }, 'Subscription status webhook could not find local subscription');
+          break;
+        }
+
+        const nextStatus = eventName === 'subscription.completed' ? 'expired' : 'cancelled';
+        const endedAt = toIsoTimestamp(subscription.ended_at || subscription.current_end || Date.now() / 1000);
+
+        await updateSubscriptionRecord(subscriptionRecord.id, {
+          statusExpr: subscriptionStatusExpr(nextStatus, nextStatus),
+          endDate: endedAt,
+          metadata: {
+            razorpay_subscription_id: subscription.id,
+            lifecycle_event: eventName,
+            ended_at: endedAt,
+          },
+        });
+
+        await pool.query(
+          `UPDATE professionals SET
+             subscription_plan = 'basic'::subscription_plan,
+             subscription_expires_at = COALESCE($1::timestamptz, NOW()),
+             updated_at = NOW()
+           WHERE id = $2`,
+          [endedAt, subscriptionRecord.professional_id]
+        );
+
+        if (eventName === 'subscription.cancelled' || eventName === 'subscription.completed') {
+          const professional = await getProfessionalContact(subscriptionRecord.professional_id);
+          if (professional?.email) {
+            const subject = eventName === 'subscription.cancelled'
+              ? 'SkillConnect subscription cancelled'
+              : 'SkillConnect subscription completed';
+            const body = eventName === 'subscription.cancelled'
+              ? `Hi ${professional.name},
+
+Your SkillConnect ${subscriptionRecord.plan} subscription has been cancelled. You can re-activate a plan anytime from your dashboard.
+
+The SkillConnect Team`
+              : `Hi ${professional.name},
+
+Your SkillConnect ${subscriptionRecord.plan} subscription has reached the end of its billing cycle and is now complete. Renew any time to restore premium benefits.
+
+The SkillConnect Team`;
+            await emailService.sendEmail({ to: professional.email, subject, text: body })
+              .catch((err) => logger.error({ err, professionalId: subscriptionRecord.professional_id }, 'Failed to send subscription lifecycle email'));
+          }
+        }
         break;
       }
 

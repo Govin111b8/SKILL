@@ -376,7 +376,10 @@ function startCronJobs() {
   cron.schedule('30 23 * * 0', syncProviderCRM, { timezone: 'UTC' });
   cron.schedule('0 2 * * *', aggregateDemandSignals, { timezone: 'UTC' });
 
-  logger.info('All 17 cron jobs scheduled');
+  // Deactivated-account cleanup — hard delete anonymized accounts after 90 days
+  cron.schedule('0 3 * * *', cleanDeactivatedAccounts, { timezone: 'UTC' });
+
+  logger.info('All 18 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -566,6 +569,28 @@ async function aggregateDemandSignals() {
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 17. Deactivated Account Cleanup — daily 03:00 UTC
+// Hard deletes anonymized accounts after 90 days for GDPR retention compliance
+// ─────────────────────────────────────────────────────────────────────────────
+async function cleanDeactivatedAccounts() {
+  logger.info('CRON: deactivated_account_cleanup — start');
+  try {
+    const result = await query(`
+      DELETE FROM users
+      WHERE deleted_at IS NOT NULL
+        AND deleted_at < NOW() - INTERVAL '90 days'
+      RETURNING id
+    `);
+    logger.info({ deleted: result.rowCount }, 'CRON: deactivated_account_cleanup — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: deactivated_account_cleanup failed');
+    }
+  }
+}
+
 module.exports = {
   startCronJobs,
   recalcReputationScores,
@@ -584,6 +609,7 @@ module.exports = {
   advanceSubscriptionOccurrences,
   syncProviderCRM,
   aggregateDemandSignals,
+  cleanDeactivatedAccounts,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
