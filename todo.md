@@ -14,15 +14,16 @@
 |---|-----|------|--------|
 | B1 | **`getPaymentHistory` count query sends wrong params** — `params.slice(0, idx - 3)` excludes too many/few params from the count query when 1 or 2 filters (from/to/status) are active, causing PostgreSQL `$N not bound` errors | `backend/src/controllers/sprint11Controller.js:152` | ✅ Fixed |
 | B2 | **`getLoyaltyHistory` unvalidated pagination** — `page` and `limit` from `req.query` are strings; `offset = (page - 1) * limit` relies on JS coercion; passing `"abc"` produces `NaN` which breaks Postgres | `backend/src/controllers/referralController.js:174-175` | ✅ Fixed |
-| B3 | **`updateRecurring` allows any `status` value** — no validation against allowed status enum values; arbitrary strings can be written to DB | `backend/src/controllers/recurringBookingController.js:95` | ⬜ Open |
-| B4 | **`deleteAddress` no 404 response** — silently succeeds even if the address doesn't exist or doesn't belong to the user | `backend/src/controllers/sprint11Controller.js:372-378` | ⬜ Open |
-| B5 | **`deleteQuickReply` no 404 response** — same issue as B4 | `backend/src/controllers/sprint11Controller.js:240-245` | ⬜ Open |
-| B6 | **`compareProfessionals` no UUID validation** — `ids.split(',')` are passed directly as `::uuid[]`; non-UUID strings cause Postgres cast errors | `backend/src/controllers/sprint11Controller.js:88-108` | ⬜ Open |
-| B7 | **`createRecurring` `nextDate` not adjusted for frequency** — always sets `next_booking_date = start_date` regardless of `frequency` (weekly should advance to next matching day_of_week) | `backend/src/controllers/recurringBookingController.js:34` | ⬜ Open |
-| B8 | **Cron empty catches swallow errors** — two `.catch(() => {})` in cron job loops hide failures from production alerts | `backend/src/workers/cron.js:622,654` | ⬜ Open |
+| B3 | **`updateRecurring` allows any `status` value** — no validation against allowed status enum values; arbitrary strings can be written to DB | `backend/src/controllers/recurringBookingController.js:95` | ✅ Fixed |
+| B4 | **`deleteAddress` no 404 response** — silently succeeds even if the address doesn't exist or doesn't belong to the user | `backend/src/controllers/sprint11Controller.js:372-378` | ✅ Fixed |
+| B5 | **`deleteQuickReply` no 404 response** — same issue as B4 | `backend/src/controllers/sprint11Controller.js:240-245` | ✅ Fixed |
+| B6 | **`compareProfessionals` no UUID validation** — `ids.split(',')` are passed directly as `::uuid[]`; non-UUID strings cause Postgres cast errors | `backend/src/controllers/sprint11Controller.js:88-108` | ✅ Fixed |
+| B7 | **`createRecurring` `nextDate` not adjusted for frequency** — always sets `next_booking_date = start_date` regardless of `frequency` (weekly should advance to next matching day_of_week) | `backend/src/controllers/recurringBookingController.js:34` | ✅ Fixed |
+| B8 | **Cron empty catches swallow errors** — two `.catch(() => {})` in cron job loops hide failures from production alerts | `backend/src/workers/cron.js:622,654` | ✅ Fixed |
 | B9 | **`Home.jsx` promotional banners and quick-rebook fetch swallow all errors** — no logging means silent failures in production | `frontend/src/pages/Home.jsx:167,170,171` | ✅ Fixed |
-| B10 | **`CategoryDetail.jsx` service enrichment fully silent** — no log on failure | `frontend/src/pages/CategoryDetail.jsx:86` | ⬜ Open |
-| B11 | **`AgentDashboard.jsx` catch block discards errors** — empty `catch (_) {}` | `frontend/src/pages/AgentDashboard.jsx:34` | ⬜ Open |
+| B10 | **`CategoryDetail.jsx` service enrichment fully silent** — no log on failure | `frontend/src/pages/CategoryDetail.jsx:86` | ✅ Fixed |
+| B11 | **`AgentDashboard.jsx` catch block discards errors** — empty `catch (_) {}` | `frontend/src/pages/AgentDashboard.jsx:34` | ✅ Fixed |
+| B12 | **`BrowserRouter` missing `basename="/react"`** — Vite base is `/react/` but React Router had no basename, causing all routes to render empty main content | `frontend/src/main.jsx` | ✅ Fixed |
 
 ---
 
