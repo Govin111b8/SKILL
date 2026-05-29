@@ -232,48 +232,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           icon: Icons.local_shipping_rounded,
                           label: 'Delivery',
                           color: AppColors.tileDelivery,
+                          colorEnd: const Color(0xFFFF6D00),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.directions_car_rounded,
                           label: 'MyRide',
                           color: AppColors.tileRide,
+                          colorEnd: const Color(0xFF01579B),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRideScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.restaurant_rounded,
                           label: 'Food',
                           color: AppColors.tileFood,
+                          colorEnd: const Color(0xFFE64A19),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FoodScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.shopping_cart_rounded,
                           label: 'Groceries',
                           color: AppColors.tileGroceries,
+                          colorEnd: const Color(0xFF1B5E20),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GroceriesScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.shopping_bag_rounded,
                           label: 'Shopping',
                           color: AppColors.tileShopping,
+                          colorEnd: const Color(0xFFB71C1C),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.home_repair_service_rounded,
                           label: 'Services',
                           color: AppColors.tileServices,
+                          colorEnd: const Color(0xFF4A148C),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.work_rounded,
                           label: 'Job',
                           color: AppColors.tileJob,
+                          colorEnd: const Color(0xFF004D40),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.account_balance_wallet_rounded,
                           label: 'Wallet',
                           color: AppColors.tileWallet,
+                          colorEnd: const Color(0xFF00695C),
                           onTap: () => Navigator.pushNamed(context, '/earnings'),
                         ),
                       ],
@@ -282,6 +290,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ),
             ),
+
+            // ── Flash Deals ───────────────────────────────────────
+            const SliverToBoxAdapter(child: _FlashDealsSection()),
 
             // ── Service hubs ──────────────────────────────────────
             SliverToBoxAdapter(
@@ -415,54 +426,191 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-// ─── Quick Action Icon (grid item) ──────────────────────────────────────────
+// ─── Quick Action Icon (grid item) — gradient tile with scale-on-tap ────────
 
-class _QuickActionIcon extends StatelessWidget {
+class _QuickActionIcon extends StatefulWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+  /// Optional second gradient stop; defaults to darkened primary.
+  final Color? colorEnd;
 
   const _QuickActionIcon({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
+    this.colorEnd,
   });
 
   @override
+  State<_QuickActionIcon> createState() => _QuickActionIconState();
+}
+
+class _QuickActionIconState extends State<_QuickActionIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween<double>(begin: 1, end: 0.88).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _ctrl.forward();
+  void _onTapUp(TapUpDetails _) {
+    _ctrl.reverse();
+    HapticFeedback.selectionClick();
+    widget.onTap();
+  }
+  void _onTapCancel() => _ctrl.reverse();
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              boxShadow: AppShadows.sm(color),
+    final end = widget.colorEnd ?? HSLColor.fromColor(widget.color).withLightness(
+      (HSLColor.fromColor(widget.color).lightness - 0.12).clamp(0.0, 1.0),
+    ).toColor();
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [widget.color, end],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withAlpha(80),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: Colors.white, size: 28),
             ),
-            child: Icon(icon, color: Colors.white, size: 26),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 7),
+            Text(
+              widget.label,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+// ─── Flash Deals horizontal carousel ────────────────────────────────────────
+
+class _FlashDealsSection extends StatelessWidget {
+  const _FlashDealsSection();
+
+  static const _deals = [
+    _Deal('AC Service', '40% OFF', 'Book today only', [Color(0xFF1B6EF3), Color(0xFF06B6D4)], Icons.ac_unit_rounded),
+    _Deal('Home Cleaning', '₹199 Flat', 'First booking', [Color(0xFF7B1FA2), Color(0xFFE91E63)], Icons.cleaning_services_rounded),
+    _Deal('Electrician', '₹99 Visit', 'Any time slot', [Color(0xFFFF6D00), Color(0xFFFFA000)], Icons.electrical_services_rounded),
+    _Deal('Plumber', 'Free Inspection', 'Limited slots', [Color(0xFF2E7D32), Color(0xFF66BB6A)], Icons.plumbing_rounded),
+    _Deal('Tutor', '1st Class Free', 'All subjects', [Color(0xFF00796B), Color(0xFF26C6DA)], Icons.school_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFF97316)]),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: const Text('⚡ FLASH DEALS', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+            ),
+            const SizedBox(width: 8),
+            Text('Today only', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+          ]),
+        ),
+        SizedBox(
+          height: 130,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            scrollDirection: Axis.horizontal,
+            itemCount: _deals.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final d = _deals[i];
+              return GestureDetector(
+                onTap: () => HapticFeedback.selectionClick(),
+                child: Container(
+                  width: 155,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: d.gradient),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    boxShadow: [BoxShadow(color: d.gradient.first.withAlpha(80), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(10)),
+                        child: Icon(d.icon, color: Colors.white, size: 18),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(20)),
+                        child: Text(d.badge, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+                      ),
+                    ]),
+                    const Spacer(),
+                    Text(d.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                    const SizedBox(height: 3),
+                    Text(d.sub, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11)),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Deal {
+  final String title, badge, sub;
+  final List<Color> gradient;
+  final IconData icon;
+  const _Deal(this.title, this.badge, this.sub, this.gradient, this.icon);
 }
 
 // ─── Error State Widget ─────────────────────────────────────────────────────

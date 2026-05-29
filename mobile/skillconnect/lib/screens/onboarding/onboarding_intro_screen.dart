@@ -21,6 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.search_rounded,
       iconGradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      bgGradient: [Color(0xFF6366F1), Color(0xFF4F46E5)],
       title: 'Find Skilled Pros',
       subtitle: 'Search from 40+ verified service categories.\nPlumbers, tutors, designers — all in one place.',
       illustration: '🔍',
@@ -28,6 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.verified_rounded,
       iconGradient: [Color(0xFF10B981), Color(0xFF059669)],
+      bgGradient: [Color(0xFF059669), Color(0xFF065F46)],
       title: 'Verified & Trusted',
       subtitle: 'Every professional is verified with KYC.\nRead real reviews from your neighbors.',
       illustration: '✅',
@@ -35,6 +37,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.calendar_month_rounded,
       iconGradient: [Color(0xFFF59E0B), Color(0xFFEF4444)],
+      bgGradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
       title: 'Book Instantly',
       subtitle: 'Schedule at your convenience.\nPay securely with multiple options.',
       illustration: '📅',
@@ -42,6 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.star_rounded,
       iconGradient: [Color(0xFF06B6D4), Color(0xFF3B82F6)],
+      bgGradient: [Color(0xFF0288D1), Color(0xFF01579B)],
       title: 'Rate & Earn Rewards',
       subtitle: 'Share feedback, earn points.\nRefer friends and get discounts.',
       illustration: '⭐',
@@ -72,47 +76,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isLast = _currentPage == _pages.length - 1;
+    final page = _pages[_currentPage];
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
+      body: AnimatedContainer(
+        duration: AppDurations.normal,
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: page.bgGradient,
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Skip button
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: GestureDetector(
+              // Top bar: logo + skip
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.md, AppSpacing.lg, 0),
+                child: Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(30),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.handyman_rounded, color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('SkillConnect', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                  const Spacer(),
+                  GestureDetector(
                     onTap: _finish,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(15),
+                        color: Colors.white.withAlpha(25),
                         borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(color: Colors.white.withAlpha(30)),
+                        border: Border.all(color: Colors.white.withAlpha(40)),
                       ),
-                      child: const Text(
-                        'Skip',
-                        style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
+                      child: const Text('Skip', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
                     ),
                   ),
-                ),
+                ]),
               ),
 
               // Page content
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
-                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  onPageChanged: (i) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _currentPage = i);
+                  },
                   itemCount: _pages.length,
                   itemBuilder: (_, i) => _buildPage(_pages[i]),
                 ),
@@ -120,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               // Dot indicators
               Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                padding: const EdgeInsets.only(bottom: AppSpacing.xl),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(_pages.length, (i) {
@@ -128,10 +144,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     return AnimatedContainer(
                       duration: AppDurations.normal,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: active ? 28 : 8,
+                      width: active ? 32 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: active ? AppColors.primary : Colors.white.withAlpha(40),
+                        color: active ? Colors.white : Colors.white.withAlpha(50),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );
@@ -144,24 +160,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, 0, AppSpacing.xxl, AppSpacing.xxxl),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: ElevatedButton(
                     onPressed: _next,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      backgroundColor: Colors.white,
+                      foregroundColor: page.bgGradient.first,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
                       elevation: 0,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isLast ? 'Get Started' : 'Next',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          isLast ? '🚀 Get Started' : 'Next  →',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: page.bgGradient.first,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Icon(isLast ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded, size: 20),
                       ],
                     ),
                   ),
@@ -180,38 +198,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Large emoji illustration
-          Text(page.illustration, style: const TextStyle(fontSize: 80)),
-          const SizedBox(height: AppSpacing.xxl),
+          // Full illustration circle
+          Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withAlpha(20),
+              border: Border.all(color: Colors.white.withAlpha(40), width: 2),
+            ),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(page.illustration, style: const TextStyle(fontSize: 70)),
+            ]),
+          ),
+          const SizedBox(height: AppSpacing.xxxl),
           // Icon badge
           Container(
-            width: 72,
-            height: 72,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: page.iconGradient),
+              color: Colors.white.withAlpha(30),
               borderRadius: BorderRadius.circular(AppRadius.xl),
-              boxShadow: AppShadows.lg(page.iconGradient.first),
+              border: Border.all(color: Colors.white.withAlpha(60), width: 2),
             ),
-            child: Icon(page.icon, color: Colors.white, size: 36),
+            child: Icon(page.icon, color: Colors.white, size: 32),
           ),
-          const SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             page.title,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 30,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             page.subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withAlpha(180),
+              color: Colors.white.withAlpha(200),
               fontSize: 15,
-              height: 1.5,
+              height: 1.6,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -224,6 +254,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _OnboardingPage {
   final IconData icon;
   final List<Color> iconGradient;
+  final List<Color> bgGradient;
   final String title;
   final String subtitle;
   final String illustration;
@@ -231,6 +262,7 @@ class _OnboardingPage {
   const _OnboardingPage({
     required this.icon,
     required this.iconGradient,
+    required this.bgGradient,
     required this.title,
     required this.subtitle,
     required this.illustration,

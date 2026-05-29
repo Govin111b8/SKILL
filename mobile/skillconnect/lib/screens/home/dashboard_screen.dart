@@ -66,118 +66,193 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-          ),
-        ],
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w800)),
+        backgroundColor: const Color(0xFF1B6EF3),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.zero,
           children: [
-            // Profile card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: cs.primaryContainer,
-                    child: Text(
-                      (user?['name'] ?? '?')[0].toUpperCase(),
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: cs.primary),
+            // ── Hero profile card ────────────────────────────────────
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1B6EF3), Color(0xFF7C3AED)],
+                ),
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                  child: Column(children: [
+                    // Avatar row
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      // Avatar
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withAlpha(120), width: 3),
+                          gradient: const LinearGradient(colors: [Color(0xFF818CF8), Color(0xFF6366F1)]),
+                        ),
+                        child: Center(
+                          child: Text(
+                            (user?['name'] ?? '?')[0].toUpperCase(),
+                            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Name + role
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const SizedBox(height: 6),
+                          Text(user?['name'] ?? 'User',
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 4),
+                          Text(user?['email'] ?? '',
+                              style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 13)),
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(40),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                (user?['role'] ?? 'customer').toString().toUpperCase(),
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            if (user?['location'] != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(Icons.location_on_rounded, size: 13, color: Colors.white.withAlpha(180)),
+                              const SizedBox(width: 2),
+                              Text(user!['location'],
+                                  style: TextStyle(fontSize: 12, color: Colors.white.withAlpha(200))),
+                            ],
+                          ]),
+                        ]),
+                      ),
+                      // Settings icon
+                      IconButton(
+                        icon: const Icon(Icons.settings_rounded, color: Colors.white),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                      ),
+                    ]),
+                    const SizedBox(height: 20),
+                    // Quick action pills row
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: [
+                        _ProfilePill(Icons.mail_outline_rounded, 'Contacts', const Color(0xFF06B6D4),
+                            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyContactsScreen()))),
+                        const SizedBox(width: 8),
+                        if (!isPro) ...[
+                          _ProfilePill(Icons.favorite_outline_rounded, 'Saved', const Color(0xFFEF4444),
+                              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
+                          const SizedBox(width: 8),
+                          _ProfilePill(Icons.history_rounded, 'History', const Color(0xFF8B5CF6),
+                              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHistoryScreen()))),
+                          const SizedBox(width: 8),
+                        ],
+                        _ProfilePill(Icons.verified_user_rounded, 'KYC', const Color(0xFF10B981),
+                            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),
+                        if (isPro) ...[
+                          const SizedBox(width: 8),
+                          _ProfilePill(Icons.edit_rounded, 'Edit Profile', const Color(0xFFF59E0B), () async {
+                            if (_dashData?['profile'] != null) {
+                              final result = await Navigator.push(context, MaterialPageRoute(
+                                builder: (_) => EditProfessionalProfileScreen(profile: _dashData!['profile']),
+                              ));
+                              if (result == true) _load();
+                            } else {
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                content: Text('Create your professional profile first via the home tab'),
+                                backgroundColor: Colors.orange,
+                              ));
+                            }
+                          }),
+                          const SizedBox(width: 8),
+                          _ProfilePill(Icons.photo_library_rounded, 'Portfolio', const Color(0xFF6366F1), () {
+                            final profileId = _dashData?['profile']?['id'];
+                            if (profileId != null) {
+                              Navigator.push(context, MaterialPageRoute(
+                                builder: (_) => PortfolioScreen(professionalId: profileId, isOwner: true),
+                              ));
+                            }
+                          }),
+                        ],
+                      ]),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(user?['name'] ?? 'User', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(user?['email'] ?? '', style: TextStyle(color: Colors.grey.shade600)),
-                  const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Chip(
-                      label: Text((user?['role'] ?? 'customer').toString().toUpperCase(), style: const TextStyle(fontSize: 11)),
-                      backgroundColor: cs.primaryContainer,
-                    ),
-                    if (user?['location'] != null) ...[
-                      const SizedBox(width: 8),
-                      Icon(Icons.location_on, size: 14, color: Colors.grey.shade500),
-                      Text(user!['location'], style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                    ],
                   ]),
-                ]),
+                ),
               ),
             ),
-            // Quick action buttons
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(children: [
-                  _actionButton(Icons.mail, 'Contacts', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyContactsScreen()))),
-                  const SizedBox(width: 8),
-                  if (!isPro) ...[
-                    _actionButton(Icons.favorite, 'Saved', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
-                    const SizedBox(width: 8),
-                    _actionButton(Icons.history, 'History', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHistoryScreen()))),
-                    const SizedBox(width: 8),
-                  ],
-                  _actionButton(Icons.verified_user_rounded, 'KYC', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),
-                  const SizedBox(width: 8),
-                  _actionButton(Icons.settings, 'Settings', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))),
-                  if (isPro) ...[
-                    const SizedBox(width: 8),
-                    _actionButton(Icons.edit, 'Edit Profile', () async {
-                      if (_dashData?['profile'] != null) {
-                        final result = await Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => EditProfessionalProfileScreen(profile: _dashData!['profile']),
-                        ));
-                        if (result == true) _load();
-                      } else {
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create your professional profile first via the home tab'), backgroundColor: Colors.orange));
-                      }
-                    }),
-                    const SizedBox(width: 8),
-                    _actionButton(Icons.photo_library, 'Portfolio', () {
-                      final profileId = _dashData?['profile']?['id'];
-                      if (profileId != null) {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => PortfolioScreen(professionalId: profileId, isOwner: true),
-                        ));
-                      }
-                    }),
-                  ],
-                ]),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Stats
-            if (_loading)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
-            else if (_error != null)
-              Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-                const Icon(Icons.cloud_off, size: 36, color: Colors.grey),
-                const SizedBox(height: 8),
-                Text('Could not load dashboard', style: TextStyle(color: Colors.grey.shade600)),
-                const SizedBox(height: 8),
-                OutlinedButton(onPressed: _load, child: const Text('Retry')),
-              ])))
-            else if (isPro) ..._buildProDashboard(context, cs)
-            else ..._buildCustomerDashboard(context, cs),
-            const SizedBox(height: 16),
-            // Sign out
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  auth.logout();
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-              ),
+            // ── Stats + content ───────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                // Stats
+                if (_loading)
+                  const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                else if (_error != null)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Column(children: [
+                      Icon(Icons.cloud_off_rounded, size: 40, color: Colors.red.shade400),
+                      const SizedBox(height: 8),
+                      Text('Could not load dashboard', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      OutlinedButton(onPressed: _load, child: const Text('Retry')),
+                    ]),
+                  )
+                else if (isPro) ..._buildProDashboard(context, cs)
+                else ..._buildCustomerDashboard(context, cs),
+                const SizedBox(height: 20),
+                // Sign out
+                GestureDetector(
+                  onTap: () {
+                    auth.logout();
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.logout_rounded, color: Colors.red.shade700, size: 20),
+                      ),
+                      const SizedBox(width: 14),
+                      Text('Sign Out', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w700, fontSize: 15)),
+                      const Spacer(),
+                      Icon(Icons.chevron_right_rounded, color: Colors.red.shade400),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ]),
             ),
           ],
         ),
@@ -329,83 +404,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Widget> _buildCustomerDashboard(BuildContext context, ColorScheme cs) {
     final stats = _dashData?['stats'] ?? {};
-    final contacts = (_dashData?['recentContacts'] as List?) ?? [];
-    final reviews = (_dashData?['reviewsGiven'] as List?) ?? [];
     final bookings = (_dashData?['recentBookings'] as List?) ?? [];
 
     return [
-      // Stats grid (2x3)
-      GridView.count(
-        crossAxisCount: 3,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.3,
-        children: [
-          _statCard('Active', '${stats['activeBookings'] ?? 0}', Icons.work_outline, cs.primary),
-          _statCard('Done', '${stats['completedBookings'] ?? 0}', Icons.check_circle, Colors.green),
-          _statCard('Spent', _money((stats['totalSpent'] ?? 0) as num), Icons.account_balance_wallet, Colors.indigo),
-          _statCard('Saved', '${stats['favorites'] ?? 0}', Icons.favorite, Colors.pink),
-          _statCard('Contacts', '${stats['totalContacts'] ?? 0}', Icons.phone, Colors.teal),
-          _statCard('Reviews', '${stats['totalReviews'] ?? 0}', Icons.star, Colors.amber),
-        ],
-      ),
+      // ── Colorful stat tiles (2-column) ────────────────────────
+      Row(children: [
+        _GradientStatTile(
+          label: 'Active Jobs',
+          value: '${stats['activeBookings'] ?? 0}',
+          icon: Icons.work_outline_rounded,
+          gradient: const [Color(0xFF6366F1), Color(0xFF818CF8)],
+        ),
+        const SizedBox(width: 10),
+        _GradientStatTile(
+          label: 'Completed',
+          value: '${stats['completedBookings'] ?? 0}',
+          icon: Icons.check_circle_outline_rounded,
+          gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
+        ),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        _GradientStatTile(
+          label: 'Total Spent',
+          value: _money((stats['totalSpent'] ?? 0) as num),
+          icon: Icons.account_balance_wallet_rounded,
+          gradient: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+        ),
+        const SizedBox(width: 10),
+        _GradientStatTile(
+          label: 'Reviews',
+          value: '${stats['totalReviews'] ?? 0}',
+          icon: Icons.star_rounded,
+          gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+        ),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        _GradientStatTile(
+          label: 'Saved Pros',
+          value: '${stats['favorites'] ?? 0}',
+          icon: Icons.favorite_rounded,
+          gradient: const [Color(0xFFEF4444), Color(0xFFF87171)],
+        ),
+        const SizedBox(width: 10),
+        _GradientStatTile(
+          label: 'Contacts',
+          value: '${stats['totalContacts'] ?? 0}',
+          icon: Icons.people_alt_rounded,
+          gradient: const [Color(0xFF06B6D4), Color(0xFF67E8F9)],
+        ),
+      ]),
+
+      // ── Recent bookings ───────────────────────────────────────
       if (bookings.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Text('Recent Bookings', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...bookings.take(5).map((b) => Card(
-          margin: const EdgeInsets.only(bottom: 6),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _bookingColor(b['status'] ?? '').withValues(alpha: 0.15),
-              child: Icon(Icons.work_outline, color: _bookingColor(b['status'] ?? ''), size: 18),
-            ),
-            title: Text(b['title'] ?? 'Booking', maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text('${b['professional_name'] ?? '?'} • ${(b['status'] ?? '').toString().replaceAll('_', ' ')}', style: const TextStyle(fontSize: 12)),
-            trailing: Text(
-              b['final_amount'] != null ? _money(b['final_amount'] as num) : (b['quoted_amount'] != null ? _money(b['quoted_amount'] as num) : ''),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-        )),
-      ],
-      const SizedBox(height: 16),
-      Text('Recent Contacts', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-      const SizedBox(height: 8),
-      if (contacts.isEmpty)
-        const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('No contacts yet. Search for professionals!'))))
-      else
-        ...contacts.take(5).map((c) => Card(
-          margin: const EdgeInsets.only(bottom: 6),
-          child: ListTile(
-            leading: CircleAvatar(child: Text((c['professional_name'] ?? '?')[0].toUpperCase())),
-            title: Text(c['professional_name'] ?? 'Professional'),
-            subtitle: Text('${c['contact_type']} • ${c['status']}', style: const TextStyle(fontSize: 12)),
-          ),
-        )),
-      if (reviews.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Text('Reviews Given', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...reviews.take(5).map((r) => Card(
-          margin: const EdgeInsets.only(bottom: 6),
-          child: ListTile(
-            leading: CircleAvatar(child: Text((r['professional_name'] ?? '?')[0].toUpperCase())),
-            title: Text(r['professional_name'] ?? 'Professional'),
-            subtitle: Text(r['comment'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.star, color: Colors.amber, size: 16),
-              Text('${r['rating']}'),
-            ]),
-          ),
-        )),
+        const SizedBox(height: 20),
+        _sectionTitle('Recent Bookings', Icons.receipt_long_rounded, const Color(0xFF6366F1)),
+        const SizedBox(height: 10),
+        ...bookings.take(4).map((b) => _BookingItemCard(booking: b, colorFn: _bookingColor, moneyFn: _money)),
       ],
     ];
   }
 
   Widget _actionButton(IconData icon, String label, VoidCallback onTap) {
+    // kept for _buildProDashboard compatibility — unused in consumer path
     final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: InkWell(
@@ -427,6 +489,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _sectionTitle(String title, IconData icon, Color color) {
+    return Row(children: [
+      Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, color: color, size: 16),
+      ),
+      const SizedBox(width: 8),
+      Text(title, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: color)),
+    ]);
+  }
+
   Widget _statCard(String label, String value, IconData icon, Color color, {VoidCallback? onTap}) {
     return Card(
       child: InkWell(
@@ -442,6 +516,145 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (onTap != null) const Icon(Icons.chevron_right, size: 12, color: Colors.grey),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+// ── Gradient stat tile used in consumer dashboard ─────────────────────────────
+
+class _GradientStatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final List<Color> gradient;
+  final VoidCallback? onTap;
+
+  const _GradientStatTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.gradient,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: gradient.first.withAlpha(60), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 10),
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11, fontWeight: FontWeight.w600)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Booking item card ─────────────────────────────────────────────────────────
+
+class _BookingItemCard extends StatelessWidget {
+  final Map booking;
+  final Color Function(String) colorFn;
+  final String Function(num) moneyFn;
+
+  const _BookingItemCard({required this.booking, required this.colorFn, required this.moneyFn});
+
+  @override
+  Widget build(BuildContext context) {
+    final b = booking;
+    final status = (b['status'] ?? '').toString();
+    final color = colorFn(status);
+    final amount = b['final_amount'] != null
+        ? moneyFn(b['final_amount'] as num)
+        : (b['quoted_amount'] != null ? moneyFn(b['quoted_amount'] as num) : '');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E293B)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withAlpha(40)),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Row(children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(Icons.work_outline_rounded, color: color, size: 22),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(b['title'] ?? 'Booking', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 3),
+          Text('${b['professional_name'] ?? '?'} • ${status.replaceAll('_', ' ')}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+        ])),
+        if (amount.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withAlpha(20),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 13)),
+          ),
+        ],
+      ]),
+    );
+  }
+}
+
+// ── Profile pill quick action ──────────────────────────────────────────────
+
+class _ProfilePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ProfilePill(this.icon, this.label, this.color, this.onTap);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(30),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: Colors.white.withAlpha(60)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+        ]),
       ),
     );
   }

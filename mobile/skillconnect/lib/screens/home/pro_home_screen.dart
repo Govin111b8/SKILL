@@ -137,52 +137,60 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
               const AvailabilityToggle(),
               const SizedBox(height: 16),
 
-              // Quick action buttons
+              // Quick action buttons — first row
               Row(children: [
                 Expanded(child: _QuickAction(
-                  icon: Icons.calendar_month,
+                  icon: Icons.calendar_month_rounded,
                   label: 'Schedule',
+                  gradient: const [Color(0xFF6366F1), Color(0xFF818CF8)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleManagementScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.account_balance_wallet,
+                  icon: Icons.account_balance_wallet_rounded,
                   label: 'Earnings',
+                  gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EarningsScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.gavel_outlined,
+                  icon: Icons.gavel_rounded,
                   label: 'Quotes',
+                  gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuoteBidManagementScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.event_repeat_outlined,
-                  label: 'AMC Visits',
+                  icon: Icons.event_repeat_rounded,
+                  label: 'AMC',
+                  gradient: const [Color(0xFF0288D1), Color(0xFF29B6F6)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AmcVisitsScreen())),
                 )),
               ]),
               const SizedBox(height: 10),
+              // Quick action buttons — second row
               Row(children: [
                 Expanded(child: _QuickAction(
-                  icon: Icons.apartment_outlined,
+                  icon: Icons.apartment_rounded,
                   label: 'Society',
+                  gradient: const [Color(0xFF7B1FA2), Color(0xFFAB47BC)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SocietyScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.analytics_outlined,
+                  icon: Icons.analytics_rounded,
                   label: 'Analytics',
+                  gradient: const [Color(0xFF00796B), Color(0xFF4DB6AC)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProviderAnalyticsScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.emergency,
+                  icon: Icons.emergency_rounded,
                   label: 'Emergency',
+                  gradient: const [Color(0xFFEF4444), Color(0xFFF87171)],
                   onTap: () => Navigator.pushNamed(context, '/emergency'),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 const Expanded(child: SizedBox()),
               ]),
               const SizedBox(height: 20),
@@ -281,17 +289,54 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
   Widget _quickStats(ColorScheme cs) {
     final stats = _dash?['stats'] ?? {};
     final funnel = _dash?['funnel'] ?? {};
-    return Row(children: [
-      _pill('Rating', '${stats['rating'] ?? '–'}', Icons.star_rounded, Colors.amber),
-      const SizedBox(width: 8),
-      _pill('Reviews', '${stats['reviews'] ?? 0}', Icons.rate_review_rounded, Colors.pink),
-      const SizedBox(width: 8),
-      _pill('Jobs done', '${funnel['completed'] ?? stats['completedJobs'] ?? 0}', Icons.check_circle_rounded, Colors.green),
-      const SizedBox(width: 8),
-      _pill('Pending', '${_pending.length}', Icons.pending_actions_rounded, Colors.orange),
+    final earnings = _dash?['earnings'];
+    final todayEarnings = (earnings?['last7d'] as num?)?.toDouble() ?? 0;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Primary KPI row
+      Row(children: [
+        _kpiCard('Today\'s ₹', '₹${_fmt(todayEarnings)}', Icons.account_balance_wallet_rounded,
+            const [Color(0xFF10B981), Color(0xFF34D399)]),
+        const SizedBox(width: 10),
+        _kpiCard('Pending', '${_pending.length}', Icons.pending_actions_rounded,
+            const [Color(0xFFF59E0B), Color(0xFFFBBF24)]),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        _kpiCard('Rating', '${stats['rating'] ?? '–'}', Icons.star_rounded,
+            const [Color(0xFF6366F1), Color(0xFF818CF8)]),
+        const SizedBox(width: 10),
+        _kpiCard('Jobs Done', '${funnel['completed'] ?? stats['completedJobs'] ?? 0}',
+            Icons.check_circle_rounded, const [Color(0xFF0288D1), Color(0xFF29B6F6)]),
+      ]),
     ]);
   }
 
+  Widget _kpiCard(String label, String val, IconData icon, List<Color> gradient) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: gradient.first.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(val, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text(label, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11, fontWeight: FontWeight.w600)),
+          ])),
+        ]),
+      ),
+    );
+  }
+
+  // Keep _pill for possible usage elsewhere
   Widget _pill(String label, String val, IconData icon, Color color) {
     return Expanded(
       child: Container(
@@ -458,25 +503,41 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final List<Color>? gradient;
 
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction({required this.icon, required this.label, required this.onTap, this.gradient});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final grad = gradient ?? [cs.primaryContainer, cs.primaryContainer];
+    final useGrad = gradient != null;
     return Material(
-      color: cs.surfaceContainerHighest,
+      color: useGrad ? Colors.transparent : cs.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: cs.primary, size: 24),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurface)),
-          ]),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: useGrad
+                ? LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: grad)
+                : null,
+            color: useGrad ? null : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, color: useGrad ? Colors.white : cs.primary, size: 24),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: useGrad ? Colors.white : cs.onSurface,
+              ), textAlign: TextAlign.center),
+            ]),
+          ),
         ),
       ),
     );
