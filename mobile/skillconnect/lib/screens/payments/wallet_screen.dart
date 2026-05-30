@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -100,217 +102,245 @@ class _WalletScreenState extends State<WalletScreen> {
     final escrowBalance = ((balance['escrow_balance'] ?? 0) as num).toDouble();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        color: const Color(0xFF6366F1),
-        child: _loading
-            ? _buildLoading()
-            : _error != null
-                ? _buildError()
-                : CustomScrollView(
-                    slivers: [
-                      // Hero balance card as a SliverAppBar
-                      SliverToBoxAdapter(
-                        child: _WalletHeroCard(
-                          currency: _currency,
-                          availableBalance: availableBalance,
-                          escrowBalance: escrowBalance,
-                          onAddMoney: () => _moneyAction(topup: true),
-                          onWithdraw: () => _moneyAction(topup: false),
-                        ),
-                      ),
-
-                      // Quick actions
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Quick Actions',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
-                                  )),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _QuickAction(
-                                    icon: Icons.add_rounded,
-                                    label: 'Add Money',
-                                    color: const Color(0xFF6366F1),
-                                    onTap: () => _moneyAction(topup: true),
-                                  ),
-                                  _QuickAction(
-                                    icon: Icons.arrow_upward_rounded,
-                                    label: 'Withdraw',
-                                    color: const Color(0xFF8B5CF6),
-                                    onTap: () => _moneyAction(topup: false),
-                                  ),
-                                  _QuickAction(
-                                    icon: Icons.receipt_long_rounded,
-                                    label: 'History',
-                                    color: const Color(0xFF06B6D4),
-                                    onTap: () {},
-                                  ),
-                                  _QuickAction(
-                                    icon: Icons.local_offer_rounded,
-                                    label: 'Offers',
-                                    color: const Color(0xFFF59E0B),
-                                    onTap: () {},
+      backgroundColor: Colors.transparent,
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: _load,
+            color: AppColors.primary,
+            child: _loading
+                ? _buildLoading()
+                : _error != null
+                    ? _buildError()
+                    : CustomScrollView(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+                              child: Row(
+                                children: const [
+                                  Expanded(
+                                    child: Text(
+                                      'Wallet',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.surfaceDark,
+                                        letterSpacing: -0.7,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-
-                      // Escrow info card
-                      if (escrowBalance > 0)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF3C7),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFF59E0B).withAlpha(80)),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                              child: _WalletHeroCard(
+                                currency: _currency,
+                                availableBalance: availableBalance,
+                                escrowBalance: escrowBalance,
+                                onAddMoney: () => _moneyAction(topup: true),
+                                onWithdraw: () => _moneyAction(topup: false),
                               ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.sm),
                               child: Row(
                                 children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF59E0B).withAlpha(40),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.lock_rounded,
-                                        color: Color(0xFFD97706), size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    child: PremiumMetricCard(
+                                      label: 'Available',
+                                      value: _currency.format(availableBalance),
+                                      icon: Icons.account_balance_wallet_rounded,
+                                      color: AppColors.tileWallet,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: PremiumMetricCard(
+                                      label: 'Escrow',
+                                      value: _currency.format(escrowBalance),
+                                      icon: Icons.lock_clock_rounded,
+                                      color: AppColors.warning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
+                              child: PremiumGlassCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Quick actions',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.surfaceDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.lg),
+                                    Row(
                                       children: [
-                                        const Text('Escrow Hold',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF92400E),
-                                                fontSize: 13)),
-                                        Text(
-                                          '${_currency.format(escrowBalance)} held for active bookings',
-                                          style: const TextStyle(
-                                              color: Color(0xFFB45309), fontSize: 12),
+                                        Expanded(
+                                          child: _QuickAction(
+                                            icon: Icons.add_rounded,
+                                            label: 'Add Money',
+                                            color: AppColors.primary,
+                                            onTap: () => _moneyAction(topup: true),
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppSpacing.md),
+                                        Expanded(
+                                          child: _QuickAction(
+                                            icon: Icons.arrow_upward_rounded,
+                                            label: 'Withdraw',
+                                            color: AppColors.accent,
+                                            onTap: () => _moneyAction(topup: false),
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppSpacing.md),
+                                        Expanded(
+                                          child: _QuickAction(
+                                            icon: Icons.receipt_long_rounded,
+                                            label: 'History',
+                                            color: AppColors.secondary,
+                                            onTap: _noop,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-
-                      // Transactions section header
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Recent Transactions',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
-                                  )),
-                              Text('View All',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF6366F1).withAlpha(220),
-                                  )),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Transaction list
-                      if (_transactions.isEmpty)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.all(40),
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF6366F1).withAlpha(20),
-                                    shape: BoxShape.circle,
+                          if (escrowBalance > 0)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+                                child: PremiumGlassCard(
+                                  gradient: [AppColors.warningLight.withAlpha(235), Colors.white.withAlpha(190)],
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.warning.withAlpha(18),
+                                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                                        ),
+                                        child: const Icon(Icons.lock_rounded, color: AppColors.warning),
+                                      ),
+                                      const SizedBox(width: AppSpacing.md),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Escrow hold',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF92400E),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${_currency.format(escrowBalance)} held for active bookings',
+                                              style: const TextStyle(
+                                                color: Color(0xFFB45309),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  child: const Icon(Icons.receipt_long_outlined,
-                                      size: 40, color: Color(0xFF6366F1)),
                                 ),
-                                const SizedBox(height: 16),
-                                const Text('No transactions yet',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 16,
-                                        color: Color(0xFF0F172A))),
-                                const SizedBox(height: 6),
-                                Text('Wallet activity will show here\nafter your first payment.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-                              ],
+                              ),
+                            ),
+                          const SliverToBoxAdapter(
+                            child: PremiumSectionTitle(
+                              title: 'Recent transactions',
+                              subtitle: 'Every movement in your SkillConnect wallet, beautifully tracked.',
                             ),
                           ),
-                        )
-                      else
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (_, i) {
-                              final txn = _transactions[i];
-                              return _TransactionItem(
-                                txn: txn,
-                                currency: _currency,
-                                isLast: i == _transactions.length - 1,
-                              );
-                            },
-                            childCount: _transactions.length,
-                          ),
-                        ),
-
-                      const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                    ],
-                  ),
+                          if (_transactions.isEmpty)
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                                child: PremiumEmptyState(
+                                  icon: Icons.receipt_long_outlined,
+                                  title: 'No transactions yet',
+                                  subtitle: 'Wallet activity will show here after your first payment, top-up, or withdrawal.',
+                                ),
+                              ),
+                            )
+                          else
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (_, i) {
+                                  final txn = _transactions[i];
+                                  return Padding(
+                                    padding: EdgeInsets.fromLTRB(
+                                      AppSpacing.lg,
+                                      0,
+                                      AppSpacing.lg,
+                                      i == _transactions.length - 1 ? AppSpacing.xxxl : AppSpacing.md,
+                                    ),
+                                    child: _TransactionItem(
+                                      txn: txn,
+                                      currency: _currency,
+                                      isLast: i == _transactions.length - 1,
+                                    ),
+                                  );
+                                },
+                                childCount: _transactions.length,
+                              ),
+                            ),
+                        ],
+                      ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildLoading() {
     return ListView(
-      padding: EdgeInsets.zero,
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        Container(
-          height: 260,
-          margin: EdgeInsets.zero,
-          color: const Color(0xFF4338CA),
-        ),
-        const SizedBox(height: 24),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
           child: Column(
-            children: List.generate(4, (_) => const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: SkeletonContainer(height: 72, borderRadius: 16),
-            )),
+            children: [
+              Container(
+                height: 220,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppColors.tileWallet, AppColors.primary, AppColors.accent]),
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              const SkeletonContainer(height: 120, borderRadius: 24),
+              const SizedBox(height: AppSpacing.md),
+              const SkeletonContainer(height: 88, borderRadius: 20),
+              const SizedBox(height: AppSpacing.md),
+              const SkeletonContainer(height: 88, borderRadius: 20),
+              const SizedBox(height: AppSpacing.md),
+              const SkeletonContainer(height: 88, borderRadius: 20),
+            ],
           ),
         ),
       ],
@@ -318,17 +348,21 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.account_balance_wallet_outlined, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: _load, child: const Text('Retry')),
-        ],
-      ),
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: PremiumEmptyState(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Unable to load wallet',
+            subtitle: _error!,
+            actionLabel: 'Retry',
+            onAction: _load,
+            gradient: AppColors.warmGradient,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -352,159 +386,151 @@ class _WalletHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFF6366F1)],
+          colors: [Color(0xFF064E3B), AppColors.tileWallet, AppColors.primary],
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        boxShadow: AppShadows.xl(AppColors.tileWallet.withAlpha(150)),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Top row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(20),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.account_balance_wallet_rounded,
-                            color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'SkillConnect Wallet',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(200),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(20),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Text('Active',
-                            style: TextStyle(color: Colors.white, fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 28),
-
-              // Balance
-              Text(
-                'Available Balance',
-                style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: availableBalance),
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeOutCubic,
-                builder: (_, val, __) => Text(
-                  currency.format(val),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  ),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(20),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: Colors.white.withAlpha(40)),
                 ),
+                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 26),
               ),
-
-              const SizedBox(height: 28),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: onAddMoney,
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_rounded, color: Color(0xFF4338CA), size: 20),
-                            SizedBox(width: 6),
-                            Text('Add Money',
-                                style: TextStyle(
-                                    color: Color(0xFF4338CA),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14)),
-                          ],
-                        ),
-                      ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(20),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: Colors.white.withAlpha(35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 6),
+                    Text(
+                      'Protected',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: onWithdraw,
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(20),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withAlpha(60)),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 6),
-                            Text('Withdraw',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'SkillConnect Wallet',
+            style: TextStyle(
+              color: Colors.white.withAlpha(210),
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: availableBalance),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeOutCubic,
+            builder: (_, val, __) => Text(
+              currency.format(val),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            escrowBalance > 0
+                ? '${currency.format(escrowBalance)} currently secured in escrow'
+                : 'Ready for payouts, top-ups, and smooth service payments',
+            style: TextStyle(
+              color: Colors.white.withAlpha(210),
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: onAddMoney,
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_rounded, color: AppColors.tileWallet, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Add Money',
+                          style: TextStyle(
+                            color: AppColors.tileWallet,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: GestureDetector(
+                  onTap: onWithdraw,
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(18),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(color: Colors.white.withAlpha(55)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Withdraw',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -533,19 +559,25 @@ class _QuickAction extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: color.withAlpha(20),
-              shape: BoxShape.circle,
-              border: Border.all(color: color.withAlpha(50)),
+              gradient: LinearGradient(colors: [color.withAlpha(34), color.withAlpha(16)]),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: color.withAlpha(60)),
             ),
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(icon, color: color, size: 28),
           ),
-          const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF475569))),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475569),
+            ),
+          ),
         ],
       ),
     );
@@ -573,38 +605,24 @@ class _TransactionItem extends StatelessWidget {
     final date = txn['date']?.toString() ?? txn['created_at']?.toString() ?? '';
     final status = (txn['status'] ?? 'completed').toString();
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(20, 0, 20, isLast ? 0 : 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return PremiumGlassCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
-          // Icon
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: color.withAlpha(20),
-              shape: BoxShape.circle,
+              gradient: LinearGradient(colors: [color.withAlpha(28), color.withAlpha(10)]),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Icon(
               isDebit ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
               color: color,
-              size: 22,
+              size: 24,
             ),
           ),
-          const SizedBox(width: 14),
-          // Description
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,43 +630,35 @@ class _TransactionItem extends StatelessWidget {
                 Text(
                   description,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: Color(0xFF0F172A)),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: AppColors.surfaceDark,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Text(
                       date.isNotEmpty ? date.substring(0, math.min(10, date.length)) : '',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                     if (status != 'completed') ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withAlpha(20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(status,
-                            style: const TextStyle(
-                                color: Color(0xFFD97706), fontSize: 10, fontWeight: FontWeight.w600)),
-                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      PremiumStatusPill(label: status, color: AppColors.warning),
                     ],
                   ],
                 ),
               ],
             ),
           ),
-          // Amount
+          const SizedBox(width: AppSpacing.sm),
           Text(
             '${isDebit ? '-' : '+'}${currency.format(amount)}',
             style: TextStyle(
               color: color,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               fontSize: 15,
             ),
           ),
@@ -657,3 +667,5 @@ class _TransactionItem extends StatelessWidget {
     );
   }
 }
+
+void _noop() {}

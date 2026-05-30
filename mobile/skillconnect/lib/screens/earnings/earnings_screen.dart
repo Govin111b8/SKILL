@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/api_service.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 /// Earnings dashboard screen for professionals.
 /// Shows total earnings, weekly/monthly breakdown, booking stats,
@@ -47,32 +49,31 @@ class _EarningsScreenState extends State<EarningsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: _loading
-          ? _buildLoading()
-          : _error != null
-              ? _buildError(cs)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: const Color(0xFF6366F1),
-                  child: _buildContent(),
-                ),
+      backgroundColor: Colors.transparent,
+      body: PremiumBackground(
+        child: SafeArea(
+          child: _loading
+              ? const PremiumLoadingList(itemCount: 5, itemHeight: 130)
+              : _error != null
+                  ? _buildError()
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      color: AppColors.primary,
+                      child: _buildContent(),
+                    ),
+        ),
+      ),
     );
   }
 
-  Widget _buildLoading() => const Center(child: CircularProgressIndicator());
-
-  Widget _buildError(ColorScheme cs) => Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.error_outline, size: 56, color: cs.error),
-      const SizedBox(height: 12),
-      Text(_error!, textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF64748B))),
-      const SizedBox(height: 16),
-      FilledButton(onPressed: _load, child: const Text('Retry')),
-    ]),
+  Widget _buildError() => PremiumEmptyState(
+    icon: Icons.error_outline_rounded,
+    title: 'Unable to load earnings',
+    subtitle: _error ?? 'Something went wrong while fetching your dashboard.',
+    actionLabel: 'Retry',
+    onAction: _load,
+    gradient: AppColors.warmGradient,
   );
 
   Widget _buildContent() {
@@ -90,144 +91,144 @@ class _EarningsScreenState extends State<EarningsScreen>
     final currencyFmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final avgRating = (recentActivity['avgRating'] as num?)?.toDouble() ?? 4.8;
     final repeatCustomers = (recentActivity['repeatCustomers'] as num?)?.toInt() ?? 0;
+    final activeDays = weeklyBookings.where((day) {
+      final count = ((day['count'] ?? day['bookings'] ?? day['bookings_completed'] ?? 0) as num).toInt();
+      return count > 0;
+    }).length;
+    final bestMonth = monthlyEarnings.isEmpty
+        ? null
+        : monthlyEarnings.reduce((a, b) {
+            final aValue = (a['earnings'] as num?)?.toDouble() ?? 0;
+            final bValue = (b['earnings'] as num?)?.toDouble() ?? 0;
+            return aValue >= bValue ? a : b;
+          });
 
-    return CustomScrollView(
-      slivers: [
-        // ── Hero earnings banner ──────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFF6366F1)],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxxl),
+      children: [
+        PremiumGlassCard(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          gradient: const [Color(0xEE4338CA), Color(0xEE6366F1), Color(0xEE8B5CF6)],
+          borderRadius: BorderRadius.circular(AppRadius.xxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(24),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: Colors.white.withAlpha(50)),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
+                  ),
+                  const Spacer(),
+                  PremiumStatChip(
+                    label: activeDays > 0 ? '$activeDays active days' : 'Fresh start',
+                    icon: Icons.auto_graph_rounded,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'Total Earnings',
+                style: TextStyle(
+                  color: Colors.white.withAlpha(200),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: AppSpacing.sm),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: totalEarnings),
+                duration: const Duration(milliseconds: 1400),
+                curve: Curves.easeOutCubic,
+                builder: (_, val, __) => Text(
+                  currencyFmt.format(val),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.4,
+                    height: 1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  const PremiumStatChip(
+                    label: '+12% this month',
+                    icon: Icons.trending_up_rounded,
+                    color: Color(0xFFD1FAE5),
+                  ),
+                  PremiumStatChip(
+                    label: '${currencyFmt.format(totalBookings == 0 ? 0 : totalEarnings / totalBookings)} avg / job',
+                    icon: Icons.payments_rounded,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(16),
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  border: Border.all(color: Colors.white.withAlpha(40)),
+                ),
+                child: Row(
                   children: [
-                    // App bar row
-                    Row(
-                      children: [
-                        const Text(
-                          'Earnings',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ready for payout',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(220),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(20),
-                            borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            currencyFmt.format(totalEarnings * 0.9),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.download_rounded,
-                                  color: Colors.white, size: 16),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Export',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(220),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Total label
-                    Text(
-                      'Total Earnings',
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(160),
-                        fontSize: 14,
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-
-                    // Animated count-up
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: totalEarnings),
-                      duration: const Duration(milliseconds: 1400),
-                      curve: Curves.easeOutCubic,
-                      builder: (_, val, __) => Text(
-                        currencyFmt.format(val),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 44,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withAlpha(40),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.trending_up_rounded,
-                                  color: Color(0xFF10B981), size: 14),
-                              SizedBox(width: 4),
-                              Text(
-                                '+12% this month',
-                                style: TextStyle(
-                                  color: Color(0xFF10B981),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Payout CTA
                     GestureDetector(
                       onTap: () => HapticFeedback.mediumImpact(),
                       child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                          boxShadow: AppShadows.md(Colors.black26),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.account_balance_rounded,
-                                color: Color(0xFF4338CA), size: 20),
-                            const SizedBox(width: 8),
+                            Icon(Icons.account_balance_rounded, color: AppColors.primaryDark, size: 18),
+                            SizedBox(width: AppSpacing.sm),
                             Text(
-                              'Withdraw ${currencyFmt.format(totalEarnings * 0.9)}',
-                              style: const TextStyle(
-                                color: Color(0xFF4338CA),
+                              'Withdraw',
+                              style: TextStyle(
+                                color: AppColors.primaryDark,
                                 fontWeight: FontWeight.w800,
-                                fontSize: 15,
                               ),
                             ),
                           ],
@@ -237,287 +238,201 @@ class _EarningsScreenState extends State<EarningsScreen>
                   ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
-
-        // ── Period tabs ───────────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabCtrl,
-                labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                indicator: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(text: 'Week'),
-                  Tab(text: 'Month'),
-                  Tab(text: 'Year'),
-                ],
-              ),
+        const SizedBox(height: AppSpacing.xl),
+        GridView.count(
+          shrinkWrap: true,
+          crossAxisCount: 2,
+          mainAxisSpacing: AppSpacing.md,
+          crossAxisSpacing: AppSpacing.md,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 1.18,
+          children: [
+            PremiumMetricCard(
+              label: 'Completed Jobs',
+              value: '$totalBookings',
+              icon: Icons.check_circle_rounded,
+              color: AppColors.success,
             ),
+            PremiumMetricCard(
+              label: 'Average Rating',
+              value: avgRating.toStringAsFixed(1),
+              icon: Icons.star_rounded,
+              color: AppColors.warning,
+            ),
+            PremiumMetricCard(
+              label: 'Repeat Clients',
+              value: '$repeatCustomers',
+              icon: Icons.groups_rounded,
+              color: AppColors.primary,
+            ),
+            PremiumMetricCard(
+              label: 'Peak Window',
+              value: activeDays > 0 ? '10–12 AM' : '—',
+              icon: Icons.bolt_rounded,
+              color: AppColors.accent,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PremiumGlassCard(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: TabBar(
+            controller: _tabCtrl,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey.shade600,
+            indicator: BoxDecoration(
+              gradient: const LinearGradient(colors: AppColors.primaryGradient),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              boxShadow: AppShadows.sm(AppColors.primary),
+            ),
+            dividerColor: Colors.transparent,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            tabs: const [
+              Tab(text: 'Week'),
+              Tab(text: 'Month'),
+              Tab(text: 'Year'),
+            ],
           ),
         ),
-
-        // ── Stats cards ───────────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.check_circle_rounded,
-                    color: const Color(0xFF10B981),
-                    label: 'Completed',
-                    value: '$totalBookings jobs',
-                  ),
+        const SizedBox(height: AppSpacing.xl),
+        PremiumSectionTitle(
+          title: 'Insights',
+          subtitle: 'Track revenue, momentum and consistency.',
+          trailing: bestMonth == null
+              ? null
+              : PremiumStatusPill(
+                  label: 'Best: ${bestMonth['month']}',
+                  color: AppColors.success,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.star_rounded,
-                    color: const Color(0xFFF59E0B),
-                    label: 'Avg Rating',
-                    value: avgRating.toStringAsFixed(1),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.people_rounded,
-                    color: const Color(0xFF6366F1),
-                    label: 'Repeat Clients',
-                    value: '$repeatCustomers',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.bolt_rounded,
-                    color: const Color(0xFF06B6D4),
-                    label: 'Peak Hour',
-                    value: '10–12 AM',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // ── Earnings chart ────────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        PremiumGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  const Text(
-                    'Earnings Overview',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 160,
-                    child: _EarningsBarChart(monthlyEarnings: monthlyEarnings),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // ── Weekly breakdown ──────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Monthly Breakdown',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...monthlyEarnings.take(6).map((m) {
-                  final earnings = (m['earnings'] as num?)?.toDouble() ?? 0;
-                  final bookings = (m['bookings_completed'] as num?)?.toInt() ?? 0;
-                  final month = m['month']?.toString() ?? '';
-                  final maxEarnings = monthlyEarnings.fold<double>(1,
-                      (prev, e) => ((e['earnings'] as num?)?.toDouble() ?? 0) > prev
-                          ? (e['earnings'] as num!).toDouble()
-                          : prev);
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(6),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                      gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    child: const Icon(Icons.bar_chart_rounded, color: Colors.white),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Earnings Overview',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Monthly revenue performance at a glance',
+                          style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              month,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              currencyFmt.format(earnings),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: Color(0xFF6366F1),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '$bookings jobs',
-                              style: const TextStyle(
-                                  color: Color(0xFF64748B), fontSize: 12),
-                            ),
-                          ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              SizedBox(
+                height: 220,
+                child: monthlyEarnings.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No earnings data yet',
+                          style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(height: 8),
-                        // Progress bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: maxEarnings > 0 ? earnings / maxEarnings : 0,
-                            backgroundColor: const Color(0xFF6366F1).withAlpha(20),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                            minHeight: 6,
+                      )
+                    : _EarningsBarChart(monthlyEarnings: monthlyEarnings),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PremiumSectionTitle(
+          title: 'Monthly Breakdown',
+          subtitle: 'See which periods delivered your strongest income.',
+        ),
+        if (monthlyEarnings.isEmpty)
+          const PremiumEmptyState(
+            icon: Icons.payments_outlined,
+            title: 'No payouts yet',
+            subtitle: 'Complete your first few bookings to unlock a detailed earnings timeline.',
+          )
+        else
+          ...monthlyEarnings.take(6).map((m) {
+            final earnings = (m['earnings'] as num?)?.toDouble() ?? 0;
+            final bookings = (m['bookings_completed'] as num?)?.toInt() ?? 0;
+            final month = m['month']?.toString() ?? '';
+            final maxEarnings = monthlyEarnings.fold<double>(1, (prev, e) {
+              final value = (e['earnings'] as num?)?.toDouble() ?? 0;
+              return value > prev ? value : prev;
+            });
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: PremiumGlassCard(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                month,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                '$bookings jobs completed',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            currencyFmt.format(earnings),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
                           ),
                         ),
                       ],
                     ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    const SizedBox(height: AppSpacing.md),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: LinearProgressIndicator(
+                        value: maxEarnings > 0 ? earnings / maxEarnings : 0,
+                        minHeight: 8,
+                        backgroundColor: AppColors.primary.withAlpha(18),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
       ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String value;
-
-  const _StatCard({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: Color(0xFF0F172A))),
-                Text(label,
-                    style: const TextStyle(
-                        color: Color(0xFF64748B), fontSize: 11)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -552,7 +467,8 @@ class _EarningsBarChart extends StatelessWidget {
               final m = data[group.x.toInt()];
               final month = m['month']?.toString() ?? '';
               return BarTooltipItem(
-                '$month\n₹${rod.toY.toStringAsFixed(0)}',
+                '$month
+₹${rod.toY.toStringAsFixed(0)}',
                 const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
               );
             },
@@ -569,8 +485,10 @@ class _EarningsBarChart extends StatelessWidget {
                 final month = (data[i]['month']?.toString() ?? '').take(3).join();
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(month,
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                  child: Text(
+                    month,
+                    style: const TextStyle(color: Color(0xFF7C83A3), fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
                 );
               },
             ),
@@ -584,7 +502,7 @@ class _EarningsBarChart extends StatelessWidget {
           horizontalInterval: maxY / 4,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (v) => FlLine(
-            color: const Color(0xFFE2E8F0),
+            color: const Color(0xFFE5E7F4),
             strokeWidth: 1,
           ),
         ),
@@ -597,11 +515,11 @@ class _EarningsBarChart extends StatelessWidget {
               BarChartRodData(
                 toY: earnings,
                 width: 18,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                 gradient: const LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  colors: AppColors.primaryGradient,
                 ),
               ),
             ],

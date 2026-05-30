@@ -9,6 +9,8 @@ import '../../services/app_locale_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/upload_service.dart';
 import '../../services/push_notification_service.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -167,366 +169,347 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final email = user?['email']?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: CustomScrollView(
-        slivers: [
-          // ── App Bar ──────────────────────────────────────────────────
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: const Color(0xFF1B6EF3),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            title: const Text(
-              'Settings',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Colors.white),
-            ),
-            actions: [
-              if (_saving)
-                const Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  ),
-                )
-              else
-                TextButton(
-                  onPressed: _save,
-                  child: const Text('Save',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
-                ),
-            ],
-          ),
-
-          // ── Profile Header ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF1B6EF3), Color(0xFF4F46E5)],
-                ),
+      backgroundColor: Colors.transparent,
+      appBar: PremiumAppBar(
+        title: 'Settings',
+        actions: [
+          if (_saving)
+            const Padding(
+              padding: EdgeInsets.only(right: AppSpacing.lg),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-              child: Row(
-                children: [
-                  // Avatar
-                  GestureDetector(
-                    onTap: _pickAvatar,
-                    child: Stack(
+            )
+          else
+            TextButton(
+              onPressed: _save,
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+        ],
+      ),
+      body: PremiumBackground(
+        child: SafeArea(
+          top: false,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+                  child: PremiumGlassCard(
+                    gradient: const [Color(0xE63B2A87), Color(0xE64F46E5), Color(0xE66366F1)],
+                    borderRadius: BorderRadius.circular(AppRadius.xxl),
+                    child: Row(
                       children: [
-                        Container(
-                          width: 68,
-                          height: 68,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            color: Colors.white.withAlpha(30),
-                          ),
-                          child: avatarUrl.isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(avatarUrl,
-                                      width: 68, height: 68, fit: BoxFit.cover),
-                                )
-                              : Center(
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w800),
-                                  ),
+                        GestureDetector(
+                          onTap: _pickAvatar,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(colors: [Colors.white, Color(0xFFE9D5FF)]),
+                                  shape: BoxShape.circle,
                                 ),
+                                child: CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: Colors.white.withAlpha(20),
+                                  backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                                  child: avatarUrl.isEmpty
+                                      ? Text(
+                                          name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                                          style: const TextStyle(
+                                            color: AppColors.primaryDark,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: AppShadows.sm(Colors.black26),
+                                  ),
+                                  child: const Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.primary),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt_rounded,
-                                size: 13, color: Color(0xFF1B6EF3)),
+                        const SizedBox(width: AppSpacing.lg),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                email,
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha(220),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: [
+                                  PremiumStatChip(
+                                    label: _appLanguage.toUpperCase(),
+                                    icon: Icons.language_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  PremiumStatChip(
+                                    label: themeService.themeMode.name.toUpperCase(),
+                                    icon: Icons.palette_rounded,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 3),
-                        Text(email,
-                            style: TextStyle(
-                                color: Colors.white.withAlpha(180), fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // ── Account Section ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _SettingsSection(
-              title: 'Account',
-              children: [
-                _EditableField(
-                  icon: Icons.person_rounded,
-                  iconColor: const Color(0xFF6366F1),
-                  label: 'Full Name',
-                  controller: _nameCtrl,
-                ),
-                _EditableField(
-                  icon: Icons.phone_rounded,
-                  iconColor: const Color(0xFF10B981),
-                  label: 'Phone Number',
-                  controller: _phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                ),
-                _EditableField(
-                  icon: Icons.location_on_rounded,
-                  iconColor: const Color(0xFFF59E0B),
-                  label: 'Location',
-                  controller: _locationCtrl,
-                ),
-                _SettingsTile(
-                  icon: Icons.lock_rounded,
-                  iconColor: const Color(0xFFEF4444),
-                  title: 'Change Password',
-                  trailing: const Icon(Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8), size: 20),
-                  onTap: _changePassword,
-                ),
-                _SettingsTile(
-                  icon: Icons.verified_user_rounded,
-                  iconColor: const Color(0xFF06B6D4),
-                  title: 'KYC Verification',
-                  subtitle: 'Verify your identity',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withAlpha(20),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text('Pending',
-                            style: TextStyle(
-                                color: Color(0xFFD97706),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: Color(0xFF94A3B8), size: 20),
-                    ],
-                  ),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // ── Preferences ────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _SettingsSection(
-              title: 'Preferences',
-              children: [
-                // Language
-                _SettingsTile(
-                  icon: Icons.language_rounded,
-                  iconColor: const Color(0xFF8B5CF6),
-                  title: 'Language',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withAlpha(15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _appLanguage.toUpperCase(),
-                          style: const TextStyle(
-                              color: Color(0xFF6366F1),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: Color(0xFF94A3B8), size: 20),
-                    ],
-                  ),
-                  onTap: () => _showLanguagePicker(context),
-                ),
-
-                // Theme
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A).withAlpha(15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.brightness_6_rounded,
-                            color: Color(0xFF0F172A), size: 18),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                          child: Text('Theme',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: Color(0xFF0F172A)))),
-                      _ThemeSegmentControl(themeService: themeService),
-                    ],
-                  ),
-                ),
-
-                // Notifications
-                _SettingsTile(
-                  icon: Icons.notifications_rounded,
-                  iconColor: const Color(0xFFF97316),
-                  title: 'Notifications',
-                  subtitle: 'Bookings, messages & offers',
-                  trailing: Switch.adaptive(
-                    value: _notificationsEnabled,
-                    activeColor: const Color(0xFF6366F1),
-                    onChanged: (val) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _notificationsEnabled = val);
-                      if (val) {
-                        PushNotificationService.requestPermission();
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // ── Privacy & Security ──────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _SettingsSection(
-              title: 'Privacy & Security',
-              children: [
-                _SettingsTile(
-                  icon: Icons.privacy_tip_rounded,
-                  iconColor: const Color(0xFF6366F1),
-                  title: 'Privacy Policy',
-                  trailing: const Icon(Icons.open_in_new_rounded,
-                      color: Color(0xFF94A3B8), size: 18),
-                  onTap: () {},
-                ),
-                _SettingsTile(
-                  icon: Icons.description_rounded,
-                  iconColor: const Color(0xFF06B6D4),
-                  title: 'Terms of Service',
-                  trailing: const Icon(Icons.open_in_new_rounded,
-                      color: Color(0xFF94A3B8), size: 18),
-                  onTap: () {},
-                ),
-                _SettingsTile(
-                  icon: Icons.delete_forever_rounded,
-                  iconColor: Colors.red,
-                  title: 'Delete Account',
-                  titleColor: Colors.red,
-                  trailing: const Icon(Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8), size: 20),
-                  onTap: () => _showDeleteConfirm(context),
-                ),
-              ],
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // ── About ──────────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _SettingsSection(
-              title: 'About',
-              children: [
-                _SettingsTile(
-                  icon: Icons.info_rounded,
-                  iconColor: const Color(0xFF64748B),
-                  title: 'Version',
-                  trailing: const Text('1.0.0',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                ),
-                _SettingsTile(
-                  icon: Icons.star_rounded,
-                  iconColor: const Color(0xFFF59E0B),
-                  title: 'Rate Us',
-                  trailing: const Icon(Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8), size: 20),
-                  onTap: () {},
-                ),
-                _SettingsTile(
-                  icon: Icons.share_rounded,
-                  iconColor: const Color(0xFF10B981),
-                  title: 'Share App',
-                  trailing: const Icon(Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8), size: 20),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // ── Logout ─────────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red, width: 1.5),
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: _logout,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              SliverToBoxAdapter(
+                child: _SettingsSection(
+                  title: 'Account',
+                  subtitle: 'Manage your public identity and credentials.',
                   children: [
-                    Icon(Icons.logout_rounded, size: 18),
-                    SizedBox(width: 8),
-                    Text('Logout', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    _EditableField(
+                      icon: Icons.person_rounded,
+                      iconColor: AppColors.primary,
+                      label: 'Full Name',
+                      controller: _nameCtrl,
+                    ),
+                    _EditableField(
+                      icon: Icons.phone_rounded,
+                      iconColor: AppColors.success,
+                      label: 'Phone Number',
+                      controller: _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    _EditableField(
+                      icon: Icons.location_on_rounded,
+                      iconColor: AppColors.warning,
+                      label: 'Location',
+                      controller: _locationCtrl,
+                    ),
+                    _SettingsTile(
+                      icon: Icons.lock_rounded,
+                      iconColor: AppColors.error,
+                      title: 'Change Password',
+                      subtitle: 'Update your account security',
+                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                      onTap: _changePassword,
+                    ),
+                    _SettingsTile(
+                      icon: Icons.verified_user_rounded,
+                      iconColor: AppColors.secondary,
+                      title: 'KYC Verification',
+                      subtitle: 'Verify your identity',
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PremiumStatusPill(label: 'Pending', color: AppColors.warning),
+                          const SizedBox(width: AppSpacing.xs),
+                          const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                        ],
+                      ),
+                      onTap: () {},
+                    ),
                   ],
                 ),
               ),
-            ),
+              SliverToBoxAdapter(
+                child: _SettingsSection(
+                  title: 'Preferences',
+                  subtitle: 'Customize language, theme and alerts.',
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.language_rounded,
+                      iconColor: AppColors.accent,
+                      title: 'Language',
+                      subtitle: 'Choose your preferred app language',
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PremiumStatusPill(label: _appLanguage.toUpperCase(), color: AppColors.primary),
+                          const SizedBox(width: AppSpacing.xs),
+                          const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                        ],
+                      ),
+                      onTap: () => _showLanguagePicker(context),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [AppColors.surfaceDark.withAlpha(25), AppColors.primary.withAlpha(18)]),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                            ),
+                            child: const Icon(Icons.brightness_6_rounded, color: AppColors.surfaceDark),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Theme', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                SizedBox(height: 2),
+                                Text('Light, system or dark mode', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                              ],
+                            ),
+                          ),
+                          _ThemeSegmentControl(themeService: themeService),
+                        ],
+                      ),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.notifications_rounded,
+                      iconColor: const Color(0xFFF97316),
+                      title: 'Notifications',
+                      subtitle: 'Bookings, messages & offers',
+                      trailing: Switch.adaptive(
+                        value: _notificationsEnabled,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _notificationsEnabled = val);
+                          if (val) {
+                            PushNotificationService.requestPermission();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _SettingsSection(
+                  title: 'Privacy & Security',
+                  subtitle: 'Control policies and sensitive account actions.',
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.privacy_tip_rounded,
+                      iconColor: AppColors.primary,
+                      title: 'Privacy Policy',
+                      trailing: const Icon(Icons.open_in_new_rounded, color: Colors.black45, size: 18),
+                      onTap: () {},
+                    ),
+                    _SettingsTile(
+                      icon: Icons.description_rounded,
+                      iconColor: AppColors.secondary,
+                      title: 'Terms of Service',
+                      trailing: const Icon(Icons.open_in_new_rounded, color: Colors.black45, size: 18),
+                      onTap: () {},
+                    ),
+                    _SettingsTile(
+                      icon: Icons.delete_forever_rounded,
+                      iconColor: Colors.red,
+                      title: 'Delete Account',
+                      titleColor: Colors.red,
+                      subtitle: 'This action is permanent',
+                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                      onTap: () => _showDeleteConfirm(context),
+                    ),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _SettingsSection(
+                  title: 'About',
+                  subtitle: 'Version, feedback and sharing.',
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.info_rounded,
+                      iconColor: Colors.grey.shade700,
+                      title: 'Version',
+                      trailing: const Text('1.0.0', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w700)),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.star_rounded,
+                      iconColor: AppColors.warning,
+                      title: 'Rate Us',
+                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                      onTap: () {},
+                    ),
+                    _SettingsTile(
+                      icon: Icons.share_rounded,
+                      iconColor: AppColors.success,
+                      title: 'Share App',
+                      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black45),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxxl),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(color: Colors.red.withAlpha(70), width: 1.4),
+                      gradient: LinearGradient(colors: [Colors.red.withAlpha(18), Colors.orange.withAlpha(10)]),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                        onTap: _logout,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.logout_rounded, size: 18, color: Colors.red),
+                              SizedBox(width: AppSpacing.sm),
+                              Text(
+                                'Logout',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -603,45 +586,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ── Supporting Widgets ────────────────────────────────────────────────────────
-
 class _SettingsSection extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final List<Widget> children;
 
-  const _SettingsSection({required this.title, required this.children});
+  const _SettingsSection({required this.title, required this.children, this.subtitle});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(
-              title.toUpperCase(),
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(6),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          PremiumSectionTitle(title: title, subtitle: subtitle),
+          PremiumGlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
             child: Column(
               children: List.generate(children.length, (i) {
                 final child = children[i];
@@ -649,11 +610,7 @@ class _SettingsSection extends StatelessWidget {
                 return Column(
                   children: [
                     child,
-                    Divider(
-                      height: 1,
-                      indent: 56,
-                      color: const Color(0xFFE2E8F0).withAlpha(200),
-                    ),
+                    Divider(color: Colors.grey.shade200, height: 1, indent: 58),
                   ],
                 );
               }),
@@ -686,47 +643,36 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return ListTile(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: iconColor.withAlpha(20),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: titleColor ?? const Color(0xFF0F172A),
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!,
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                  ],
-                ],
-              ),
-            ),
-            if (trailing != null) trailing!,
-          ],
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [iconColor.withAlpha(20), iconColor.withAlpha(8)]),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          color: titleColor ?? AppColors.surfaceDark,
         ),
       ),
+      subtitle: subtitle == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                subtitle!,
+                style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
+              ),
+            ),
+      trailing: trailing,
     );
   }
 }
@@ -749,37 +695,59 @@ class _EditableField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: iconColor.withAlpha(20),
-              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(colors: [iconColor.withAlpha(20), iconColor.withAlpha(8)]),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: Color(0xFF0F172A)),
-              decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
+            child: Container(
+              padding: const EdgeInsets.all(1.2),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(230),
+                  borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+                ),
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.surfaceDark),
+                  decoration: InputDecoration(
+                    labelText: label,
+                    labelStyle: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700, fontSize: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: const Icon(Icons.edit_rounded, size: 16, color: Colors.black45),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                  ),
+                ),
               ),
             ),
           ),
-          const Icon(Icons.edit_rounded, size: 14, color: Color(0xFF94A3B8)),
         ],
       ),
     );
@@ -799,10 +767,11 @@ class _ThemeSegmentControl extends StatelessWidget {
     ];
 
     return Container(
-      height: 32,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withAlpha(150),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: Colors.white.withAlpha(140)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -812,15 +781,16 @@ class _ThemeSegmentControl extends StatelessWidget {
             onTap: () => themeService.setTheme(opt.$1),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
+                gradient: isSelected ? const LinearGradient(colors: AppColors.primaryGradient) : null,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                boxShadow: isSelected ? AppShadows.sm(AppColors.primary) : null,
               ),
               child: Icon(
                 opt.$2,
                 size: 16,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                color: isSelected ? Colors.white : Colors.black54,
               ),
             ),
           );
@@ -846,61 +816,121 @@ class _ChangePasswordSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFFCBD5E1),
-              borderRadius: BorderRadius.circular(2),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            margin: const EdgeInsets.only(bottom: 16),
           ),
-          const Text('Change Password',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-          const SizedBox(height: 20),
-          TextField(
+          const SizedBox(height: AppSpacing.xl),
+          const Text(
+            'Change Password',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+            'Refresh your login credentials to keep your SkillConnect account protected.',
+            style: TextStyle(color: Colors.black54, height: 1.5, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _SheetField(
             controller: currentCtrl,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: 'Current Password',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.lock_rounded),
-            ),
+            label: 'Current Password',
+            icon: Icons.lock_rounded,
           ),
-          const SizedBox(height: 12),
-          TextField(
+          const SizedBox(height: AppSpacing.md),
+          _SheetField(
             controller: newCtrl,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: 'New Password (min 8 chars)',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.lock_open_rounded),
-            ),
+            label: 'New Password (min 8 chars)',
+            icon: Icons.lock_open_rounded,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                minimumSize: const Size(0, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                boxShadow: AppShadows.md(AppColors.primary),
               ),
-              onPressed: onSave,
-              child: const Text('Update Password',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  onTap: onSave,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    child: Center(
+                      child: Text(
+                        'Update Password',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
         ],
+      ),
+    );
+  }
+}
+
+class _SheetField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+
+  const _SheetField({required this.controller, required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(1.2),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: AppColors.primaryGradient),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+        ),
+        child: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon, color: AppColors.primary),
+            labelStyle: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl - 1),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
       ),
     );
   }
