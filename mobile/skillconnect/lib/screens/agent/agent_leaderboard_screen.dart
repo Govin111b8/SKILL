@@ -186,20 +186,21 @@ class _AgentLeaderboardScreenState extends State<AgentLeaderboardScreen> {
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
-                sliver: SliverList.separated(
-                  itemCount: rest.length,
-                  itemBuilder: (context, index) {
-                    final agent = rest[index];
-                    final isCurrent = _isCurrentAgent(agent, currentId);
-                    return _LeaderboardRow(
-                      agent: agent,
-                      currency: _currency,
-                      isCurrent: isCurrent,
-                    );
-                  },
-                  separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+                  child: Column(
+                    children: [
+                      for (var index = 0; index < rest.length; index++) ...[
+                        _LeaderboardRow(
+                          agent: rest[index],
+                          currency: _currency,
+                          isCurrent: _isCurrentAgent(rest[index], currentId),
+                        ),
+                        if (index != rest.length - 1) const SizedBox(height: AppSpacing.md),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -237,9 +238,9 @@ class _PeriodChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(color: Colors.white.withAlpha(selected ? 70 : 40)),
         ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+        child: const Text(
+          '',
+          style: TextStyle(),
         ),
       ),
     );
@@ -263,11 +264,14 @@ class _PodiumCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = switch (position) {
-      1 => const [Color(0xFFFDE68A), Color(0xFFF59E0B)],
-      2 => const [Color(0xFFE5E7EB), Color(0xFF94A3B8)],
-      _ => const [Color(0xFFF5CBA7), Color(0xFFB45309)],
-    };
+    final List<Color> gradient;
+    if (position == 1) {
+      gradient = const [Color(0xFFFDE68A), Color(0xFFF59E0B)];
+    } else if (position == 2) {
+      gradient = const [Color(0xFFE5E7EB), Color(0xFF94A3B8)];
+    } else {
+      gradient = const [Color(0xFFF5CBA7), Color(0xFFB45309)];
+    }
     final amount = ((agent['earnings'] ?? agent['total_commission'] ?? 0) as num).toDouble();
     final score = (agent['performance_score'] ?? 0).toString();
 

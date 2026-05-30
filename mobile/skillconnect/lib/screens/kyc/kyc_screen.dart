@@ -4,6 +4,8 @@ import '../../data/kyc_catalog.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/trust_badge.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 class KycScreen extends StatefulWidget {
   const KycScreen({super.key});
@@ -88,102 +90,227 @@ class _KycScreenState extends State<KycScreen> {
 
     final lvl = (_summary['kyc_level'] ?? 0) as int;
     final score = ((_summary['trust_score'] ?? 0) as num).toInt();
+    final verifiedCount = _myDocs.where((d) => d['status'] == 'verified').length;
+    final pendingCount = _myDocs.where((d) => d['status'] == 'pending').length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('KYC & Verification'), elevation: 0),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Trust score header
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFF06B6D4)]),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withAlpha(80), blurRadius: 20, offset: const Offset(0, 8))],
-                    ),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.white, size: 28),
-                        const SizedBox(width: 10),
-                        const Text('Trust Score', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                        const Spacer(),
-                        TrustBadge(kycLevel: lvl, trustScore: score),
-                      ]),
-                      const SizedBox(height: 16),
-                      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('$score', style: const TextStyle(color: Colors.white, fontSize: 56, fontWeight: FontWeight.w900, height: 1)),
-                        Padding(padding: const EdgeInsets.only(bottom: 8, left: 4), child: Text('/100', style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 18, fontWeight: FontWeight.w600))),
-                        const Spacer(),
-                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('Level $lvl / 3', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-                          Text(_levelLabel(lvl), style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 11)),
-                        ]),
-                      ]),
-                      const SizedBox(height: 14),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: LinearProgressIndicator(
-                          value: score / 100,
-                          minHeight: 8,
-                          backgroundColor: Colors.white.withAlpha(60),
-                          valueColor: const AlwaysStoppedAnimation(Colors.white),
+      extendBodyBehindAppBar: true,
+      appBar: const PremiumAppBar(title: 'KYC & Verification'),
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: _loading
+              ? const PremiumLoadingList(itemCount: 5, itemHeight: 132)
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, AppSpacing.xxxl),
+                    children: [
+                      PremiumHeroHeader(
+                        title: _heroTitle(lvl, verifiedCount),
+                        subtitle: _nextStepHint(lvl, score),
+                        icon: lvl >= 2 ? Icons.verified_user_rounded : Icons.shield_outlined,
+                        gradient: _heroGradient(lvl),
+                        trailing: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            TrustBadge(kycLevel: lvl, trustScore: score),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              '$score/100',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'Trust score',
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(220),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        chips: [
+                          PremiumStatChip(
+                            label: 'Level $lvl',
+                            icon: Icons.workspace_premium_rounded,
+                            color: Colors.white,
+                          ),
+                          PremiumStatChip(
+                            label: '$verifiedCount verified',
+                            icon: Icons.verified_rounded,
+                            color: Colors.white,
+                          ),
+                          PremiumStatChip(
+                            label: pendingCount > 0 ? '$pendingCount pending' : 'Secure vault',
+                            icon: pendingCount > 0 ? Icons.schedule_rounded : Icons.lock_rounded,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        child: PremiumGlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.alt_route_rounded, color: AppColors.primary),
+                                  SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    'Verification journey',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              _buildJourneyStep(
+                                index: 1,
+                                title: 'Phone verified',
+                                subtitle: 'Start building trust with a verified mobile number.',
+                                complete: lvl >= 1,
+                                active: lvl == 0,
+                                color: AppColors.info,
+                              ),
+                              _buildJourneyConnector(lvl >= 1),
+                              _buildJourneyStep(
+                                index: 2,
+                                title: 'Government ID',
+                                subtitle: 'Aadhaar, PAN, or another identity document.',
+                                complete: lvl >= 2,
+                                active: lvl == 1,
+                                color: AppColors.success,
+                              ),
+                              _buildJourneyConnector(lvl >= 2),
+                              _buildJourneyStep(
+                                index: 3,
+                                title: 'Pro-grade trust',
+                                subtitle: 'Add business or credential docs for maximum visibility.',
+                                complete: lvl >= 3,
+                                active: lvl == 2,
+                                color: AppColors.accent,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(_nextStepHint(lvl, score), style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12)),
-                    ]),
+                      if (_error != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
+                          child: PremiumGlassCard(
+                            gradient: [
+                              AppColors.errorLight.withAlpha(225),
+                              Colors.white.withAlpha(205),
+                            ],
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error.withAlpha(18),
+                                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  ),
+                                  child: const Icon(Icons.error_outline_rounded, color: AppColors.error),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: Text(
+                                    _error!,
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      for (final cat in byCategory.keys) ...[
+                        PremiumSectionTitle(
+                          title: cat,
+                          subtitle: 'Tap a document to add or manage verification.',
+                          trailing: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: _catColor(cat).withAlpha(18),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                            ),
+                            child: Icon(_catIcon(cat), color: _catColor(cat)),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                          child: Column(
+                            children: [
+                              for (final doc in byCategory[cat]!) ...[
+                                _docTile(doc),
+                                const SizedBox(height: AppSpacing.md),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
+                        child: PremiumGlassCard(
+                          gradient: [
+                            AppColors.warningLight.withAlpha(235),
+                            Colors.white.withAlpha(210),
+                          ],
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(colors: AppColors.warmGradient),
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                ),
+                                child: const Icon(Icons.shield_moon_outlined, color: Colors.white),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Privacy & Security',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      'Document numbers are masked everywhere. Originals are encrypted at rest. We never share your KYC data with third parties — only verification status is shown publicly.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade700,
+                                        height: 1.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 12),
-                    Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)), child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade800, fontSize: 12)))])),
-                  ],
-                  const SizedBox(height: 24),
-
-                  // Per category
-                  for (final cat in byCategory.keys) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8, top: 8),
-                      child: Row(children: [
-                        Icon(_catIcon(cat), size: 18, color: const Color(0xFF6366F1)),
-                        const SizedBox(width: 8),
-                        Text(cat, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.3)),
-                      ]),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-                      child: Column(children: [
-                        for (var i = 0; i < byCategory[cat]!.length; i++) ...[
-                          if (i > 0) const Divider(height: 1, indent: 60),
-                          _docTile(byCategory[cat]![i]),
-                        ],
-                      ]),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.amber.shade200)),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Icon(Icons.shield_outlined, color: Color(0xFFB45309)),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('Privacy & Security', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF92400E))),
-                        const SizedBox(height: 4),
-                        Text('Document numbers are masked everywhere. Originals are encrypted at rest. We never share your KYC data with third parties — only verification status is shown publicly.', style: TextStyle(fontSize: 12, color: Colors.brown.shade700)),
-                      ])),
-                    ]),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
+                ),
+        ),
+      ),
     );
   }
 
@@ -191,21 +318,136 @@ class _KycScreenState extends State<KycScreen> {
     final existing = _docFor(doc.code);
     final status = existing?['status'] as String?;
     final masked = existing?['doc_number'] as String?;
-    return ListTile(
-      leading: Container(
-        width: 40, height: 40,
-        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
-        child: Center(child: Text(doc.emoji, style: const TextStyle(fontSize: 20))),
-      ),
-      title: Text(doc.label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      subtitle: Text(masked ?? doc.hint, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-      trailing: status == null
-          ? FilledButton.tonal(onPressed: () => _add(doc), style: FilledButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6)), child: const Text('Add', style: TextStyle(fontSize: 12)))
-          : Row(mainAxisSize: MainAxisSize.min, children: [
-              _statusChip(status),
-              IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _delete(existing!['id'] as String)),
-            ]),
+    final color = _statusColor(status);
+    final icon = _statusIcon(status);
+    final statusLabel = _statusLabel(status);
+
+    return PremiumGlassCard(
       onTap: status == null ? () => _add(doc) : null,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: status == null
+                  ? [AppColors.primary.withAlpha(22), AppColors.accent.withAlpha(18)]
+                  : [color.withAlpha(18), color.withAlpha(8)],
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Center(
+              child: Text(doc.emoji, style: const TextStyle(fontSize: 24)),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        doc.label,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    if (status != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(14),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(color: color.withAlpha(70)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icon, size: 14, color: color),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              statusLabel,
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  masked ?? doc.hint,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: status == null ? AppColors.primary.withAlpha(10) : color.withAlpha(10),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                        child: Text(
+                          status == null
+                              ? 'Ready to add'
+                              : status == 'verified'
+                                  ? 'Securely verified and visible'
+                                  : status == 'pending'
+                                      ? 'Under review by our verification team'
+                                      : 'Needs attention before approval',
+                          style: TextStyle(
+                            color: status == null ? AppColors.primary : color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    if (status == null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          boxShadow: AppShadows.sm(AppColors.primary),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'Add',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        onPressed: () => _delete(existing!['id'] as String),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -242,6 +484,126 @@ class _KycScreenState extends State<KycScreen> {
     'Credential' => Icons.workspace_premium_rounded,
     _ => Icons.folder_outlined,
   };
+
+  String _heroTitle(int level, int verifiedCount) {
+    if (level >= 3) return 'Verified like a pro';
+    if (verifiedCount > 0) return 'Almost fully verified';
+    return 'Start your verification';
+  }
+
+  List<Color> _heroGradient(int level) {
+    if (level >= 3) return AppColors.successGradient;
+    if (level >= 2) return const [AppColors.primary, AppColors.info, AppColors.accent];
+    return AppColors.heroGradient;
+  }
+
+  Widget _buildJourneyStep({
+    required int index,
+    required String title,
+    required String subtitle,
+    required bool complete,
+    required bool active,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedContainer(
+          duration: AppDurations.normal,
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: complete || active
+                ? LinearGradient(colors: [color, color.withAlpha(190)])
+                : null,
+            color: complete || active ? null : Colors.white,
+            border: Border.all(
+              color: complete || active ? Colors.transparent : AppColors.borderLight,
+            ),
+            boxShadow: complete || active ? AppShadows.sm(color) : null,
+          ),
+          child: Icon(
+            complete ? Icons.check_rounded : Icons.circle_outlined,
+            color: complete || active ? Colors.white : AppColors.borderDark,
+            size: 18,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$index. $title',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildJourneyConnector(bool complete) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, top: AppSpacing.xs, bottom: AppSpacing.xs),
+      child: Container(
+        width: 2,
+        height: 20,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: complete
+                ? [AppColors.success.withAlpha(180), AppColors.primary.withAlpha(120)]
+                : [AppColors.borderLight, AppColors.borderLight],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _statusColor(String? status) => switch (status) {
+    'verified' => AppColors.success,
+    'pending' => AppColors.warning,
+    'rejected' => AppColors.error,
+    _ => AppColors.primary,
+  };
+
+  IconData _statusIcon(String? status) => switch (status) {
+    'verified' => Icons.shield_rounded,
+    'pending' => Icons.schedule_rounded,
+    'rejected' => Icons.cancel_rounded,
+    _ => Icons.add_circle_outline_rounded,
+  };
+
+  String _statusLabel(String? status) => switch (status) {
+    'verified' => 'Verified',
+    'pending' => 'Pending',
+    'rejected' => 'Rejected',
+    _ => 'Add document',
+  };
+
+  Color _catColor(String cat) => switch (cat) {
+    'Identity' => AppColors.primary,
+    'Employment' => AppColors.info,
+    'Business' => AppColors.warning,
+    'Credential' => AppColors.accent,
+    _ => AppColors.primary,
+  };
 }
 
 class _SubmitSheet extends StatefulWidget {
@@ -265,59 +627,167 @@ class _SubmitSheetState extends State<_SubmitSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        padding: const EdgeInsets.all(20),
-        child: SafeArea(
-          top: false,
-          child: Form(
-            key: _form,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16), decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-              Row(children: [
-                Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)), child: Center(child: Text(widget.doc.emoji, style: const TextStyle(fontSize: 24)))),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(widget.doc.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                  Text(widget.doc.hint, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                ])),
-              ]),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _num,
-                decoration: InputDecoration(labelText: 'Document number', hintText: widget.doc.exampleFormat ?? 'Enter number', prefixIcon: const Icon(Icons.numbers_rounded)),
-                textCapitalization: TextCapitalization.characters,
-                autofocus: true,
-                validator: (v) => widget.doc.clientValidate(v ?? ''),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(labelText: 'Name as on document (optional)', prefixIcon: Icon(Icons.person_outline)),
-              ),
-              const SizedBox(height: 16),
-              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(10)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700, size: 18),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Format will be re-validated server-side. Document numbers are masked on display and stored hashed.', style: TextStyle(fontSize: 11, color: Colors.blue.shade900))),
-              ])),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    if (!_form.currentState!.validate()) return;
-                    Navigator.pop(context, {
-                      'doc_type': widget.doc.code,
-                      'doc_number': _num.text.trim(),
-                      if (_name.text.trim().isNotEmpty) 'holder_name': _name.text.trim(),
-                    });
-                  },
-                  icon: const Icon(Icons.verified_rounded),
-                  label: const Text('Submit for verification'),
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        ),
+        child: PremiumBackground(
+          child: Container(
+            margin: const EdgeInsets.only(top: AppSpacing.huge),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: PremiumGlassCard(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Form(
+                    key: _form,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 44,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                            decoration: BoxDecoration(
+                              color: AppColors.borderLight,
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary.withAlpha(18), AppColors.accent.withAlpha(12)],
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                ),
+                                child: Center(
+                                  child: Text(widget.doc.emoji, style: const TextStyle(fontSize: 28)),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.doc.label,
+                                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      widget.doc.hint,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade700,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        TextFormField(
+                          controller: _num,
+                          decoration: InputDecoration(
+                            labelText: 'Document number',
+                            hintText: widget.doc.exampleFormat ?? 'Enter number',
+                            prefixIcon: const Icon(Icons.badge_outlined),
+                            filled: true,
+                            fillColor: Colors.white.withAlpha(150),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                          autofocus: true,
+                          validator: (v) => widget.doc.clientValidate(v ?? ''),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextFormField(
+                          controller: _name,
+                          decoration: InputDecoration(
+                            labelText: 'Name as on document (optional)',
+                            prefixIcon: const Icon(Icons.person_outline_rounded),
+                            filled: true,
+                            fillColor: Colors.white.withAlpha(150),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.infoLight.withAlpha(210),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            border: Border.all(color: AppColors.info.withAlpha(50)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.lock_outline_rounded, color: AppColors.info, size: 18),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  'Format will be re-validated server-side. Document numbers are masked on display and stored hashed.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue.shade900,
+                                    height: 1.45,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          width: double.infinity,
+                          child: PremiumGradientButton(
+                            label: 'Submit for verification',
+                            icon: Icons.verified_rounded,
+                            onPressed: () {
+                              if (!_form.currentState!.validate()) return;
+                              Navigator.pop(context, {
+                                'doc_type': widget.doc.code,
+                                'doc_number': _num.text.trim(),
+                                if (_name.text.trim().isNotEmpty) 'holder_name': _name.text.trim(),
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-            ]),
+            ),
           ),
         ),
       ),

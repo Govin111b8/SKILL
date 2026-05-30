@@ -168,7 +168,7 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                 child: PremiumGradientButton(
                   label: 'Save Preferences',
                   icon: Icons.save_rounded,
-                  onPressed: _save,
+                  onPressed: () { _save(); },
                 ),
               ),
             ],

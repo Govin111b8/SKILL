@@ -92,7 +92,7 @@ class _AgentOnboardingScreenState extends State<AgentOnboardingScreen> {
       return PremiumScrollScaffold(
         backgroundColor: const Color(0xFFF5F7FF),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.huge, AppSpacing.lg, AppSpacing.xxl),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
@@ -161,7 +161,7 @@ class _AgentOnboardingScreenState extends State<AgentOnboardingScreen> {
       backgroundColor: const Color(0xFFF5F7FF),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.huge, AppSpacing.lg, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -416,7 +416,10 @@ class _AgentOnboardingScreenState extends State<AgentOnboardingScreen> {
             _ReviewRow(label: 'City', value: _cityController.text),
             _ReviewRow(label: 'Territory', value: _territoryController.text),
             _ReviewRow(label: 'Account holder', value: _holderController.text),
-            _ReviewRow(label: 'Account number', value: _accountController.text.isEmpty ? '—' : '•••• ${_accountController.text.characters.takeLast(4)}'),
+            _ReviewRow(
+              label: 'Account number',
+              value: _accountController.text.isEmpty ? '—' : '•••• ${_accountController.text.characters.takeLast(4)}',
+            ),
             _ReviewRow(label: 'IFSC', value: _ifscController.text),
           ],
         );
@@ -469,9 +472,7 @@ class _StepProgressIndicator extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: active
-                      ? AppColors.primaryGradient
-                      : [Colors.grey.shade300, Colors.grey.shade200],
+                  colors: active ? AppColors.primaryGradient : [Colors.grey.shade300, Colors.grey.shade200],
                 ),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
@@ -505,12 +506,16 @@ class _StepProgressIndicator extends StatelessWidget {
                             : Colors.grey.shade300,
                     width: 1.4,
                   ),
-                  boxShadow: isComplete || isActive
-                      ? AppShadows.sm(isComplete ? AppColors.success : AppColors.primary)
-                      : null,
+                  boxShadow: isComplete || isActive ? AppShadows.sm(isComplete ? AppColors.success : AppColors.primary) : null,
                 ),
                 child: Icon(
-                  isComplete ? Icons.check_rounded : stepIndex + 1 == 1 ? Icons.person_rounded : stepIndex + 1 == 2 ? Icons.account_balance_rounded : Icons.task_alt_rounded,
+                  isComplete
+                      ? Icons.check_rounded
+                      : stepIndex + 1 == 1
+                          ? Icons.person_rounded
+                          : stepIndex + 1 == 2
+                              ? Icons.account_balance_rounded
+                              : Icons.task_alt_rounded,
                   color: isComplete || isActive ? Colors.white : Colors.grey.shade500,
                   size: 20,
                 ),

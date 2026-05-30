@@ -285,7 +285,7 @@ class _AgentWalletScreenState extends State<AgentWalletScreen> {
                             PremiumGradientButton(
                               label: 'Withdraw now',
                               icon: Icons.arrow_upward_rounded,
-                              colors: const [Color(0xFF93C5FD), Color(0xFFFFFFFF)],
+                              colors: const [Color(0xFF60A5FA), Color(0xFF2563EB)],
                               onPressed: _openWithdrawSheet,
                             ),
                           ],
@@ -349,73 +349,80 @@ class _AgentWalletScreenState extends State<AgentWalletScreen> {
                   ),
                 )
               else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
-                  sliver: SliverList.separated(
-                    itemCount: _earnings.length,
-                    itemBuilder: (context, index) {
-                      final item = _earnings[index];
-                      final status = (item['status'] ?? 'pending').toString();
-                      final isCredited = status == 'credited';
-                      final color = isCredited ? AppColors.success : AppColors.warning;
-                      final amount = ((item['commission_amount'] ?? item['amount'] ?? 0) as num).toDouble();
-                      final description = item['booking_reference']?.toString() ?? item['booking_id']?.toString() ?? 'Booking';
-                      final dateText = _formatDate(item['date']?.toString() ?? item['created_at']?.toString());
-                      return PremiumGlassCard(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: color.withAlpha(16),
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
-                              ),
-                              child: Icon(
-                                isCredited ? Icons.south_west_rounded : Icons.schedule_rounded,
-                                color: color,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.lg),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    description,
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    dateText,
-                                    style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  PremiumStatusPill(label: status, color: color),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  _currency.format(amount),
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+                    child: Column(
+                      children: [
+                        for (var index = 0; index < _earnings.length; index++) ...[
+                          Builder(
+                            builder: (context) {
+                              final item = _earnings[index];
+                              final status = (item['status'] ?? 'pending').toString();
+                              final isCredited = status == 'credited';
+                              final color = isCredited ? AppColors.success : AppColors.warning;
+                              final amount = ((item['commission_amount'] ?? item['amount'] ?? 0) as num).toDouble();
+                              final description = item['booking_reference']?.toString() ?? item['booking_id']?.toString() ?? 'Booking';
+                              final dateText = _formatDate(item['date']?.toString() ?? item['created_at']?.toString());
+                              return PremiumGlassCard(
+                                padding: const EdgeInsets.all(AppSpacing.lg),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 52,
+                                      height: 52,
+                                      decoration: BoxDecoration(
+                                        color: color.withAlpha(16),
+                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                      ),
+                                      child: Icon(
+                                        isCredited ? Icons.south_west_rounded : Icons.schedule_rounded,
+                                        color: color,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.lg),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            description,
+                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                          ),
+                                          const SizedBox(height: AppSpacing.xs),
+                                          Text(
+                                            dateText,
+                                            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                          ),
+                                          const SizedBox(height: AppSpacing.sm),
+                                          PremiumStatusPill(label: status, color: color),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          _currency.format(amount),
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                        ),
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Text(
+                                          isCredited ? 'Credit' : 'Processing',
+                                          style: TextStyle(color: color, fontWeight: FontWeight.w700),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  isCredited ? 'Credit' : 'Processing',
-                                  style: TextStyle(color: color, fontWeight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                              );
+                            },
+                          ),
+                          if (index != _earnings.length - 1) const SizedBox(height: AppSpacing.md),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
             ],
