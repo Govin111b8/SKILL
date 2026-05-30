@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 /// Schedule management screen for professionals.
 /// Allows setting weekly availability, blocking dates (vacation), and
@@ -9,10 +11,12 @@ class ScheduleManagementScreen extends StatefulWidget {
   const ScheduleManagementScreen({super.key});
 
   @override
-  State<ScheduleManagementScreen> createState() => _ScheduleManagementScreenState();
+  State<ScheduleManagementScreen> createState() =>
+      _ScheduleManagementScreenState();
 }
 
-class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> with SingleTickerProviderStateMixin {
+class _ScheduleManagementScreenState extends State<ScheduleManagementScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Map<String, dynamic>> _schedule = [];
   List<Map<String, dynamic>> _blockedDates = [];
@@ -20,7 +24,15 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> wit
   String? _error;
   bool _saving = false;
 
-  static const _days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  static const _days = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
 
   @override
   void initState() {
@@ -36,7 +48,10 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> wit
   }
 
   Future<void> _loadData() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final results = await Future.wait([
         ApiService.get('/schedule', auth: true),
@@ -63,13 +78,16 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> wit
       HapticFeedback.mediumImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Schedule saved!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Schedule saved!'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -97,7 +115,8 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> wit
     final slot = _schedule[slotIndex];
     final current = slot[isStart ? 'start_time' : 'end_time'] as String;
     final parts = current.split(':');
-    final initial = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    final initial =
+        TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
 
     final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked != null) {
@@ -119,206 +138,437 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> wit
     final dates = <String>[];
     var d = picked.start;
     while (!d.isAfter(picked.end)) {
-      dates.add('${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}');
+      dates.add(
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}');
       d = d.add(const Duration(days: 1));
     }
 
     try {
-      await ApiService.post('/schedule/block-dates', {'dates': dates, 'reason': 'Vacation'}, auth: true);
+      await ApiService.post('/schedule/block-dates',
+          {'dates': dates, 'reason': 'Vacation'}, auth: true);
       _loadData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
   Future<void> _unblockDate(String date) async {
     try {
-      await ApiService.post('/schedule/unblock-dates', {'dates': [date]}, auth: true);
+      await ApiService.post(
+          '/schedule/unblock-dates', {'dates': [date]}, auth: true);
       setState(() {
-        _blockedDates.removeWhere((d) => d['blocked_date']?.toString().startsWith(date) == true);
+        _blockedDates.removeWhere(
+            (d) => d['blocked_date']?.toString().startsWith(date) == true);
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Schedule'),
-        actions: [
-          if (!_loading)
-            TextButton.icon(
-              onPressed: _saving ? null : _saveSchedule,
-              icon: _saving
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.save),
-              label: const Text('Save'),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: Column(children: [
+            _buildHeader(context),
+            _buildPremiumTabBar(),
+            Expanded(
+              child: _loading
+                  ? const PremiumLoadingList(itemCount: 7, itemHeight: 100)
+                  : _error != null
+                      ? Center(
+                          child: PremiumEmptyState(
+                            icon: Icons.error_outline_rounded,
+                            title: 'Could not load schedule',
+                            subtitle: _error!,
+                            actionLabel: 'Retry',
+                            onAction: _loadData,
+                            gradient: const [
+                              AppColors.error,
+                              Color(0xFFFF6B6B)
+                            ],
+                          ),
+                        )
+                      : TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildWeeklyTab(),
+                            _buildBlockedTab(),
+                          ],
+                        ),
             ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Weekly Hours'),
-            Tab(text: 'Blocked Dates'),
-          ],
+          ]),
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_error!, style: TextStyle(color: cs.error)),
-                  const SizedBox(height: 12),
-                  FilledButton(onPressed: _loadData, child: const Text('Retry')),
-                ]))
-              : TabBarView(
-                  controller: _tabController,
-                  children: [_buildWeeklyTab(cs), _buildBlockedTab(cs)],
-                ),
     );
   }
 
-  Widget _buildWeeklyTab(ColorScheme cs) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+      child: Row(children: [
+        IconButton(
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withAlpha(20)),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        const Expanded(
+          child: Text(
+            'My Schedule',
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5),
+          ),
+        ),
+        if (!_loading)
+          AnimatedContainer(
+            duration: AppDurations.fast,
+            decoration: BoxDecoration(
+              gradient: _saving
+                  ? null
+                  : const LinearGradient(colors: AppColors.primaryGradient),
+              color: _saving ? Colors.grey.withAlpha(40) : null,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: _saving ? null : AppShadows.sm(AppColors.primary),
+            ),
+            child: TextButton.icon(
+              onPressed: _saving ? null : _saveSchedule,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child:
+                          CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.save_rounded,
+                      color: Colors.white, size: 16),
+              label: Text(
+                'Save',
+                style: TextStyle(
+                  color: _saving ? Colors.grey : Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _buildPremiumTabBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(60),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          gradient: const LinearGradient(colors: AppColors.primaryGradient),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.sm(AppColors.primary),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.grey.shade600,
+        labelStyle:
+            const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        tabs: const [
+          Tab(text: 'Weekly Hours'),
+          Tab(text: 'Blocked Dates'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyTab() {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.huge),
       itemCount: 7,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, day) {
         final slots = _slotsForDay(day);
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(_days[day], style: Theme.of(context).textTheme.titleMedium),
-                    const Spacer(),
-                    if (slots.isEmpty)
-                      Text('Day off', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13))
-                    else
-                      Text('${slots.length} slot${slots.length > 1 ? 's' : ''}',
-                          style: TextStyle(color: cs.primary, fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline, size: 20),
-                      onPressed: () => _addSlot(day),
-                      tooltip: 'Add time slot',
+        final isWeekend = day == 0 || day == 6;
+        final dayColor = isWeekend ? AppColors.warning : AppColors.primary;
+
+        return PremiumGlassCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: dayColor.withAlpha(15),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: dayColor.withAlpha(50)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _days[day].substring(0, 2),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: dayColor,
+                      ),
                     ),
-                  ],
+                  ),
                 ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _days[day],
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 15),
+                      ),
+                      Text(
+                        slots.isEmpty
+                            ? 'Day off'
+                            : '${slots.length} slot${slots.length > 1 ? 's' : ''} scheduled',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: slots.isEmpty
+                              ? Colors.grey.shade500
+                              : dayColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _addSlot(day),
+                  icon: const Icon(Icons.add_circle_rounded,
+                      color: AppColors.primary),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary.withAlpha(12),
+                  ),
+                  tooltip: 'Add time slot',
+                ),
+              ]),
+              if (slots.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
                 ...slots.map((slot) {
                   final globalIndex = _schedule.indexOf(slot);
                   return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      children: [
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: slot['is_active'] == true
+                            ? AppColors.primary.withAlpha(8)
+                            : Colors.grey.withAlpha(10),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(
+                          color: slot['is_active'] == true
+                              ? AppColors.primary.withAlpha(40)
+                              : Colors.grey.withAlpha(30),
+                        ),
+                      ),
+                      child: Row(children: [
                         Switch(
                           value: slot['is_active'] == true,
-                          onChanged: (v) => setState(() => _schedule[globalIndex]['is_active'] = v),
+                          onChanged: (v) => setState(
+                              () => _schedule[globalIndex]['is_active'] = v),
+                          activeColor: AppColors.primary,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
-                        InkWell(
+                        const SizedBox(width: AppSpacing.xs),
+                        _TimeChip(
+                          time: slot['start_time'] ?? '09:00',
                           onTap: () => _pickTime(globalIndex, true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(slot['start_time'] ?? '09:00',
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                          ),
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text('—'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm),
+                          child: Text('—',
+                              style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w300)),
                         ),
-                        InkWell(
+                        _TimeChip(
+                          time: slot['end_time'] ?? '17:00',
                           onTap: () => _pickTime(globalIndex, false),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(slot['end_time'] ?? '17:00',
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                          ),
                         ),
                         const Spacer(),
                         IconButton(
-                          icon: Icon(Icons.delete_outline, size: 20, color: cs.error),
+                          icon: const Icon(Icons.remove_circle_outline_rounded,
+                              size: 20, color: AppColors.error),
                           onPressed: () => _removeSlot(globalIndex),
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.error.withAlpha(10),
+                          ),
                         ),
-                      ],
+                      ]),
                     ),
                   );
                 }),
               ],
-            ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildBlockedTab(ColorScheme cs) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
+  Widget _buildBlockedTab() {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: GestureDetector(
+          onTap: _addBlockedDates,
+          child: Container(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _addBlockedDates,
-              icon: const Icon(Icons.block),
-              label: const Text('Block Dates (Vacation)'),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFEF4444)]),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              boxShadow: AppShadows.md(AppColors.warning),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.beach_access_rounded,
+                    color: Colors.white, size: 20),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Block Dates (Vacation)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        Expanded(
-          child: _blockedDates.isEmpty
-              ? Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.event_available, size: 48, color: cs.onSurfaceVariant),
-                    const SizedBox(height: 12),
-                    Text('No blocked dates', style: TextStyle(color: cs.onSurfaceVariant)),
-                  ]),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _blockedDates.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    final item = _blockedDates[i];
-                    final date = item['blocked_date']?.toString().split('T').first ?? '';
-                    final reason = item['reason'] ?? 'Blocked';
-                    return ListTile(
-                      leading: const Icon(Icons.event_busy),
-                      title: Text(date),
-                      subtitle: Text(reason),
-                      trailing: IconButton(
-                        icon: Icon(Icons.restore, color: cs.primary),
+      ),
+      Expanded(
+        child: _blockedDates.isEmpty
+            ? const PremiumEmptyState(
+                icon: Icons.event_available_rounded,
+                title: 'No blocked dates',
+                subtitle:
+                    'Block date ranges when you\'re on vacation or unavailable.',
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxxl),
+                itemCount: _blockedDates.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.md),
+                itemBuilder: (context, i) {
+                  final item = _blockedDates[i];
+                  final date =
+                      item['blocked_date']?.toString().split('T').first ??
+                          '';
+                  final reason = item['reason'] ?? 'Blocked';
+                  return PremiumGlassCard(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                    child: Row(children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withAlpha(15),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                              color: AppColors.warning.withAlpha(50)),
+                        ),
+                        child: const Icon(Icons.event_busy_rounded,
+                            color: AppColors.warning, size: 22),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(date,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14)),
+                            Text(reason,
+                                style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.restore_rounded,
+                            color: AppColors.primary),
                         onPressed: () => _unblockDate(date),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.primary.withAlpha(12),
+                        ),
                         tooltip: 'Unblock',
                       ),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
+                    ]),
+                  );
+                },
+              ),
+      ),
+    ]);
   }
+}
+
+class _TimeChip extends StatelessWidget {
+  final String time;
+  final VoidCallback onTap;
+  const _TimeChip({required this.time, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [
+              Color(0xFFEEF2FF),
+              Color(0xFFF5F3FF),
+            ]),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.primary.withAlpha(40)),
+          ),
+          child: Text(
+            time,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
 }
