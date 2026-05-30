@@ -267,7 +267,7 @@ class _VisitCardState extends State<_VisitCard> {
           Row(children: [
             Expanded(child: OutlinedButton.icon(onPressed: _pickProofPhoto, icon: const Icon(Icons.camera_alt_outlined, size: 18), label: Text(_proofPhoto == null ? 'Take Proof Photo' : 'Retake Photo'))),
             const SizedBox(width: 10),
-            Expanded(child: PremiumGradientButton(label: _marking ? 'Saving…' : 'Mark Done', icon: Icons.check_circle_outline, colors: const [Color(0xFF10B981), Color(0xFF34D399)], onPressed: _marking ? null : _markDone)),
+            Expanded(child: PremiumGradientButton(label: _marking ? 'Saving…' : 'Mark Done', icon: Icons.check_circle_outline, colors: const [Color(0xFF10B981), Color(0xFF34D399)], onPressed: _marking ? () {} : _markDone)),
           ]),
           const SizedBox(height: AppSpacing.sm),
           Align(alignment: Alignment.center, child: TextButton.icon(onPressed: _showReschedule, icon: const Icon(Icons.schedule, size: 16), label: const Text('Reschedule Visit'))),

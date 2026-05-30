@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 import '../profile/professional_profile_screen.dart';
 
 /// Neighbourhood Trust Screen — shows community trust scores for professionals
 /// operating in the user's area. Trust levels: Bronze → Silver → Gold → Platinum.
-/// Multi-factor scoring: verification, experience, rating, repeat customers,
-/// responsiveness, reliability.
 class NeighbourhoodTrustScreen extends StatefulWidget {
   const NeighbourhoodTrustScreen({super.key});
 
@@ -23,7 +23,6 @@ class _NeighbourhoodTrustScreenState extends State<NeighbourhoodTrustScreen>
   String? _error;
   String _selectedLevel = 'all';
 
-  // Demo data — used when the API is unavailable
   static const List<Map<String, dynamic>> _demoData = [
     {
       'id': 'pro-1',
@@ -143,11 +142,15 @@ class _NeighbourhoodTrustScreenState extends State<NeighbourhoodTrustScreen>
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final res = await ApiService.get('/trust/neighbourhood', auth: true);
       final list = res['data'] as List? ?? const [];
-      _professionals = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _professionals =
+          list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       if (_professionals.isEmpty) _professionals = _demoData;
     } catch (_) {
       _professionals = _demoData;
@@ -157,78 +160,226 @@ class _NeighbourhoodTrustScreenState extends State<NeighbourhoodTrustScreen>
 
   List<Map<String, dynamic>> get _filtered {
     if (_selectedLevel == 'all') return _professionals;
-    return _professionals.where((p) =>
-      (p['trust_level'] as String? ?? '').toLowerCase() == _selectedLevel.toLowerCase()
-    ).toList();
+    return _professionals
+        .where((p) =>
+            (p['trust_level'] as String? ?? '').toLowerCase() ==
+            _selectedLevel.toLowerCase())
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Neighbourhood Trust'),
-        bottom: TabBar(
-          controller: _tabController,
-          onTap: (i) {
-            setState(() {
-              _selectedLevel = ['all', 'Platinum', 'Gold', 'Silver'][i];
-            });
-          },
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(child: _LevelTab(level: 'Platinum', color: Color(0xFF6366F1))),
-            Tab(child: _LevelTab(level: 'Gold', color: Color(0xFFF59E0B))),
-            Tab(child: _LevelTab(level: 'Silver', color: Color(0xFF94A3B8))),
-          ],
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeroHeader(context),
+              _buildPremiumTabBar(context),
+              Expanded(
+                child: _loading
+                    ? _buildSkeletons()
+                    : _error != null
+                        ? _buildError()
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.lg,
+                                  AppSpacing.md,
+                                  AppSpacing.lg,
+                                  AppSpacing.xxxl),
+                              children: [
+                                _TrustInfoBanner(),
+                                const SizedBox(height: AppSpacing.lg),
+                                ..._filtered.map(
+                                  (pro) => _ProTrustCard(
+                                    pro: pro,
+                                    onTap: () {
+                                      HapticFeedback.selectionClick();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              ProfessionalProfileScreen(
+                                            professionalId:
+                                                pro['id'].toString(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                if (_filtered.isEmpty)
+                                  PremiumEmptyState(
+                                    icon: Icons.verified_user_outlined,
+                                    title:
+                                        'No ${_selectedLevel == 'all' ? '' : _selectedLevel} professionals yet',
+                                    subtitle:
+                                        'Professionals in your area will appear here as they build trust.',
+                                  ),
+                              ],
+                            ),
+                          ),
+              ),
+            ],
+          ),
         ),
       ),
-      body: _loading
-          ? _buildSkeletons()
-          : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 12),
-                  Text(_error!),
-                  const SizedBox(height: 16),
-                  FilledButton(onPressed: _load, child: const Text('Retry')),
-                ]))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                    children: [
-                      _TrustInfoBanner(),
-                      const SizedBox(height: 16),
-                      ..._filtered.map((pro) => _ProTrustCard(
-                        pro: pro,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => ProfessionalProfileScreen(professionalId: pro['id'].toString()),
-                          ));
-                        },
-                      )),
-                      if (_filtered.isEmpty)
-                        EmptyStateWidget(
-                          icon: Icons.verified_user_outlined,
-                          title: 'No ${_selectedLevel == 'all' ? '' : _selectedLevel} professionals yet',
-                          subtitle: 'Professionals in your area will appear here as they build trust.',
-                        ),
-                    ],
+    );
+  }
+
+  Widget _buildHeroHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withAlpha(20),
+              foregroundColor: AppColors.surfaceDark,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Neighbourhood Trust',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
                   ),
                 ),
+                Text(
+                  '${_professionals.length} verified professionals near you',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: AppColors.primaryGradient),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: AppShadows.md(AppColors.primary),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                SizedBox(width: 4),
+                Text('Verified',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumTabBar(BuildContext context) {
+    final levels = [
+      ('All', null, Colors.grey),
+      ('Platinum', Icons.workspace_premium, const Color(0xFF6366F1)),
+      ('Gold', Icons.emoji_events, const Color(0xFFF59E0B)),
+      ('Silver', Icons.star, const Color(0xFF94A3B8)),
+    ];
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+      child: Row(
+        children: List.generate(levels.length, (i) {
+          final (label, icon, color) = levels[i];
+          final selected = _tabController.index == i;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                _tabController.animateTo(i);
+                setState(() {
+                  _selectedLevel = ['all', 'Platinum', 'Gold', 'Silver'][i];
+                });
+              },
+              child: AnimatedContainer(
+                duration: AppDurations.fast,
+                margin: EdgeInsets.only(right: i < levels.length - 1 ? 6 : 0),
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.sm, horizontal: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  gradient: selected
+                      ? LinearGradient(
+                          colors: [
+                            color.withAlpha(200),
+                            color.withAlpha(140)
+                          ],
+                        )
+                      : null,
+                  color: selected ? null : Colors.white.withAlpha(60),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: selected ? color : Colors.grey.withAlpha(40),
+                  ),
+                  boxShadow:
+                      selected ? AppShadows.sm(color) : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null)
+                      Icon(icon,
+                          size: 14,
+                          color:
+                              selected ? Colors.white : color),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            selected ? Colors.white : Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
   Widget _buildSkeletons() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: List.generate(5, (_) => const Padding(
-        padding: EdgeInsets.only(bottom: 12),
-        child: CardSkeleton(height: 120),
-      )),
+    return const PremiumLoadingList(itemCount: 5, itemHeight: 140);
+  }
+
+  Widget _buildError() {
+    return PremiumEmptyState(
+      icon: Icons.error_outline_rounded,
+      title: 'Could not load trust data',
+      subtitle: _error ?? 'Something went wrong.',
+      actionLabel: 'Retry',
+      onAction: _load,
+      gradient: const [AppColors.error, Color(0xFFFF6B6B)],
     );
   }
 }
@@ -240,39 +391,58 @@ class _LevelTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(Icons.workspace_premium, size: 14, color: color),
-      const SizedBox(width: 4),
-      Text(level),
-    ],
-  );
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.workspace_premium, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(level),
+        ],
+      );
 }
 
 class _TrustInfoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.secondaryContainer,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
+    return PremiumGlassCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      gradient: const [
+        Color(0xFFEEF2FF),
+        Color(0xFFF5F3FF),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient:
+                      const LinearGradient(colors: AppColors.primaryGradient),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(Icons.info_outline_rounded,
+                    color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              const Text(
+                'How Trust Scores Work',
+                style:
+                    TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const _TrustFactor(label: 'KYC Verification', emoji: '🪪'),
+          const _TrustFactor(label: 'Experience & Completed Jobs', emoji: '🔧'),
+          const _TrustFactor(label: 'Customer Ratings', emoji: '⭐'),
+          const _TrustFactor(label: 'Repeat Customers', emoji: '🔁'),
+          const _TrustFactor(label: 'Response Time', emoji: '⚡'),
+          const _TrustFactor(
+              label: 'Reliability (on-time %, no-shows)', emoji: '📍'),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('How Trust Scores Work', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        const _TrustFactor(label: 'KYC Verification', emoji: '🪪'),
-        const _TrustFactor(label: 'Experience & Completed Jobs', emoji: '🔧'),
-        const _TrustFactor(label: 'Customer Ratings', emoji: '⭐'),
-        const _TrustFactor(label: 'Repeat Customers', emoji: '🔁'),
-        const _TrustFactor(label: 'Response Time', emoji: '⚡'),
-        const _TrustFactor(label: 'Reliability (on-time %, no-shows)', emoji: '📍'),
-      ]),
     );
   }
 }
@@ -284,13 +454,17 @@ class _TrustFactor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 4),
-    child: Row(children: [
-      Text(emoji, style: const TextStyle(fontSize: 14)),
-      const SizedBox(width: 8),
-      Text(label, style: Theme.of(context).textTheme.bodySmall),
-    ]),
-  );
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Row(children: [
+          Text(emoji, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: AppSpacing.sm),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500)),
+        ]),
+      );
 }
 
 class _ProTrustCard extends StatelessWidget {
@@ -300,19 +474,27 @@ class _ProTrustCard extends StatelessWidget {
 
   Color _levelColor(String level) {
     switch (level) {
-      case 'Platinum': return const Color(0xFF6366F1);
-      case 'Gold': return const Color(0xFFF59E0B);
-      case 'Silver': return const Color(0xFF94A3B8);
-      default: return const Color(0xFFCD7F32);
+      case 'Platinum':
+        return const Color(0xFF6366F1);
+      case 'Gold':
+        return const Color(0xFFF59E0B);
+      case 'Silver':
+        return const Color(0xFF94A3B8);
+      default:
+        return const Color(0xFFCD7F32);
     }
   }
 
   IconData _levelIcon(String level) {
     switch (level) {
-      case 'Platinum': return Icons.workspace_premium;
-      case 'Gold': return Icons.emoji_events;
-      case 'Silver': return Icons.star;
-      default: return Icons.military_tech;
+      case 'Platinum':
+        return Icons.workspace_premium;
+      case 'Gold':
+        return Icons.emoji_events;
+      case 'Silver':
+        return Icons.star;
+      default:
+        return Icons.military_tech;
     }
   }
 
@@ -330,81 +512,181 @@ class _ProTrustCard extends StatelessWidget {
         : '${responseH.toStringAsFixed(1)} h';
     final verified = pro['government_id_verified'] == true;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: PremiumGlassCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(children: [
-              // Avatar
-              CircleAvatar(
-                radius: 26,
-                backgroundImage: pro['avatar_url'] != null
-                    ? NetworkImage(pro['avatar_url'].toString())
-                    : null,
-                child: pro['avatar_url'] == null
-                    ? Text(pro['name'].toString().substring(0, 1), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Text(pro['name'].toString(), style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(width: 6),
+              Stack(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [color.withAlpha(60), color.withAlpha(20)],
+                      ),
+                      border: Border.all(color: color.withAlpha(80), width: 2),
+                    ),
+                    child: ClipOval(
+                      child: pro['avatar_url'] != null
+                          ? Image.network(pro['avatar_url'].toString(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
+                                    child: Text(
+                                      pro['name'].toString().substring(0, 1),
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                          color: color),
+                                    ),
+                                  ))
+                          : Center(
+                              child: Text(
+                                pro['name'].toString().substring(0, 1),
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    color: color),
+                              ),
+                            ),
+                    ),
+                  ),
                   if (verified)
-                    const Icon(Icons.verified, size: 16, color: Color(0xFF10B981)),
-                ]),
-                Text(pro['headline']?.toString() ?? '', style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(pro['location']?.toString() ?? '', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
-              ])),
-              // Trust badge
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Icon(Icons.check,
+                            color: Colors.white, size: 10),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pro['name'].toString(),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      pro['headline']?.toString() ?? '',
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.grey.shade600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      Icon(Icons.location_on_rounded,
+                          size: 11, color: Colors.grey.shade400),
+                      const SizedBox(width: 2),
+                      Text(
+                        pro['location']?.toString() ?? '',
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.grey.shade500),
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: color.withAlpha(80)),
+                  gradient: LinearGradient(colors: [
+                    color.withAlpha(30),
+                    color.withAlpha(15),
+                  ]),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: color.withAlpha(100)),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(_levelIcon(level), size: 14, color: color),
+                  Icon(_levelIcon(level), size: 13, color: color),
                   const SizedBox(width: 4),
-                  Text(level, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                  Text(
+                    level,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: color),
+                  ),
                 ]),
               ),
             ]),
-            const SizedBox(height: 12),
-            // Trust score bar
+            const SizedBox(height: AppSpacing.md),
             Row(children: [
-              Text('Trust Score', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                'Trust Score',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600),
+              ),
               const Spacer(),
-              Text('$score / 100', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+              Text(
+                '$score / 100',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: color),
+              ),
             ]),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
               child: LinearProgressIndicator(
                 value: score / 100,
-                minHeight: 6,
-                backgroundColor: color.withAlpha(30),
+                minHeight: 7,
+                backgroundColor: color.withAlpha(25),
                 valueColor: AlwaysStoppedAnimation(color),
               ),
             ),
-            const SizedBox(height: 12),
-            // Stats row
+            const SizedBox(height: AppSpacing.md),
             Row(children: [
-              _StatChip(icon: Icons.star, value: rating.toStringAsFixed(1), label: 'Rating'),
-              const SizedBox(width: 8),
-              _StatChip(icon: Icons.handyman_outlined, value: '$jobs', label: 'Jobs'),
-              const SizedBox(width: 8),
-              _StatChip(icon: Icons.repeat, value: '$repeat%', label: 'Repeat'),
-              const SizedBox(width: 8),
-              _StatChip(icon: Icons.bolt, value: responseStr, label: 'Response'),
+              _StatChip(
+                  icon: Icons.star_rounded,
+                  value: rating.toStringAsFixed(1),
+                  label: 'Rating',
+                  color: AppColors.warning),
+              const SizedBox(width: AppSpacing.sm),
+              _StatChip(
+                  icon: Icons.handyman_outlined,
+                  value: '$jobs',
+                  label: 'Jobs',
+                  color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
+              _StatChip(
+                  icon: Icons.repeat_rounded,
+                  value: '$repeat%',
+                  label: 'Repeat',
+                  color: AppColors.success),
+              const SizedBox(width: AppSpacing.sm),
+              _StatChip(
+                  icon: Icons.bolt_rounded,
+                  value: responseStr,
+                  label: 'Response',
+                  color: AppColors.secondary),
             ]),
-          ]),
+          ],
         ),
       ),
     );
@@ -415,22 +697,34 @@ class _StatChip extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
-  const _StatChip({required this.icon, required this.value, required this.label});
+  final Color color;
+  const _StatChip(
+      {required this.icon,
+      required this.value,
+      required this.label,
+      required this.color});
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(children: [
-        Icon(icon, size: 13, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-        Text(label, style: const TextStyle(fontSize: 9)),
-      ]),
-    ),
-  );
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.sm, horizontal: AppSpacing.xs),
+          decoration: BoxDecoration(
+            color: color.withAlpha(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: color.withAlpha(40)),
+          ),
+          child: Column(children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(height: 3),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: color)),
+            Text(label,
+                style: TextStyle(fontSize: 9, color: Colors.grey.shade600)),
+          ]),
+        ),
+      );
 }
