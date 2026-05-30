@@ -1,9 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 class CollectionsScreen extends StatefulWidget {
   const CollectionsScreen({super.key});
@@ -16,7 +17,6 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
   List<Map<String, dynamic>> _collections = [];
   bool _loading = true;
   String? _error;
-  String _selectedCategory = 'All';
 
   @override
   void initState() {
@@ -25,214 +25,215 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() { _loading = true; _error = null; });
     try {
-      final res = await ApiService.get('/collections');
+      final res = await ApiService.get('/collections', auth: true);
       final data = res['data'];
-      final list = data is List
-          ? data
-          : data is Map<String, dynamic>
-              ? (data['items'] as List? ?? data['collections'] as List? ?? const [])
-              : const [];
-      _collections = list.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      final list = data is List ? data : (data is Map ? (data['items'] as List? ?? data['collections'] as List? ?? const []) : const []);
+      _collections = list.whereType<Map>().map((e) => Map<String,dynamic>.from(e)).toList();
     } catch (e) {
       _error = e.toString();
     }
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _toggleSave(Map<String, dynamic> collection) async {
-    final auth = context.read<AuthService>();
-    if (!auth.isLoggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please login to save collections.')));
-      return;
-    }
-    final id = (collection['id'] ?? '').toString();
-    final saved = collection['saved'] == true;
+  Future<void> _createCollection(String name, bool isPublic) async {
     try {
-      if (saved) {
-        await ApiService.delete('/collections/$id/save', auth: true);
-      } else {
-        await ApiService.post('/collections/$id/save', {}, auth: true);
-      }
-      setState(() => collection['saved'] = !saved);
+      await ApiService.post('/collections', {'name': name, 'is_public': isPublic}, auth: true);
+      await _load();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not update collection: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
     }
   }
 
-  void _showCollection(Map<String, dynamic> collection) {
-    final professionals = (collection['professionals'] as List? ?? const []);
-    showModalBottomSheet(
+  Future<void> _deleteCollection(String id) async {
+    try {
+      await ApiService.delete('/collections/$id', auth: true);
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
+    }
+  }
+
+  Future<void> _showCreateDialog() async {
+    final nameCtl = TextEditingController();
+    bool isPublic = false;
+    final confirmed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(collection['title']?.toString() ?? 'Collection', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              if (professionals.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 24),
-                  child: EmptyStateWidget(
-                    icon: Icons.collections_bookmark_outlined,
-                    title: 'No professionals yet',
-                    subtitle: 'This collection is ready for professionals to be added.',
-                  ),
-                )
-              else
-                ...professionals.map((item) {
-                  final pro = Map<String, dynamic>.from(item as Map);
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundImage: (pro['avatar_url'] ?? '').toString().isNotEmpty ? NetworkImage(pro['avatar_url'].toString()) : null,
-                      child: (pro['avatar_url'] ?? '').toString().isEmpty ? Text((pro['name'] ?? '').toString().trim().isEmpty ? '?' : (pro['name'] ?? '').toString().trim()[0].toUpperCase()) : null,
-                    ),
-                    title: Text(pro['name']?.toString() ?? 'Professional'),
-                    subtitle: Text(pro['category']?.toString() ?? pro['headline']?.toString() ?? ''),
-                    trailing: TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/professional/${pro['id']}'),
-                      child: const Text('View'),
-                    ),
-                  );
-                }),
-            ],
-          ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+          title: Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)]), borderRadius: BorderRadius.circular(AppRadius.md)),
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('New Collection', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(
+              controller: nameCtl,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Collection Name',
+                hintText: 'e.g. Favorite Plumbers',
+                prefixIcon: const Icon(Icons.collections_bookmark_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: SwitchListTile(
+                value: isPublic,
+                onChanged: (v) => setS(() => isPublic = v),
+                title: const Text('Public Collection', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(isPublic ? 'Visible to everyone' : 'Only you can see this'),
+                secondary: Icon(isPublic ? Icons.public_rounded : Icons.lock_outline_rounded, color: AppColors.primary),
+              ),
+            ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            PremiumGradientButton(
+              label: 'Create',
+              colors: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+              onPressed: () { if (nameCtl.text.trim().isNotEmpty) Navigator.pop(ctx, true); },
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+          ],
         ),
       ),
     );
+    if (confirmed == true && nameCtl.text.trim().isNotEmpty) {
+      await _createCollection(nameCtl.text.trim(), isPublic);
+    }
   }
+
+  Future<void> _confirmDelete(String id, String name) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+        title: const Text('Delete Collection?', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Text('Delete "$name"? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _deleteCollection(id);
+  }
+
+  static const _collectionGradients = [
+    [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+    [Color(0xFF6366F1), Color(0xFF0891B2)],
+    [Color(0xFF10B981), Color(0xFF059669)],
+    [Color(0xFFF59E0B), Color(0xFFEF4444)],
+    [Color(0xFF1B6EF3), Color(0xFF7C3AED)],
+    [Color(0xFFDB2777), Color(0xFFDC2626)],
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final categories = {'All', ..._collections.map((e) => (e['category'] ?? 'Other').toString())}.toList();
-    final visible = _selectedCategory == 'All'
-        ? _collections
-        : _collections.where((e) => (e['category'] ?? 'Other').toString() == _selectedCategory).toList();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Collections')),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: _loading
-            ? ListView(children: const [SizedBox(height: 240, child: Center(child: CircularProgressIndicator()))])
-            : _error != null
-                ? ListView(children: [
-                    EmptyStateWidget(
-                      icon: Icons.error_outline_rounded,
-                      iconColor: Colors.red,
-                      title: 'Could not load collections',
-                      subtitle: _error!,
-                      actionLabel: 'Retry',
-                      onAction: _load,
-                    ),
-                  ])
-                : CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 52,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: categories.length,
-                            itemBuilder: (context, index) {
-                              final category = categories[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: ChoiceChip(
-                                  label: Text(category),
-                                  selected: _selectedCategory == category,
-                                  onSelected: (_) => setState(() => _selectedCategory = category),
-                                ),
-                              );
-                            },
-                          ),
+    return PremiumScrollScaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () { HapticFeedback.mediumImpact(); _showCreateDialog(); },
+        backgroundColor: const Color(0xFFEC4899),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('New Collection', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      ),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PremiumHeroHeader(
+              title: 'My Collections',
+              subtitle: 'Your curated boards',
+              icon: Icons.collections_bookmark_rounded,
+              gradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+              chips: [
+                if (!_loading) PremiumStatChip(label: '${_collections.length} boards', color: Colors.white, icon: Icons.grid_view_rounded),
+              ],
+            ),
+          ),
+          if (_loading)
+            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.all(AppSpacing.lg), child: PremiumLoadingList(itemCount: 4, itemHeight: 160))),
+          if (!_loading && _error != null)
+            SliverToBoxAdapter(child: PremiumEmptyState(icon: Icons.error_outline, title: 'Something went wrong', subtitle: _error!, actionLabel: 'Retry', onAction: _load, gradient: const [AppColors.error, Color(0xFFDC2626)])),
+          if (!_loading && _error == null && _collections.isEmpty)
+            SliverToBoxAdapter(child: PremiumEmptyState(icon: Icons.collections_bookmark_rounded, title: 'No collections yet', subtitle: 'Create your first board to save and organize your favorite professionals.', actionLabel: 'Create Collection', onAction: _showCreateDialog, gradient: const [Color(0xFFEC4899), Color(0xFF8B5CF6)])),
+          if (!_loading && _error == null && _collections.isNotEmpty) ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) {
+                    final col = _collections[i];
+                    final id = col['id']?.toString() ?? '';
+                    final name = col['name']?.toString() ?? 'Collection';
+                    final count = (col['item_count'] as num?)?.toInt() ?? 0;
+                    final isPublic = col['is_public'] == true;
+                    final grad = _collectionGradients[i % _collectionGradients.length];
+                    return GestureDetector(
+                      onTap: () { HapticFeedback.mediumImpact(); context.push('/collections/$id'); },
+                      onLongPress: () { HapticFeedback.heavyImpact(); _confirmDelete(id, name); },
+                      child: PremiumGlassCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 100,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: grad),
+                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(AppRadius.xl), topRight: Radius.circular(AppRadius.xl)),
+                              ),
+                              child: Stack(children: [
+                                Center(child: Icon(Icons.collections_bookmark_rounded, color: Colors.white.withAlpha(80), size: 48)),
+                                Positioned(top: 10, right: 10, child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.black.withAlpha(50), borderRadius: BorderRadius.circular(AppRadius.pill)),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Icon(isPublic ? Icons.public_rounded : Icons.lock_outline_rounded, color: Colors.white, size: 11),
+                                    const SizedBox(width: 4),
+                                    Text(isPublic ? 'Public' : 'Private', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                  ]),
+                                )),
+                              ]),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Text('$count item${count == 1 ? '' : 's'}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                              ]),
+                            ),
+                          ],
                         ),
                       ),
-                      if (visible.isEmpty)
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: EmptyStateWidget(
-                            icon: Icons.collections_outlined,
-                            title: 'No collections found',
-                            subtitle: 'Try another category or save some collections to see them here.',
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.all(16),
-                          sliver: SliverGrid(
-                            delegate: SliverChildBuilderDelegate((context, index) {
-                              final collection = visible[index];
-                              final imageUrl = (collection['cover_image'] ?? collection['image_url'] ?? '').toString();
-                              return GestureDetector(
-                                onTap: () => _showCollection(collection),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                          child: imageUrl.isEmpty
-                                              ? Container(
-                                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                                  child: const Center(child: Icon(Icons.image_outlined, size: 36)),
-                                                )
-                                              : CachedNetworkImage(
-                                                  imageUrl: imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  width: double.infinity,
-                                                  placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
-                                                  errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)),
-                                                ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                          Row(children: [
-                                            Expanded(
-                                              child: Text(collection['title']?.toString() ?? 'Collection', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
-                                            ),
-                                            IconButton(
-                                              onPressed: () => _toggleSave(collection),
-                                              icon: Icon(collection['saved'] == true ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: collection['saved'] == true ? Colors.red : null),
-                                              visualDensity: VisualDensity.compact,
-                                            ),
-                                          ]),
-                                          Text('${collection['professional_count'] ?? 0} professionals'),
-                                          Text(collection['category']?.toString() ?? 'General', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                                        ]),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }, childCount: visible.length),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: .74,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                    );
+                  },
+                  childCount: _collections.length,
+                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.88),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
+

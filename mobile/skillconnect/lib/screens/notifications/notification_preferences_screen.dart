@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/app_locale_service.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 /// Smart push notification preferences screen.
 /// Lets users control notification categories to avoid annoyance.
@@ -53,75 +55,125 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Category header
-          Text('Notification Categories', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text('Choose what notifications you receive', style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 16),
-
-          _NotifTile(
-            icon: Icons.receipt_long,
-            title: 'Booking Updates',
-            subtitle: 'Confirmations, assignments, completions',
-            value: _transactional,
-            onChanged: null, // Always on
-            locked: true,
-          ),
-          _NotifTile(
-            icon: Icons.lightbulb_outline,
-            title: 'Smart Suggestions',
-            subtitle: '"Plumber available nearby", "Need help with yesterday\'s search?"',
-            value: _behavioral,
-            onChanged: (v) => setState(() => _behavioral = v),
-          ),
-          _NotifTile(
-            icon: Icons.history,
-            title: 'Service Reminders',
-            subtitle: '"It\'s been 30 days since last service"',
-            value: _lifecycle,
-            onChanged: (v) => setState(() => _lifecycle = v),
-          ),
-          _NotifTile(
-            icon: Icons.local_offer,
-            title: 'Offers & Promotions',
-            subtitle: 'Max 1-2 per week',
-            value: _promotional,
-            onChanged: (v) => setState(() => _promotional = v),
-          ),
-
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 16),
-
-          // Language preference
-          Text('Notification Language', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: AppLocaleService.languageOptions
-                .map(
-                  (option) => ChoiceChip(
-                    label: Text(option.value),
-                    selected: _language == option.key,
-                    onSelected: (selected) {
-                      if (selected) setState(() => _language = option.key);
-                    },
+      extendBodyBehindAppBar: true,
+      appBar: const PremiumAppBar(title: 'Notification Settings'),
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, AppSpacing.xxxl),
+            children: [
+              PremiumHeroHeader(
+                title: 'Stay informed your way',
+                subtitle: 'Choose which alerts feel helpful, timely, and premium.',
+                icon: Icons.tune_rounded,
+                chips: [
+                  PremiumStatChip(
+                    label: _promotional ? 'Offers on' : 'Offers off',
+                    icon: _promotional ? Icons.local_offer_rounded : Icons.local_offer_outlined,
+                    color: Colors.white,
                   ),
-                )
-                .toList(),
+                  PremiumStatChip(
+                    label: 'Language ${_language.toUpperCase()}',
+                    icon: Icons.translate_rounded,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+              const PremiumSectionTitle(
+                title: 'Notification categories',
+                subtitle: 'Smart toggle cards for booking, reminders, and promotions.',
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Column(
+                  children: [
+                    _NotifTile(
+                      icon: Icons.receipt_long,
+                      title: 'Booking Updates',
+                      subtitle: 'Confirmations, assignments, completions',
+                      value: _transactional,
+                      onChanged: null,
+                      locked: true,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _NotifTile(
+                      icon: Icons.lightbulb_outline,
+                      title: 'Smart Suggestions',
+                      subtitle: '"Plumber available nearby", "Need help with yesterday's search?"',
+                      value: _behavioral,
+                      onChanged: (v) => setState(() => _behavioral = v),
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _NotifTile(
+                      icon: Icons.history,
+                      title: 'Service Reminders',
+                      subtitle: '"It's been 30 days since last service"',
+                      value: _lifecycle,
+                      onChanged: (v) => setState(() => _lifecycle = v),
+                      color: AppColors.info,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _NotifTile(
+                      icon: Icons.local_offer,
+                      title: 'Offers & Promotions',
+                      subtitle: 'Max 1-2 per week',
+                      value: _promotional,
+                      onChanged: (v) => setState(() => _promotional = v),
+                      color: AppColors.warning,
+                    ),
+                  ],
+                ),
+              ),
+              const PremiumSectionTitle(
+                title: 'Notification language',
+                subtitle: 'Pick the language you want alerts in.',
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: PremiumGlassCard(
+                  child: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: AppLocaleService.languageOptions
+                        .map(
+                          (option) => ChoiceChip(
+                            label: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                              child: Text(option.value),
+                            ),
+                            selected: _language == option.key,
+                            selectedColor: AppColors.primary.withAlpha(16),
+                            backgroundColor: Colors.white.withAlpha(180),
+                            side: BorderSide(
+                              color: _language == option.key ? AppColors.primary : AppColors.borderLight,
+                            ),
+                            labelStyle: TextStyle(
+                              color: _language == option.key ? AppColors.primary : AppColors.surfaceDark,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) setState(() => _language = option.key);
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxl, AppSpacing.lg, 0),
+                child: PremiumGradientButton(
+                  label: 'Save Preferences',
+                  icon: Icons.save_rounded,
+                  onPressed: () { _save(); },
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(height: 32),
-          FilledButton(
-            onPressed: _save,
-            child: const Text('Save Preferences'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -134,6 +186,7 @@ class _NotifTile extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
   final bool locked;
+  final Color color;
 
   const _NotifTile({
     required this.icon,
@@ -142,37 +195,62 @@ class _NotifTile extends StatelessWidget {
     required this.value,
     this.onChanged,
     this.locked = false,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).dividerColor),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+    return PremiumGlassCard(
+      gradient: value
+          ? [color.withAlpha(18), Colors.white.withAlpha(220)]
+          : [Colors.white.withAlpha(210), Colors.white.withAlpha(160)],
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: color.withAlpha(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            Switch(
-              value: value,
-              onChanged: locked ? null : onChanged,
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      ),
+                    ),
+                    if (locked)
+                      const PremiumStatusPill(label: 'Always on', color: AppColors.success),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Switch(
+            value: value,
+            onChanged: locked ? null : onChanged,
+            activeColor: color,
+          ),
+        ],
       ),
     );
   }

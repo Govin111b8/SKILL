@@ -37,7 +37,13 @@
   "noConnection": "இணைப்பு இல்லை",
   "connecting": "இணைக்கிறது...",
   "pendingSync": "{count} நிலுவை ஒத்திசைவு",
-  "@pendingSync": { "placeholders": { "count": { "type": "int" } } },
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notificationSettings": "அறிவிப்பு அமைப்புகள்",
   "bookingUpdates": "முன்பதிவு புதுப்பிப்புகள்",
   "smartSuggestions": "சிறந்த பரிந்துரைகள்",
@@ -129,5 +135,22 @@
   "b2bEnquiry": "B2B விசாரணை",
   "demandForecast": "தேவை முன்கணிப்பு",
   "peakDemandHours": "உச்ச தேவை நேரங்கள்",
-  "predictedBookings": "முன்கணிக்கப்பட்ட முன்பதிவுகள்"
+  "predictedBookings": "முன்கணிக்கப்பட்ட முன்பதிவுகள்",
+  "delivery": "Delivery",
+  "myRide": "MyRide",
+  "food": "Food",
+  "groceries": "Groceries",
+  "shopping": "Shopping",
+  "job": "Job",
+  "scanQr": "Scan QR",
+  "quickActions": "Quick Actions",
+  "promotionsAndUpdates": "Promotions & Updates",
+  "available": "Available",
+  "requests": "Requests",
+  "scan": "Scan",
+  "bookDelivery": "Book Delivery",
+  "requestRide": "Request Ride",
+  "postJob": "Post Job",
+  "browseJobs": "Browse Jobs",
+  "buyForMe": "Buy For Me"
 }

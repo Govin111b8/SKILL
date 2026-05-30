@@ -9,6 +9,7 @@ import '../../services/api_service.dart';
 import '../../services/booking_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/app_components.dart';
+import '../../widgets/premium_ui.dart';
 import '../messages/chat_screen.dart';
 import '../reviews/post_service_rating_screen.dart';
 import 'bookings_list_screen.dart' show bookingStatusColor, prettyStatus;
@@ -191,32 +192,85 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     final auth = context.watch<AuthService>();
     final isPro = auth.isProfessional;
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking'), actions: [
-        if (_booking != null)
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline),
-            tooltip: 'Open chat',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                otherUserId: isPro ? _booking!.customerId : _booking!.professionalId,
-                otherName: isPro ? (_booking!.customerName ?? 'Customer') : (_booking!.professionalName ?? 'Pro'),
-                bookingId: _booking!.id,
-                openWith: isPro ? 'customer' : 'professional',
-              ),
-            )),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Booking', style: TextStyle(fontWeight: FontWeight.w800)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: AppColors.primaryGradient),
           ),
-      ]),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
-                  const SizedBox(height: 12),
-                  Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600)),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(onPressed: _load, icon: const Icon(Icons.refresh), label: const Text('Retry')),
-                ])))
-              : RefreshIndicator(onRefresh: _load, child: _buildBody(isPro)),
+        ),
+        actions: [
+          if (_booking != null)
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              tooltip: 'Open chat',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ChatScreen(
+                  otherUserId: isPro ? _booking!.customerId : _booking!.professionalId,
+                  otherName: isPro ? (_booking!.customerName ?? 'Customer') : (_booking!.professionalName ?? 'Pro'),
+                  bookingId: _booking!.id,
+                  openWith: isPro ? 'customer' : 'professional',
+                ),
+              )),
+            ),
+        ],
+      ),
+      body: PremiumBackground(
+        child: SafeArea(
+          top: false,
+          child: _loading
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    PremiumHeroHeader(
+                      title: 'Booking Details',
+                      subtitle: 'Preparing your premium booking view with latest status and actions.',
+                      icon: Icons.receipt_long_rounded,
+                      gradient: AppColors.heroGradient,
+                      chips: [
+                        PremiumStatChip(label: 'Real-time', icon: Icons.sync_rounded, color: Colors.white),
+                      ],
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      child: PremiumLoadingList(itemCount: 4, itemHeight: 140),
+                    ),
+                  ],
+                )
+              : _error != null
+                  ? RefreshIndicator(
+                      onRefresh: _load,
+                      color: AppColors.primary,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          const PremiumHeroHeader(
+                            title: 'Booking Details',
+                            subtitle: 'We could not load the latest information for this booking right now.',
+                            icon: Icons.receipt_long_rounded,
+                            gradient: AppColors.heroGradient,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                            child: PremiumEmptyState(
+                              icon: Icons.cloud_off_rounded,
+                              title: 'Unable to load booking',
+                              subtitle: _error!,
+                              actionLabel: 'Retry',
+                              onAction: _load,
+                              gradient: AppColors.warmGradient,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(onRefresh: _load, child: _buildBody(isPro)),
+        ),
+      ),
     );
   }
 
@@ -225,108 +279,270 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     final statusColor = bookingStatusColor(b.status);
     final otherName = isPro ? (b.customerName ?? 'Customer') : (b.professionalName ?? 'Professional');
     final actions = _availableActions(isPro);
-    final cs = Theme.of(context).colorScheme;
+    final amount = b.finalAmount ?? b.quotedAmount;
 
     // Determine current step for the step indicator
     final stepIndex = _getStepIndex(b.status);
 
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      // ── Booking Progress Stepper ──────────────────────────────
-      if (b.status != 'cancelled' && b.status != 'disputed')
-        StepIndicator(
-          currentStep: stepIndex,
-          steps: const ['Requested', 'Quoted', 'Accepted', 'Scheduled', 'In Progress', 'Done'],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+      children: [
+        PremiumHeroHeader(
+          title: b.title,
+          subtitle: b.description ?? 'A premium service journey with live status updates and guided actions.',
+          icon: Icons.receipt_long_rounded,
+          gradient: AppColors.heroGradient,
+          trailing: _DetailAmountCard(amount: amount),
+          chips: [
+            PremiumStatChip(label: prettyStatus(b.status), icon: Icons.flag_rounded, color: Colors.white),
+            PremiumStatChip(label: otherName, icon: isPro ? Icons.person_rounded : Icons.verified_user_rounded, color: Colors.white),
+          ],
         ),
-      if (b.status != 'cancelled' && b.status != 'disputed')
-        const SizedBox(height: 8),
-
-      Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: Text(prettyStatus(b.status), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
+        if (b.status != 'cancelled' && b.status != 'disputed')
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: PremiumGlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Journey Progress',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  StepIndicator(
+                    currentStep: stepIndex,
+                    steps: const ['Requested', 'Quoted', 'Accepted', 'Scheduled', 'In Progress', 'Done'],
+                  ),
+                ],
+              ),
+            ),
           ),
-          const Spacer(),
-          if (b.quotedAmount != null)
-            Text('₹${(b.finalAmount ?? b.quotedAmount)!.toStringAsFixed(0)}',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.primary)),
-        ]),
-        const SizedBox(height: 14),
-        Text(b.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        if (b.description != null) ...[
-          const SizedBox(height: 8),
-          Text(b.description!, style: TextStyle(color: Colors.grey.shade700, height: 1.4)),
-        ],
-        const Divider(height: 28),
-        Row(children: [
-          CircleAvatar(backgroundColor: cs.primaryContainer, child: Text(otherName[0].toUpperCase(), style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold))),
-          const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(isPro ? 'Customer' : 'Professional', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-            Text(otherName, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ]),
-        ]),
-        if (b.scheduledFor != null) ...[
-          const SizedBox(height: 12),
-          _kv(Icons.event, 'Scheduled', DateFormat('MMM d, y • h:mm a').format(b.scheduledFor!.toLocal())),
-        ],
-        if (b.serviceAddress != null) _kv(Icons.location_on_outlined, 'Address', b.serviceAddress!),
-        if (b.categoryName != null) _kv(Icons.category_outlined, 'Service', b.categoryName!),
-        _kv(Icons.access_time, 'Created', DateFormat('MMM d, y • h:mm a').format(b.createdAt.toLocal())),
-      ]))),
-      if (actions.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 10),
-          for (final a in actions)
-            Padding(padding: const EdgeInsets.only(bottom: 8), child: SizedBox(
-              height: 48,
-              child: a.danger
-                  ? OutlinedButton.icon(
-                      onPressed: _acting ? null : () => _runAction(a),
-                      icon: Icon(a.icon, color: Colors.red),
-                      label: Text(a.label, style: const TextStyle(color: Colors.red)),
-                      style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
-                    )
-                  : FilledButton.icon(
-                      onPressed: _acting ? null : () => _runAction(a),
-                      icon: Icon(a.icon),
-                      label: Text(a.label),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: PremiumMetricCard(
+                  label: 'Status',
+                  value: prettyStatus(b.status),
+                  icon: Icons.flag_rounded,
+                  color: statusColor,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: PremiumMetricCard(
+                  label: 'Created',
+                  value: DateFormat('MMM d').format(b.createdAt.toLocal()),
+                  icon: Icons.schedule_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+          child: PremiumGlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    PremiumStatusPill(label: prettyStatus(b.status), color: statusColor),
+                    const Spacer(),
+                    if (amount != null)
+                      Text(
+                        '₹${amount.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: Center(
+                        child: Text(
+                          otherName.isNotEmpty ? otherName[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
                     ),
-            )),
-        ]))),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isPro ? 'Customer' : 'Professional',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            otherName,
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (b.description != null && b.description!.trim().isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(110),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: Colors.white.withAlpha(150)),
+                    ),
+                    child: Text(
+                      b.description!,
+                      style: TextStyle(
+                        color: Colors.grey.shade800,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                _kv(Icons.event, 'Scheduled', b.scheduledFor != null ? DateFormat('MMM d, y • h:mm a').format(b.scheduledFor!.toLocal()) : 'To be confirmed'),
+                if (b.serviceAddress != null) _kv(Icons.location_on_outlined, 'Address', b.serviceAddress!),
+                if (b.categoryName != null) _kv(Icons.category_outlined, 'Service', b.categoryName!),
+                _kv(Icons.access_time, 'Created', DateFormat('MMM d, y • h:mm a').format(b.createdAt.toLocal())),
+              ],
+            ),
+          ),
+        ),
+        if (actions.isNotEmpty) ...[
+          const PremiumSectionTitle(
+            title: 'Available Actions',
+            subtitle: 'Take the next step in this booking journey.',
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: PremiumGlassCard(
+              child: Column(
+                children: [
+                  for (final a in actions)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: Opacity(
+                        opacity: _acting ? 0.6 : 1,
+                        child: IgnorePointer(
+                          ignoring: _acting,
+                          child: PremiumGradientButton(
+                            label: a.label,
+                            icon: a.icon,
+                            colors: a.danger ? AppColors.warmGradient : AppColors.primaryGradient,
+                            onPressed: () => _runAction(a),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_acting)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: aColor(actions),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Processing update...',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        const PremiumSectionTitle(
+          title: 'Timeline',
+          subtitle: 'Every booking movement, beautifully organized.',
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: PremiumGlassCard(
+            child: Column(
+              children: [
+                for (int i = 0; i < b.statusLog.length; i++)
+                  _TimelineTile(
+                    log: b.statusLog[i],
+                    isLast: i == b.statusLog.length - 1,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ],
-      const SizedBox(height: 16),
-      Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Timeline', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 12),
-        for (final log in b.statusLog)
-          Padding(padding: const EdgeInsets.only(bottom: 12), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(width: 10, height: 10, margin: const EdgeInsets.only(top: 5),
-                decoration: BoxDecoration(color: bookingStatusColor(log.toStatus), shape: BoxShape.circle)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(prettyStatus(log.toStatus), style: const TextStyle(fontWeight: FontWeight.w600)),
-              if (log.note != null && log.note!.isNotEmpty)
-                Text(log.note!, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-              Text(DateFormat('MMM d, h:mm a').format(log.createdAt.toLocal()),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-            ])),
-          ])),
-      ]))),
-    ]);
+    );
   }
 
   Widget _kv(IconData icon, String k, String v) => Padding(
-    padding: const EdgeInsets.only(top: 8),
-    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, size: 16, color: Colors.grey.shade600),
-      const SizedBox(width: 8),
-      Text('$k: ', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-      Expanded(child: Text(v, style: const TextStyle(fontSize: 13))),
-    ]),
+    padding: const EdgeInsets.only(top: AppSpacing.sm),
+    child: Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(110),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: Colors.white.withAlpha(150)),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withAlpha(18),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              k,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(v, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ]),
+    ),
   );
 
   Future<void> _showReviewDialog() async {
@@ -375,6 +591,137 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Thanks for your feedback!'), backgroundColor: Colors.green));
     }
+  }
+}
+
+Color aColor(List<_Action> actions) => actions.any((a) => !a.danger) ? AppColors.primary : AppColors.error;
+
+class _DetailAmountCard extends StatelessWidget {
+  final double? amount;
+
+  const _DetailAmountCard({required this.amount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(24),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: Colors.white.withAlpha(50)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            amount != null ? '₹${amount!.toStringAsFixed(0)}' : '—',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Amount',
+            style: TextStyle(
+              color: Colors.white.withAlpha(215),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineTile extends StatelessWidget {
+  final BookingStatusLog log;
+  final bool isLast;
+
+  const _TimelineTile({required this.log, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = bookingStatusColor(log.toStatus);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.sm(color),
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 70,
+                margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [color.withAlpha(160), color.withAlpha(0)],
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.md),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(110),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: Colors.white.withAlpha(150)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          prettyStatus(log.toStatus),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
+                      ),
+                      PremiumStatusPill(label: prettyStatus(log.toStatus), color: color),
+                    ],
+                  ),
+                  if (log.note != null && log.note!.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      log.note!,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.45),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    DateFormat('MMM d, h:mm a').format(log.createdAt.toLocal()),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

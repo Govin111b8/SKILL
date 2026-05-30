@@ -28,6 +28,12 @@ import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_intro_screen.dart';
 import 'screens/contacts/my_contacts_screen.dart';
 import 'screens/bookings/bookings_list_screen.dart';
+import 'screens/delivery/delivery_screen.dart';
+import 'screens/rides/my_ride_screen.dart';
+import 'screens/food/food_screen.dart';
+import 'screens/groceries/groceries_screen.dart';
+import 'screens/shopping/shopping_screen.dart';
+import 'screens/jobs/job_screen.dart';
 import 'screens/messages/threads_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/search/search_screen.dart';
@@ -40,8 +46,10 @@ import 'screens/warranty/warranty_screen.dart';
 import 'screens/notifications/notification_preferences_screen.dart';
 import 'screens/schedule/schedule_management_screen.dart';
 import 'screens/earnings/earnings_screen.dart';
+import 'screens/scan/scan_screen.dart';
 import 'widgets/connectivity_banner.dart';
 import 'widgets/app_components.dart';
+import 'theme/design_tokens.dart';
 
 void main() async {
   // Track cold start time
@@ -252,6 +260,14 @@ class SkillConnectApp extends StatelessWidget {
         '/notification-preferences': (_) => const NotificationPreferencesScreen(),
         '/schedule': (_) => const ScheduleManagementScreen(),
         '/earnings': (_) => const EarningsScreen(),
+        '/scan': (_) => const ScanScreen(),
+        '/delivery': (_) => const DeliveryScreen(),
+        '/my-ride': (_) => const MyRideScreen(),
+        '/food': (_) => const FoodScreen(),
+        '/groceries': (_) => const GroceriesScreen(),
+        '/shopping': (_) => const ShoppingScreen(),
+        '/jobs': (_) => const JobScreen(),
+        '/services': (_) => const ServiceHubScreen(),
       },
         onGenerateRoute: (settings) {
           if (settings.name == '/professional') {
@@ -383,58 +399,13 @@ class _MainShellState extends State<MainShell> {
         DashboardScreen(),     // Profile / settings
       ];
     }
+    // Consumer: Home · Requests · [FAB=Services] · Scan · Chat
     return const [
-      HomeScreen(),          // Home: discover pros
-      ServiceHubScreen(),    // Services: browse categories
-      BookingsListScreen(),  // Bookings
-      ThreadsScreen(),       // Chats
+      HomeScreen(),          // Home: discover
+      BookingsListScreen(),  // Requests
+      ScanScreen(),          // Scan (FAB placeholder slot — never shown as indexed)
+      ThreadsScreen(),       // Chat
       DashboardScreen(),     // Profile
-    ];
-  }
-
-  List<NavigationDestination> _buildDestinations(bool isPro, bool isAgent, bool isAdmin) {
-    if (isAdmin) {
-      return const [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
-        NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Users'),
-        NavigationDestination(icon: Icon(Icons.assessment_outlined), selectedIcon: Icon(Icons.assessment), label: 'Reports'),
-        NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
-      ];
-    }
-    if (isAgent) {
-      return const [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
-        NavigationDestination(icon: Icon(Icons.people_alt_outlined), selectedIcon: Icon(Icons.people_alt), label: 'Referrals'),
-        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
-        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
-      ];
-    }
-    if (isPro) {
-      return [
-        const NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
-        const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Bookings'),
-        NavigationDestination(
-          icon: _unread > 0
-              ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
-              : const Icon(Icons.chat_bubble_outline),
-          selectedIcon: const Icon(Icons.chat_bubble),
-          label: 'Chats',
-        ),
-        const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
-      ];
-    }
-    return [
-      const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
-      const NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps_rounded), label: 'Services'),
-      const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note_rounded), label: 'Bookings'),
-      NavigationDestination(
-        icon: _unread > 0
-            ? AppBadge(count: _unread, child: const Icon(Icons.chat_bubble_outline))
-            : const Icon(Icons.chat_bubble_outline),
-        selectedIcon: const Icon(Icons.chat_bubble_rounded),
-        label: 'Chats',
-      ),
-      const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
     ];
   }
 
@@ -470,15 +441,22 @@ class _MainShellState extends State<MainShell> {
     final isAgent = auth.isAgent;
     final isAdmin = auth.isAdmin;
     final screens = _buildScreens(isPro, isAgent, isAdmin);
-    // Reset index if it goes out of range when role changes
-    final safeIndex = _index.clamp(0, screens.length - 1);
+    final isConsumer = !isPro && !isAgent && !isAdmin;
+
+    // For consumer: 4 nav slots (0=Home,1=Requests,2=Scan,3=Chat,4=Profile)
+    // but we treat FAB as index 2 (Services) and shift:
+    // bar slot 0→screens[0], 1→screens[1], FAB→ServiceHub, 2→screens[2](Scan), 3→screens[3](Chat)
+    // We keep _index in range 0–3 (not counting FAB)
+    // Effective screen index: _index < 2 ? _index : _index + 1 (skip Scan placeholder at 2)
+    int effectiveIndex = isConsumer
+        ? (_index < 2 ? _index : _index + 1)
+        : _index;
+    final safeIndex = effectiveIndex.clamp(0, screens.length - 1);
 
     return Scaffold(
       body: Stack(children: [
         Column(children: [
-          // Connectivity-aware banner (offline/slow network)
           const ConnectivityBanner(),
-          // Connection status banner (WebSocket)
           if (_connStatus != ConnectionStatus.connected)
             Material(
               color: _connStatus == ConnectionStatus.connecting
@@ -540,21 +518,264 @@ class _MainShellState extends State<MainShell> {
           ),
         ),
       ]),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -4))],
+      // ── Consumer: custom BottomAppBar + center FAB ──────────────
+      floatingActionButton: isConsumer
+          ? FloatingActionButton(
+              backgroundColor: AppColors.superOrange,
+              foregroundColor: Colors.white,
+              elevation: 6,
+              shape: const CircleBorder(),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ServiceHubScreen()),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.apps_rounded, size: 22),
+                  Text('Services', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: isConsumer
+          ? _ConsumerBottomBar(
+              currentIndex: _index,
+              unread: _unread,
+              onTap: (i) {
+                HapticFeedback.selectionClick();
+                if (i == 2) {
+                  // Scan tab
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
+                } else {
+                  setState(() => _index = i);
+                }
+              },
+            )
+          : _LegacyBottomNav(
+              isPro: isPro,
+              isAgent: isAgent,
+              isAdmin: isAdmin,
+              selectedIndex: _index.clamp(0, screens.length - 1),
+              unread: _unread,
+              onTap: (i) {
+                HapticFeedback.selectionClick();
+                setState(() => _index = i);
+              },
+            ),
+    );
+  }
+}
+
+// ── Consumer Bottom Bar (Grab/Gojek-style with center FAB notch) ─────────────
+
+class _ConsumerBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final int unread;
+  final ValueChanged<int> onTap;
+
+  const _ConsumerBottomBar({
+    required this.currentIndex,
+    required this.unread,
+    required this.onTap,
+  });
+
+  // Visible slots: 0=Home, 1=Requests, [FAB], 2=Scan, 3=Chat
+  // currentIndex maps: 0→Home, 1→Requests, 2→Scan, 3→Chat, 4→Profile (not in bottom bar)
+  static const _items = [
+    _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
+    _NavItem(Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Requests'),
+    _NavItem(Icons.qr_code_scanner_rounded, Icons.qr_code_scanner_rounded, 'Scan'),
+    _NavItem(Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Chat'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.cardDark : Colors.white;
+    final activeColor = AppColors.superBlue;
+    final inactiveColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+
+    return BottomAppBar(
+      color: bgColor,
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      elevation: 8,
+      child: SizedBox(
+        height: 60,
+        child: Row(
+          children: [
+            // Left two items
+            ...[0, 1].map((i) => Expanded(
+              child: _NavButton(
+                item: _items[i],
+                selected: currentIndex == i,
+                activeColor: activeColor,
+                inactiveColor: inactiveColor,
+                onTap: () => onTap(i),
+              ),
+            )),
+            // Center spacer for FAB
+            const Expanded(child: SizedBox()),
+            // Right two items
+            ...[2, 3].map((i) => Expanded(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _NavButton(
+                    item: _items[i],
+                    selected: currentIndex == i,
+                    activeColor: activeColor,
+                    inactiveColor: inactiveColor,
+                    onTap: () => onTap(i),
+                    badge: i == 3 && unread > 0 ? unread : null,
+                  ),
+                ],
+              ),
+            )),
+          ],
         ),
-        child: NavigationBar(
-          selectedIndex: safeIndex,
-          onDestinationSelected: (i) {
-            HapticFeedback.selectionClick();
-            setState(() => _index = i);
-          },
-          animationDuration: const Duration(milliseconds: 400),
-          destinations: _buildDestinations(isPro, isAgent, isAdmin),
-        ),
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  const _NavItem(this.icon, this.selectedIcon, this.label);
+}
+
+class _NavButton extends StatelessWidget {
+  final _NavItem item;
+  final bool selected;
+  final Color activeColor;
+  final Color inactiveColor;
+  final VoidCallback onTap;
+  final int? badge;
+
+  const _NavButton({
+    required this.item,
+    required this.selected,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.onTap,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                selected ? item.selectedIcon : item.icon,
+                color: selected ? activeColor : inactiveColor,
+                size: 24,
+              ),
+              if (badge != null)
+                Positioned(
+                  right: -6, top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    constraints: const BoxConstraints(minWidth: 16),
+                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                    child: Text('$badge',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            item.label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? activeColor : inactiveColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Legacy Bottom Nav (pro / agent / admin) ───────────────────────────────────
+
+class _LegacyBottomNav extends StatelessWidget {
+  final bool isPro;
+  final bool isAgent;
+  final bool isAdmin;
+  final int selectedIndex;
+  final int unread;
+  final ValueChanged<int> onTap;
+
+  const _LegacyBottomNav({
+    required this.isPro,
+    required this.isAgent,
+    required this.isAdmin,
+    required this.selectedIndex,
+    required this.unread,
+    required this.onTap,
+  });
+
+  List<NavigationDestination> _destinations() {
+    if (isAdmin) {
+      return const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(Icons.people_outlined), selectedIcon: Icon(Icons.people), label: 'Users'),
+        NavigationDestination(icon: Icon(Icons.assessment_outlined), selectedIcon: Icon(Icons.assessment), label: 'Reports'),
+        NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+      ];
+    }
+    if (isAgent) {
+      return const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+        NavigationDestination(icon: Icon(Icons.people_alt_outlined), selectedIcon: Icon(Icons.people_alt), label: 'Referrals'),
+        NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chats'),
+        NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      ];
+    }
+    // Pro
+    return [
+      const NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Overview'),
+      const NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Requests'),
+      NavigationDestination(
+        icon: unread > 0
+            ? AppBadge(count: unread, child: const Icon(Icons.chat_bubble_outline))
+            : const Icon(Icons.chat_bubble_outline),
+        selectedIcon: const Icon(Icons.chat_bubble),
+        label: 'Chats',
+      ),
+      const NavigationDestination(icon: Icon(Icons.person_outlined), selectedIcon: Icon(Icons.person), label: 'Profile'),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -4))],
+      ),
+      child: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onTap,
+        animationDuration: const Duration(milliseconds: 400),
+        destinations: _destinations(),
       ),
     );
   }

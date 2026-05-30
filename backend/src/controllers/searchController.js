@@ -1,5 +1,22 @@
 const { query } = require('../config/database');
 const logger = require('../config/logger');
+const meilisearch = require('../services/meilisearch');
+
+
+function escapeMeiliValue(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function buildMeiliFilter({ verified_only, provider_type, availability, category_id, category, service_id }) {
+  const filters = [];
+  if (verified_only !== 'false') filters.push('government_id_verified = true');
+  if (provider_type) filters.push(`provider_type = "${escapeMeiliValue(provider_type)}"`);
+  if (availability) filters.push(`availability_status = "${escapeMeiliValue(availability)}"`);
+  if (category_id && Number.isFinite(parseInt(category_id, 10))) filters.push(`category_ids = ${parseInt(category_id, 10)}`);
+  if (category && String(category).trim()) filters.push(`category_name = "${escapeMeiliValue(String(category).trim())}"`);
+  if (service_id) filters.push(`service_ids = "${escapeMeiliValue(service_id)}"`);
+  return filters.join(' AND ');
+}
 
 /**
  * Search ranking — 6-factor weighted Trust Score (PRD §6.4.2)
@@ -46,10 +63,50 @@ const search = async (req, res, next) => {
       ).catch((err) => logger.error({ err, userId: req.user.id }, 'Failed to save search history'));
     }
 
-    const pageNum = Math.max(1, parseInt(page) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-    const offset = (pageNum - 1) * limitNum;
-    const params = [];
+
+const pageNum = Math.max(1, parseInt(page) || 1);
+const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+const offset = (pageNum - 1) * limitNum;
+
+if (meilisearch.isEnabled() && q && q.trim()) {
+  const filterString = buildMeiliFilter({ verified_only, provider_type, availability, category_id, category, service_id });
+  const [professionalSearch, serviceSearch] = await Promise.all([
+    meilisearch.searchProfessionals(q.trim(), filterString, limitNum, offset),
+    meilisearch.searchServices(q.trim(), filterString, Math.min(limitNum, 10), 0),
+  ]);
+
+  if (professionalSearch) {
+    return res.status(200).json({
+      success: true,
+      data: professionalSearch.hits.map((row) => ({
+        ...row,
+        average_rating: row.average_rating != null ? parseFloat(row.average_rating) : row.average_rating,
+        ranking_score: row.ranking_score != null ? parseFloat(row.ranking_score) : row.ranking_score,
+        profile_completeness_score: row.profile_completeness_score != null ? parseFloat(row.profile_completeness_score) : row.profile_completeness_score,
+        distance: row.distance != null ? parseFloat(row.distance) : row.distance,
+      })),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: professionalSearch.total,
+        pages: Math.ceil((professionalSearch.total || 0) / limitNum),
+      },
+      filters_applied: {
+        q: q || undefined,
+        category: category || undefined,
+        category_id: category_id || undefined,
+        service: service || undefined,
+        service_id: service_id || undefined,
+        availability: availability || undefined,
+        provider_type: provider_type || undefined,
+      },
+      search_engine: 'meilisearch',
+      service_hits: serviceSearch?.hits || [],
+    });
+  }
+}
+
+const params = [];
     const conditions = [];
     let paramIndex = 1;
 

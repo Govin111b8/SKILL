@@ -1,13 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+
+import '../../data/services_catalog.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
+import '../../theme/design_tokens.dart';
+import '../../widgets/premium_ui.dart';
 import '../../widgets/professional_card.dart';
-import '../../widgets/skeleton_loader.dart';
 import '../../widgets/voice_search_button.dart';
-import '../../data/services_catalog.dart';
 
 class SearchScreen extends StatefulWidget {
   final int? categoryId;
@@ -35,14 +38,12 @@ class _SearchScreenState extends State<SearchScreen> {
   final _maxPriceCtl = TextEditingController();
   Timer? _debounce;
 
-  // Geo + Availability filters
   bool _availableNow = false;
   bool _nearMe = false;
   double _radiusKm = 25;
   double? _userLat;
   double? _userLng;
   bool _geoLoading = false;
-  // Fallback coords (Hyderabad) used only if permission denied
   static const double _fallbackLat = 17.385;
   static const double _fallbackLng = 78.4867;
 
@@ -68,8 +69,6 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  /// Request permission and fetch real device coordinates.
-  /// Falls back to hardcoded Hyderabad coords if permission denied.
   Future<void> _fetchLocation() async {
     setState(() => _geoLoading = true);
     try {
@@ -81,21 +80,21 @@ class _SearchScreenState extends State<SearchScreen> {
         if (mounted) setState(() => _geoLoading = false);
         return;
       }
-
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         _showGeoSnackBar('Location permission denied. Using default city.');
         _userLat = _fallbackLat;
         _userLng = _fallbackLng;
         if (mounted) setState(() => _geoLoading = false);
         return;
       }
-
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
       _userLat = pos.latitude;
       _userLng = pos.longitude;
     } catch (_) {
@@ -107,11 +106,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _showGeoSnackBar(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 2)),
+    );
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels > _scrollController.position.maxScrollExtent - 200 && !_loadingMore && _page < _totalPages) {
+    if (_scrollController.position.pixels >
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        _page < _totalPages) {
       _loadNextPage();
     }
   }
@@ -122,21 +126,36 @@ class _SearchScreenState extends State<SearchScreen> {
     final nextPage = _page + 1;
     try {
       final params = <String, String>{
-        'sort_by': _sortBy, 'page': nextPage.toString(), 'limit': '20',
+        'sort_by': _sortBy,
+        'page': nextPage.toString(),
+        'limit': '20',
       };
       if (_searchCtl.text.trim().isNotEmpty) params['q'] = _searchCtl.text.trim();
-      if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
-      if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
+      if (_selectedCategoryId != null) {
+        params['category_id'] = _selectedCategoryId.toString();
+      }
+      if (_maxPrice != null && _maxPrice!.isNotEmpty) {
+        params['max_price'] = _maxPrice!;
+      }
       if (_availableNow) params['availability'] = 'available';
       if (_nearMe && _userLat != null && _userLng != null) {
-        params['latitude'] = _userLat.toString(); params['longitude'] = _userLng.toString(); params['radius_km'] = _radiusKm.toStringAsFixed(0);
+        params['latitude'] = _userLat.toString();
+        params['longitude'] = _userLng.toString();
+        params['radius_km'] = _radiusKm.toStringAsFixed(0);
       }
       final res = await ApiService.get('/search', queryParams: params);
-      final next = (res['data'] as List).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
+      final next = (res['data'] as List)
+          .map((e) => Professional.fromJson(e as Map<String, dynamic>))
+          .toList();
       final pag = res['pagination'] as Map?;
       _totalPages = (pag?['pages'] as num?)?.toInt() ?? 1;
       _page = nextPage;
-      if (mounted) setState(() { _results.addAll(next); _loadingMore = false; });
+      if (mounted) {
+        setState(() {
+          _results.addAll(next);
+          _loadingMore = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loadingMore = false);
     }
@@ -152,13 +171,17 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _loadCategories() async {
     try {
       final res = await ApiService.get('/categories');
-      _categories = (res['data'] as List).map((e) => Category.fromJson(e)).toList();
+      _categories =
+          (res['data'] as List).map((e) => Category.fromJson(e)).toList();
       if (mounted) setState(() {});
     } catch (_) {}
   }
 
   Future<void> _search({int page = 1}) async {
-    setState(() { _loading = true; _page = page; });
+    setState(() {
+      _loading = true;
+      _page = page;
+    });
     try {
       final params = <String, String>{
         'sort_by': _sortBy,
@@ -166,8 +189,12 @@ class _SearchScreenState extends State<SearchScreen> {
         'limit': '20',
       };
       if (_searchCtl.text.trim().isNotEmpty) params['q'] = _searchCtl.text.trim();
-      if (_selectedCategoryId != null) params['category_id'] = _selectedCategoryId.toString();
-      if (_maxPrice != null && _maxPrice!.isNotEmpty) params['max_price'] = _maxPrice!;
+      if (_selectedCategoryId != null) {
+        params['category_id'] = _selectedCategoryId.toString();
+      }
+      if (_maxPrice != null && _maxPrice!.isNotEmpty) {
+        params['max_price'] = _maxPrice!;
+      }
       if (_availableNow) params['availability'] = 'available';
       if (_nearMe && _userLat != null && _userLng != null) {
         params['latitude'] = _userLat.toString();
@@ -175,14 +202,21 @@ class _SearchScreenState extends State<SearchScreen> {
         params['radius_km'] = _radiusKm.toStringAsFixed(0);
       }
       final res = await ApiService.get('/search', queryParams: params);
-      _results = (res['data'] as List).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
+      _results = (res['data'] as List)
+          .map((e) => Professional.fromJson(e as Map<String, dynamic>))
+          .toList();
       final pag = res['pagination'] as Map?;
       _totalPages = (pag?['pages'] as num?)?.toInt() ?? 1;
       _searched = true;
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: $e'), backgroundColor: Colors.red.shade700));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Search failed: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
       }
       return;
     }
@@ -204,292 +238,811 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  bool get hasFilters =>
+      _selectedCategoryId != null ||
+      (_maxPrice != null && _maxPrice!.isNotEmpty) ||
+      _availableNow ||
+      _nearMe;
+
+  String _selectedCategoryName() {
+    for (final category in _categories) {
+      if (category.id == _selectedCategoryId) return category.name;
+    }
+    return 'Category';
+  }
+
+  Future<void> _handleNearMeToggle(bool value) async {
+    HapticFeedback.mediumImpact();
+    if (value && _userLat == null) {
+      await _fetchLocation();
+    }
+    if (mounted) setState(() => _nearMe = value);
+  }
+
+  void _runSearchNow() {
+    HapticFeedback.mediumImpact();
+    _debounce?.cancel();
+    _search();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final hasFilters = _selectedCategoryId != null || (_maxPrice != null && _maxPrice!.isNotEmpty) || _availableNow || _nearMe;
     final svc = widget.categoryId != null ? findServiceById(widget.categoryId!) : null;
     final hub = widget.categoryId != null ? findHubById(widget.categoryId!) : null;
-    final themeColors = svc?.gradient ?? hub?.gradient ?? const [Color(0xFF6366F1), Color(0xFF8B5CF6)];
+    final themeColors = svc?.gradient ?? hub?.gradient ?? AppColors.primaryGradient;
+    final bannerTitle =
+        widget.categoryName ?? svc?.name ?? hub?.name ?? 'Search Professionals';
+    final bannerSubtitle = svc?.tagline ??
+        hub?.description ??
+        'Find trusted professionals near you with premium discovery filters.';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: widget.categoryName != null ? Text(widget.categoryName!) : const Text('Search Professionals'),
-        automaticallyImplyLeading: widget.categoryId != null,
-        flexibleSpace: widget.categoryId != null
-            ? Container(decoration: BoxDecoration(gradient: LinearGradient(colors: themeColors)))
-            : null,
-        foregroundColor: widget.categoryId != null ? Colors.white : null,
-      ),
-      body: Column(
-        children: [
-          // Service banner
-          if (svc != null || hub != null) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: themeColors),
-                boxShadow: [BoxShadow(color: themeColors.first.withAlpha(80), blurRadius: 18, offset: const Offset(0, 6))],
-              ),
-              child: Row(children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: Colors.white.withAlpha(50), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withAlpha(80))),
-                  child: Icon(svc?.icon ?? hub?.icon ?? Icons.apps, color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Text(svc?.emoji ?? hub?.emoji ?? '⭐', style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Expanded(child: Text(svc?.name ?? hub?.name ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.3), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ]),
-                    const SizedBox(height: 2),
-                    Text(svc?.tagline ?? hub?.description ?? '', style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  ]),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(color: Colors.white.withAlpha(50), borderRadius: BorderRadius.circular(100)),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.verified, color: Colors.white, size: 12),
-                    SizedBox(width: 4),
-                    Text('Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
-              ]),
-            ),
-          ],
-
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchCtl,
-                  decoration: InputDecoration(
-                    hintText: 'Search by name, skill, or keyword...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchCtl.text.isNotEmpty
-                        ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchCtl.clear(); setState(() {}); })
-                        : null,
-                  ),
-                  onSubmitted: (_) { _debounce?.cancel(); _search(); },
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(onPressed: () => _search(), child: const Text('Go')),
-              const SizedBox(width: 4),
-              VoiceSearchButton(onResult: (text) {
-                _searchCtl.text = text;
-                _search();
-              }),
-              IconButton(
-                icon: Badge(
-                  isLabelVisible: hasFilters,
-                  child: Icon(_showFilters ? Icons.filter_list_off : Icons.filter_list),
-                ),
-                onPressed: () => setState(() => _showFilters = !_showFilters),
-              ),
-            ]),
+    return PremiumScrollScaffold(
+      safeTop: false,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          if (_searched) {
+            await _search(page: 1);
+          } else {
+            await _loadCategories();
+          }
+        },
+        color: AppColors.primary,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
-
-          // Filters panel
-          if (_showFilters) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: cs.surfaceContainerHighest.withAlpha(80),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Category dropdown
-                DropdownButtonFormField<int?>(
-                  value: _selectedCategoryId,
-                  decoration: const InputDecoration(labelText: 'Category', prefixIcon: Icon(Icons.category), isDense: true),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('All Categories')),
-                    ..._categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
-                  ],
-                  onChanged: (v) => setState(() => _selectedCategoryId = v),
-                ),
-                const SizedBox(height: 10),
-                // Max price
-                TextField(
-                  controller: _maxPriceCtl,
-                  decoration: const InputDecoration(labelText: 'Max Price (₹)', prefixIcon: Icon(Icons.attach_money), isDense: true),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) => _maxPrice = v,
-                ),
-                const SizedBox(height: 14),
-                // Available Now toggle
-                SwitchListTile(
-                  dense: true,
-                  value: _availableNow,
-                  onChanged: (v) => setState(() => _availableNow = v),
-                  title: const Text('Available Now', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Only show pros currently online'),
-                  secondary: Icon(Icons.circle, size: 14, color: _availableNow ? Colors.green : Colors.grey.shade400),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                const SizedBox(height: 8),
-                // Near Me toggle + radius
-                SwitchListTile(
-                  dense: true,
-                  value: _nearMe,
-                  onChanged: _geoLoading ? null : (v) async {
-                    if (v && _userLat == null) {
-                      await _fetchLocation();
-                    }
-                    if (mounted) setState(() => _nearMe = v);
-                  },
-                  title: Row(children: [
-                    const Text('Near Me', style: TextStyle(fontWeight: FontWeight.w600)),
-                    if (_geoLoading) ...[
-                      const SizedBox(width: 8),
-                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-                    ],
-                  ]),
-                  subtitle: const Text('Professionals within radius'),
-                  secondary: Icon(Icons.location_on, color: _nearMe ? cs.primary : Colors.grey.shade400),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                if (_nearMe) ...[                  
-                  Row(children: [
-                    const SizedBox(width: 4),
-                    const Icon(Icons.straighten, size: 16),
-                    Expanded(child: Slider(
-                      value: _radiusKm,
-                      min: 5,
-                      max: 100,
-                      divisions: 19,
-                      label: '${_radiusKm.toStringAsFixed(0)} km',
-                      onChanged: (v) => setState(() => _radiusKm = v),
-                    )),
-                    Text('${_radiusKm.toStringAsFixed(0)} km', style: TextStyle(fontWeight: FontWeight.w600, color: cs.primary)),
-                  ]),
-                ],
-                const SizedBox(height: 10),
-                Row(children: [
-                  TextButton(onPressed: _clearFilters, child: const Text('Clear Filters')),
-                  const Spacer(),
-                  FilledButton.tonal(onPressed: () { setState(() => _showFilters = false); _search(); }, child: const Text('Apply')),
-                ]),
-              ]),
-            ),
-          ],
-
-          // Sort chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(children: [
-              for (final s in [('reputation', 'Top Rated'), ('rating', 'Highest Rating'), ('experience', 'Most Experienced'), ('response_time', 'Fastest Response'), if (_nearMe) ('distance', 'Nearest')])
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(s.$2),
-                    selected: _sortBy == s.$1,
-                    onSelected: (_) { setState(() => _sortBy = s.$1); if (_searched) _search(); },
-                  ),
-                ),
-            ]),
-          ),
-          const SizedBox(height: 8),
-
-          // Active filters chips
-          if (hasFilters)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [
-                if (_selectedCategoryId != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Chip(
-                      label: Text(_categories.where((c) => c.id == _selectedCategoryId).firstOrNull?.name ?? 'Category', style: const TextStyle(fontSize: 12)),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () { setState(() => _selectedCategoryId = null); if (_searched) _search(); },
-                      visualDensity: VisualDensity.compact,
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              stretch: true,
+              elevation: 0,
+              expandedHeight: widget.categoryId != null ? 286 : 210,
+              backgroundColor: Colors.transparent,
+              foregroundColor:
+                  widget.categoryId != null ? Colors.white : AppColors.surfaceDark,
+              automaticallyImplyLeading: widget.categoryId != null,
+              title: widget.categoryId == null
+                  ? const Text(
+                      'Search Professionals',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    )
+                  : null,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: widget.categoryId != null
+                          ? themeColors
+                          : const [
+                              Color(0xFFEEF2FF),
+                              Color(0xFFF5F3FF),
+                              Color(0xFFF0F9FF),
+                            ],
                     ),
                   ),
-                if (_maxPrice != null && _maxPrice!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Chip(
-                      label: Text('Max ₹$_maxPrice', style: const TextStyle(fontSize: 12)),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () { setState(() { _maxPrice = null; _maxPriceCtl.clear(); }); if (_searched) _search(); },
-                      visualDensity: VisualDensity.compact,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        112,
+                      ),
+                      child: widget.categoryId != null
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(28),
+                                        borderRadius:
+                                            BorderRadius.circular(AppRadius.xl),
+                                        border: Border.all(
+                                          color: Colors.white.withAlpha(70),
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        svc?.icon ?? hub?.icon ?? Icons.search_rounded,
+                                        color: Colors.white,
+                                        size: 30,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    const PremiumStatChip(
+                                      label: 'Verified pros',
+                                      color: Colors.white,
+                                      icon: Icons.verified_rounded,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                                Row(
+                                  children: [
+                                    Text(
+                                      svc?.emoji ?? hub?.emoji ?? '✨',
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        bannerTitle,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.02,
+                                          letterSpacing: -0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  bannerSubtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(225),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Discover exceptional talent',
+                                  style: TextStyle(
+                                    color: AppColors.surfaceDark.withAlpha(235),
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.05,
+                                    letterSpacing: -0.8,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Search by skill, category, availability, price, and distance with a beautifully refined experience.',
+                                  style: TextStyle(
+                                    color: AppColors.surfaceDark.withAlpha(170),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                if (_availableNow)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Chip(
-                      avatar: const Icon(Icons.circle, size: 10, color: Colors.green),
-                      label: const Text('Available Now', style: TextStyle(fontSize: 12)),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () { setState(() => _availableNow = false); if (_searched) _search(); },
-                      visualDensity: VisualDensity.compact,
-                    ),
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(94),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
-                if (_nearMe)
-                  Chip(
-                    avatar: const Icon(Icons.location_on, size: 14),
-                    label: Text('Within ${_radiusKm.toStringAsFixed(0)} km', style: const TextStyle(fontSize: 12)),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () { setState(() => _nearMe = false); if (_searched) _search(); },
-                    visualDensity: VisualDensity.compact,
-                  ),
-              ]),
-            ),
-
-          // Results
-          Expanded(
-            child: _loading
-                ? ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, __) => const SkeletonProfessionalCard(),
-                  )
-                : !_searched
-                    ? _SearchSuggestions(
-                        onSelect: (q) {
-                          _searchCtl.text = q;
-                          HapticFeedback.selectionClick();
-                          _debounce?.cancel();
-                          _search();
-                        },
-                      )
-                    : _results.isEmpty
-                        ? EmptyStateWidget(
-                            icon: Icons.person_search_rounded,
-                            iconColor: const Color(0xFF6366F1),
-                            title: 'No professionals found',
-                            subtitle: hasFilters
-                                ? 'Try adjusting your filters or searching a different keyword.'
-                                : 'We couldn\'t find anyone matching your search. Try a different keyword.',
-                            actionLabel: hasFilters ? 'Clear filters' : null,
-                            onAction: hasFilters ? _clearFilters : null,
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _results.length + (_loadingMore ? 1 : 0),
-                            itemBuilder: (_, i) {
-                              if (i == _results.length) {
-                                return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()));
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: ProfessionalCard(professional: _results[i]),
-                              );
-                            },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: PremiumSearchField(
+                          hint: 'Search by name, skill, or keyword...',
+                          controller: _searchCtl,
+                          onChanged: (_) => setState(() {}),
+                          suffix: Padding(
+                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_searchCtl.text.isNotEmpty)
+                                  IconButton(
+                                    tooltip: 'Clear',
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      color: AppColors.primary,
+                                    ),
+                                    onPressed: () {
+                                      HapticFeedback.mediumImpact();
+                                      _searchCtl.clear();
+                                      setState(() {});
+                                    },
+                                  ),
+                                IconButton(
+                                  tooltip: 'Search',
+                                  icon: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: AppColors.primary,
+                                  ),
+                                  onPressed: _runSearchNow,
+                                ),
+                              ],
+                            ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      PremiumGlassCard(
+                        padding: EdgeInsets.zero,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        child: SizedBox(
+                          width: 52,
+                          height: 52,
+                          child: Center(
+                            child: VoiceSearchButton(
+                              onResult: (text) {
+                                _searchCtl.text = text;
+                                _search();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      PremiumGlassCard(
+                        onTap: () {
+                          setState(() => _showFilters = !_showFilters);
+                        },
+                        padding: EdgeInsets.zero,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        child: SizedBox(
+                          width: 52,
+                          height: 52,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(
+                                _showFilters
+                                    ? Icons.tune_rounded
+                                    : Icons.filter_alt_rounded,
+                                color: AppColors.primary,
+                              ),
+                              if (hasFilters)
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accent,
+                                      shape: BoxShape.circle,
+                                      boxShadow: AppShadows.sm(AppColors.accent),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: AnimatedSwitcher(
+                duration: AppDurations.normal,
+                child: _showFilters
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          AppSpacing.md,
+                          AppSpacing.lg,
+                          0,
+                        ),
+                        child: PremiumGlassCard(
+                          borderRadius: BorderRadius.circular(AppRadius.xxl),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    child: Text(
+                                      'Refine your search',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  if (hasFilters)
+                                    TextButton(
+                                      onPressed: () {
+                                        HapticFeedback.mediumImpact();
+                                        _clearFilters();
+                                      },
+                                      child: const Text('Clear all'),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              DropdownButtonFormField<int?>(
+                                value: _selectedCategoryId,
+                                decoration: InputDecoration(
+                                  labelText: 'Category',
+                                  prefixIcon:
+                                      const Icon(Icons.category_rounded),
+                                  filled: true,
+                                  fillColor: Colors.white.withAlpha(120),
+                                  border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.lg),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                isExpanded: true,
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    child: Text('All Categories'),
+                                  ),
+                                  ..._categories.map(
+                                    (c) => DropdownMenuItem(
+                                      value: c.id,
+                                      child: Text(c.name),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (v) {
+                                  HapticFeedback.mediumImpact();
+                                  setState(() => _selectedCategoryId = v);
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              TextField(
+                                controller: _maxPriceCtl,
+                                keyboardType: TextInputType.number,
+                                onChanged: (v) => _maxPrice = v,
+                                decoration: InputDecoration(
+                                  labelText: 'Max Price (₹)',
+                                  prefixIcon: const Icon(
+                                    Icons.currency_rupee_rounded,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white.withAlpha(120),
+                                  border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.lg),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              PremiumGlassCard(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                gradient: [
+                                  Colors.white.withAlpha(205),
+                                  Colors.white.withAlpha(120),
+                                ],
+                                child: Column(
+                                  children: [
+                                    SwitchListTile(
+                                      dense: true,
+                                      value: _availableNow,
+                                      contentPadding: EdgeInsets.zero,
+                                      onChanged: (v) {
+                                        HapticFeedback.mediumImpact();
+                                        setState(() => _availableNow = v);
+                                      },
+                                      title: const Text(
+                                        'Available Now',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      subtitle: const Text(
+                                        'Only show professionals currently online',
+                                      ),
+                                      secondary: PremiumStatusPill(
+                                        label: _availableNow ? 'Live' : 'Offline',
+                                        color: _availableNow
+                                            ? AppColors.success
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    const Divider(height: AppSpacing.xl),
+                                    SwitchListTile(
+                                      dense: true,
+                                      value: _nearMe,
+                                      contentPadding: EdgeInsets.zero,
+                                      onChanged: _geoLoading
+                                          ? null
+                                          : _handleNearMeToggle,
+                                      title: Row(
+                                        children: [
+                                          const Text(
+                                            'Near Me',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          if (_geoLoading) ...[
+                                            const SizedBox(
+                                              width: AppSpacing.sm,
+                                            ),
+                                            const SizedBox(
+                                              width: 14,
+                                              height: 14,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      subtitle: const Text(
+                                        'Search professionals within your preferred radius',
+                                      ),
+                                      secondary: const Icon(
+                                        Icons.location_on_rounded,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    if (_nearMe) ...[
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.radar_rounded,
+                                            color: AppColors.primary,
+                                          ),
+                                          const SizedBox(width: AppSpacing.sm),
+                                          Expanded(
+                                            child: Slider(
+                                              value: _radiusKm,
+                                              min: 5,
+                                              max: 100,
+                                              divisions: 19,
+                                              label:
+                                                  '${_radiusKm.toStringAsFixed(0)} km',
+                                              onChanged: (v) {
+                                                setState(() => _radiusKm = v);
+                                              },
+                                            ),
+                                          ),
+                                          Text(
+                                            '${_radiusKm.toStringAsFixed(0)} km',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: PremiumGlassCard(
+                                      onTap: () {
+                                        HapticFeedback.mediumImpact();
+                                        setState(() => _showFilters = false);
+                                      },
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.xl,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: AppSpacing.lg,
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'Close',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.surfaceDark,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: PremiumGradientButton(
+                                      label: 'Apply filters',
+                                      icon: Icons.tune_rounded,
+                                      onPressed: () {
+                                        setState(() => _showFilters = false);
+                                        _search();
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PremiumSectionTitle(
+                      title: 'Sort by',
+                      subtitle: _searched
+                          ? '${_results.length} professionals found'
+                          : 'Choose how results are ranked',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(
+                      height: 48,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          for (final s in [
+                            ('reputation', 'Top Rated'),
+                            ('rating', 'Highest Rating'),
+                            ('experience', 'Most Experienced'),
+                            ('response_time', 'Fastest Response'),
+                            if (_nearMe) ('distance', 'Nearest'),
+                          ])
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(right: AppSpacing.sm),
+                              child: _PremiumSelectableChip(
+                                label: s.$2,
+                                selected: _sortBy == s.$1,
+                                onTap: () {
+                                  setState(() => _sortBy = s.$1);
+                                  if (_searched) _search();
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (hasFilters) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          if (_selectedCategoryId != null)
+                            _ActiveFilterChip(
+                              label: _selectedCategoryName(),
+                              icon: Icons.category_rounded,
+                              onTap: () {
+                                setState(() => _selectedCategoryId = null);
+                                if (_searched) _search();
+                              },
+                            ),
+                          if (_maxPrice != null && _maxPrice!.isNotEmpty)
+                            _ActiveFilterChip(
+                              label: 'Max ₹$_maxPrice',
+                              icon: Icons.currency_rupee_rounded,
+                              onTap: () {
+                                setState(() {
+                                  _maxPrice = null;
+                                  _maxPriceCtl.clear();
+                                });
+                                if (_searched) _search();
+                              },
+                            ),
+                          if (_availableNow)
+                            _ActiveFilterChip(
+                              label: 'Available Now',
+                              icon: Icons.bolt_rounded,
+                              color: AppColors.success,
+                              onTap: () {
+                                setState(() => _availableNow = false);
+                                if (_searched) _search();
+                              },
+                            ),
+                          if (_nearMe)
+                            _ActiveFilterChip(
+                              label:
+                                  'Within ${_radiusKm.toStringAsFixed(0)} km',
+                              icon: Icons.location_on_rounded,
+                              color: AppColors.accent,
+                              onTap: () {
+                                setState(() => _nearMe = false);
+                                if (_searched) _search();
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (_loading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: AppSpacing.md),
+                  child: PremiumLoadingList(itemCount: 4, itemHeight: 124),
+                ),
+              )
+            else if (!_searched)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: AppSpacing.md,
+                    bottom: AppSpacing.huge,
+                  ),
+                  child: _SearchSuggestions(
+                    onSelect: (q) {
+                      _searchCtl.text = q;
+                      HapticFeedback.selectionClick();
+                      _debounce?.cancel();
+                      _search();
+                    },
+                  ),
+                ),
+              )
+            else if (_results.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: PremiumEmptyState(
+                  icon: Icons.person_search_rounded,
+                  title: 'No professionals found',
+                  subtitle: hasFilters
+                      ? 'Try adjusting your filters or searching with a different keyword.'
+                      : 'We couldn\'t find anyone matching your search. Try a broader keyword.',
+                  actionLabel: hasFilters ? 'Clear filters' : null,
+                  onAction: hasFilters ? _clearFilters : null,
+                ),
+              )
+            else ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: ProfessionalCard(professional: _results[index]),
+                    ),
+                    childCount: _results.length,
+                  ),
+                ),
+              ),
+              if (_loadingMore)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.huge),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.huge),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumSelectableChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PremiumSelectableChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(colors: AppColors.primaryGradient)
+              : null,
+          color: selected ? null : Colors.white.withAlpha(178),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            width: 1.4,
+            color: selected
+                ? Colors.transparent
+                : AppColors.primary.withAlpha(60),
           ),
+          boxShadow: selected
+              ? AppShadows.md(AppColors.primary)
+              : AppShadows.sm(AppColors.primary),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : AppColors.surfaceDark,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActiveFilterChip({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.color = AppColors.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGlassCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      gradient: [color.withAlpha(38), Colors.white.withAlpha(195)],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Icon(Icons.close_rounded, size: 14, color: color),
         ],
       ),
     );
@@ -540,87 +1093,207 @@ class _SearchSuggestionsState extends State<_SearchSuggestions> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Recent searches
-        if (_history.isNotEmpty) ...[
-          Row(children: [
-            Icon(Icons.history, size: 16, color: cs.primary),
-            const SizedBox(width: 6),
-            Text('Recent searches', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
-            const Spacer(),
-            GestureDetector(
-              onTap: _clearHistory,
-              child: Text('Clear', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PremiumGlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: AppColors.primaryGradient,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Smart suggestions',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Pick up where you left off or explore popular searches curated for SkillConnect.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.45,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (_history.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      const Text(
+                        'Recent searches',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          _clearHistory();
+                        },
+                        child: const Text('Clear'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: _history
+                        .map(
+                          (q) => _SuggestionChip(
+                            label: q,
+                            icon: Icons.history_rounded,
+                            onTap: () => widget.onSelect(q),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ],
             ),
-          ]),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8, runSpacing: 8,
-            children: _history.map((q) => GestureDetector(
-              onTap: () => widget.onSelect(q),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: cs.primary.withAlpha(40)),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.history, size: 14, color: cs.primary.withAlpha(150)),
-                  const SizedBox(width: 6),
-                  Text(q, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: cs.primary)),
-                ]),
-              ),
-            )).toList(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
+          PremiumSectionTitle(
+            title: 'Popular searches',
+            subtitle: 'Instant shortcuts to what customers search most',
+          ),
+          PremiumGlassCard(
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: _suggestions
+                  .map(
+                    (s) => _SuggestionChip(
+                      label: '${s.$1}  ${s.$2}',
+                      icon: Icons.trending_up_rounded,
+                      onTap: () => widget.onSelect(s.$2),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PremiumGlassCard(
+            gradient: [AppColors.primary.withAlpha(28), Colors.white.withAlpha(205)],
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withAlpha(18),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb_outline_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pro tip',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Use filters for availability, price, and distance to discover the perfect professional faster.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.45,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
-        Text('Popular searches', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8, runSpacing: 8,
-          children: _suggestions.map((s) {
-            return GestureDetector(
-              onTap: () => widget.onSelect(s.$2),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(s.$1, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 6),
-                  Text(s.$2, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-            );
-          }).toList(),
+      ),
+    );
+  }
+}
+
+class _SuggestionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SuggestionChip({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
         ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cs.primary.withAlpha(10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.primary.withAlpha(30)),
-          ),
-          child: Row(children: [
-            Icon(Icons.lightbulb_outline_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Tip: Use filters for better results', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.primary)),
-              const SizedBox(height: 2),
-              Text('Filter by availability, price range, and distance to find the perfect match.', style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4)),
-            ])),
-          ]),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(210),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.primary.withAlpha(40)),
+          boxShadow: AppShadows.sm(AppColors.primary),
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

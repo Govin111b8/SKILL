@@ -46,6 +46,21 @@ class AppColors {
   static const Color secondary = Color(0xFF06B6D4);
   static const Color accent = Color(0xFF8B5CF6);
 
+  // Super-app brand colors (Grab/Gojek-style)
+  static const Color superBlue = Color(0xFF1B6EF3);
+  static const Color superBlueDark = Color(0xFF1558CC);
+  static const Color superOrange = Color(0xFFFF8C00);
+
+  // Quick-action tile colors
+  static const Color tileDelivery = Color(0xFFFFA000);   // amber
+  static const Color tileRide = Color(0xFF0288D1);       // sky-blue
+  static const Color tileFood = Color(0xFFFF6D00);       // orange
+  static const Color tileGroceries = Color(0xFF2E7D32);  // green
+  static const Color tileShopping = Color(0xFFD32F2F);   // red
+  static const Color tileServices = Color(0xFF7B1FA2);   // purple
+  static const Color tileJob = Color(0xFF00796B);        // teal
+  static const Color tileWallet = Color(0xFF00897B);     // teal-green
+
   // Semantic
   static const Color success = Color(0xFF10B981);
   static const Color successLight = Color(0xFFD1FAE5);
@@ -69,6 +84,7 @@ class AppColors {
   static const List<Color> heroGradient = [Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF0891B2)];
   static const List<Color> successGradient = [Color(0xFF10B981), Color(0xFF059669)];
   static const List<Color> warmGradient = [Color(0xFFF59E0B), Color(0xFFEF4444)];
+  static const List<Color> superAppGradient = [Color(0xFF1B6EF3), Color(0xFF1558CC)];
 }
 
 /// Animation durations

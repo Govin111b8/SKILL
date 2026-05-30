@@ -9,6 +9,7 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - secret-template.yaml
+  - external-secret.yaml
   - backend-deployment.yaml
   - frontend-deployment.yaml
   - statefulsets.yaml

@@ -18,6 +18,7 @@ const { query } = require('../config/database');
 const logger = require('../config/logger');
 const emailService = require('../services/email');
 const smsService = require('../services/sms');
+const { notify } = require('../utils/notifier');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Reputation Score Recalculation — nightly 02:00 IST (20:30 UTC)
@@ -376,7 +377,16 @@ function startCronJobs() {
   cron.schedule('30 23 * * 0', syncProviderCRM, { timezone: 'UTC' });
   cron.schedule('0 2 * * *', aggregateDemandSignals, { timezone: 'UTC' });
 
-  logger.info('All 17 cron jobs scheduled');
+  // Deactivated-account cleanup — hard delete anonymized accounts after 90 days
+  cron.schedule('0 3 * * *', cleanDeactivatedAccounts, { timezone: 'UTC' });
+
+  // Review reminders — every 15 minutes
+  cron.schedule('*/15 * * * *', sendReviewReminders, { timezone: 'UTC' });
+
+  // Abandoned onboarding reminders — daily at 10:00 UTC
+  cron.schedule('0 10 * * *', remindAbandonedOnboarding, { timezone: 'UTC' });
+
+  logger.info('All 20 cron jobs scheduled');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -566,6 +576,91 @@ async function aggregateDemandSignals() {
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 17. Deactivated Account Cleanup — daily 03:00 UTC
+// Hard deletes anonymized accounts after 90 days for GDPR retention compliance
+// ─────────────────────────────────────────────────────────────────────────────
+async function cleanDeactivatedAccounts() {
+  logger.info('CRON: deactivated_account_cleanup — start');
+  try {
+    const result = await query(`
+      DELETE FROM users
+      WHERE deleted_at IS NOT NULL
+        AND deleted_at < NOW() - INTERVAL '90 days'
+      RETURNING id
+    `);
+    logger.info({ deleted: result.rowCount }, 'CRON: deactivated_account_cleanup — done');
+  } catch (err) {
+    if (!err.message?.includes('does not exist')) {
+      logger.error({ err }, 'CRON: deactivated_account_cleanup failed');
+    }
+  }
+}
+
+// 18. Review Reminder — every 15 minutes, catch bookings completed 25-35 min ago
+async function sendReviewReminders() {
+  try {
+    const bookings = await query(
+      `SELECT b.id, b.title, b.customer_id, u.name AS customer_name
+       FROM bookings b
+       JOIN users u ON b.customer_id = u.id
+       WHERE b.status = 'completed'
+         AND b.completed_at BETWEEN NOW() - INTERVAL '35 minutes' AND NOW() - INTERVAL '25 minutes'
+         AND NOT EXISTS (
+           SELECT 1 FROM reviews r WHERE r.booking_id = b.id AND r.reviewer_id = b.customer_id
+         )`,
+      []
+    );
+    for (const booking of bookings.rows) {
+      await notify(booking.customer_id, {
+        type: 'review_reminder',
+        title: '⭐ How was your service?',
+        body: `Please rate your experience for "${booking.title}". Your feedback helps other customers!`,
+        link_url: `/bookings/${booking.id}?review=1`,
+        related_id: booking.id,
+      }).catch((err) => { logger.warn({ err, bookingId: booking.id }, 'CRON: review_reminder — notify failed'); });
+    }
+    if (bookings.rows.length > 0) {
+      logger.info({ count: bookings.rows.length }, 'CRON: review_reminder — sent review prompts');
+    }
+  } catch (err) {
+    logger.error({ err }, 'CRON: review_reminder failed');
+  }
+}
+
+// 19. Abandoned Onboarding Detector — runs daily at 10:00 UTC
+async function remindAbandonedOnboarding() {
+  try {
+    // Professionals who registered > 2 days ago but have no published storefront/KYC
+    const abandoned = await query(
+      `SELECT u.id AS user_id, u.name, u.phone
+       FROM users u
+       JOIN professionals p ON p.user_id = u.id
+       WHERE u.created_at BETWEEN NOW() - INTERVAL '7 days' AND NOW() - INTERVAL '2 days'
+         AND p.is_verified = false
+         AND NOT EXISTS (
+           SELECT 1 FROM kyc_verifications kv WHERE kv.user_id = u.id AND kv.status IN ('approved','pending')
+         )`,
+      []
+    );
+    for (const pro of abandoned.rows) {
+      await notify(pro.user_id, {
+        type: 'onboarding_reminder',
+        title: '🚀 Complete your profile to get bookings!',
+        body: `Hi ${pro.name || 'there'}! You're almost set up on SkillConnect. Complete your KYC and start earning today.`,
+        link_url: '/onboarding/professional',
+        related_id: pro.user_id,
+      }).catch((err) => { logger.warn({ err, userId: pro.user_id }, 'CRON: abandoned_onboarding — notify failed'); });;
+    }
+    if (abandoned.rows.length > 0) {
+      logger.info({ count: abandoned.rows.length }, 'CRON: abandoned_onboarding — reminders sent');
+    }
+  } catch (err) {
+    logger.error({ err }, 'CRON: abandoned_onboarding failed');
+  }
+}
+
 module.exports = {
   startCronJobs,
   recalcReputationScores,
@@ -584,6 +679,9 @@ module.exports = {
   advanceSubscriptionOccurrences,
   syncProviderCRM,
   aggregateDemandSignals,
+  cleanDeactivatedAccounts,
+  sendReviewReminders,
+  remindAbandonedOnboarding,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

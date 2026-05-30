@@ -12,7 +12,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
       <ErrorBoundary>
-        <BrowserRouter>
+        <BrowserRouter basename="/react">
           <AuthProvider>
             <WebSocketProvider>
               <App />

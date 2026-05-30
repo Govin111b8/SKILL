@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/booking_service.dart';
+import '../../widgets/premium_ui.dart';
+import '../../theme/design_tokens.dart';
 
 /// One-tap rebooking screen.
 /// Shows previous bookings and allows instant rebooking with the same professional.
@@ -12,70 +14,140 @@ class RebookingSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.replay, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Rebook: ${booking.title}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+      child: PremiumBackground(
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  booking.professionalName ?? 'Same Professional',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(180),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                  ),
                 ),
-                if (booking.categoryName != null) ...[
-                  const SizedBox(height: 4),
-                  Text(booking.categoryName!, style: Theme.of(context).textTheme.bodySmall),
-                ],
-                if (booking.serviceAddress != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                    borderRadius: BorderRadius.circular(AppRadius.xxl),
+                    boxShadow: AppShadows.lg(AppColors.primary),
+                  ),
+                  child: Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(booking.serviceAddress!, style: Theme.of(context).textTheme.bodySmall)),
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(24),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: Colors.white.withAlpha(40)),
+                        ),
+                        child: const Icon(Icons.replay_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Book Again',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              booking.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(225),
+                                fontWeight: FontWeight.w600,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                PremiumGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Booking snapshot',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _DetailRow(
+                        icon: Icons.person_rounded,
+                        label: 'Professional',
+                        value: booking.professionalName ?? 'Same Professional',
+                      ),
+                      if (booking.categoryName != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _DetailRow(
+                          icon: Icons.category_rounded,
+                          label: 'Service',
+                          value: booking.categoryName!,
+                        ),
+                      ],
+                      if (booking.serviceAddress != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _DetailRow(
+                          icon: Icons.location_on_rounded,
+                          label: 'Address',
+                          value: booking.serviceAddress!,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                PremiumGradientButton(
+                  label: 'Book Again — 1 Tap',
+                  icon: Icons.flash_on_rounded,
+                  onPressed: () => _rebook(context),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(230),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => _rebook(context),
-            icon: const Icon(Icons.flash_on),
-            label: const Text('Book Again — 1 Tap'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -105,5 +177,48 @@ class RebookingSheet extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withAlpha(18),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Icon(icon, color: AppColors.primary),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

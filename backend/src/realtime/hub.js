@@ -4,13 +4,109 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const { config } = require('../config');
 const logger = require('../config/logger');
+const redis = require('../config/redis');
 
 const sockets = new Map(); // userId -> Set<ws>
 const presence = new Map(); // userId -> { lastSeen: Date, status: 'online'|'away'|'offline' }
 
 const HEARTBEAT_INTERVAL = 30000; // 30s sweep
 
+
+const REDIS_USER_CHANNEL_PATTERN = 'ws:user:*';
+const REDIS_BROADCAST_CHANNEL = 'ws:broadcast';
+let redisSubscriber = null;
+let redisSubscriberReady = false;
+let redisSubscriberInit = null;
+
+function normalizeUserId(userId) {
+  return String(userId);
+}
+
+function deliverToLocal(userId, payload) {
+  const s = sockets.get(normalizeUserId(userId));
+  if (!s) return 0;
+  const data = JSON.stringify(payload);
+  let sent = 0;
+  for (const ws of s) {
+    if (ws.readyState === 1) {
+      ws.send(data);
+      sent++;
+    }
+  }
+  return sent;
+}
+
+function deliverBroadcastLocal(payload) {
+  const data = JSON.stringify(payload);
+  for (const [, set] of sockets) {
+    for (const ws of set) {
+      if (ws.readyState === 1) ws.send(data);
+    }
+  }
+}
+
+async function ensureRedisSubscriber() {
+  if (!redis.isAvailable() || !redis.client) return null;
+  if (redisSubscriberReady) return redisSubscriber;
+  if (redisSubscriberInit) return redisSubscriberInit;
+
+  redisSubscriberInit = (async () => {
+    redisSubscriber = redis.client.duplicate();
+
+    redisSubscriber.on('pmessage', (pattern, channel, message) => {
+      try {
+        if (!channel.startsWith('ws:user:')) return;
+        const userId = channel.replace('ws:user:', '');
+        deliverToLocal(userId, JSON.parse(message));
+      } catch (err) {
+        logger.warn({ err: err.message, channel }, 'Failed to deliver Redis user WebSocket message');
+      }
+    });
+
+    redisSubscriber.on('message', (channel, message) => {
+      if (channel !== REDIS_BROADCAST_CHANNEL) return;
+      try {
+        deliverBroadcastLocal(JSON.parse(message));
+      } catch (err) {
+        logger.warn({ err: err.message, channel }, 'Failed to deliver Redis broadcast WebSocket message');
+      }
+    });
+
+    redisSubscriber.on('error', (err) => {
+      redisSubscriberReady = false;
+      logger.error({ err: err.message }, 'Redis WebSocket subscriber error');
+    });
+
+    await redisSubscriber.connect();
+    await redisSubscriber.psubscribe(REDIS_USER_CHANNEL_PATTERN);
+    await redisSubscriber.subscribe(REDIS_BROADCAST_CHANNEL);
+    redisSubscriberReady = true;
+    logger.info('Redis WebSocket pub/sub enabled');
+    return redisSubscriber;
+  })().catch((err) => {
+    redisSubscriberReady = false;
+    redisSubscriberInit = null;
+    logger.error({ err: err.message }, 'Failed to initialize Redis WebSocket pub/sub');
+    return null;
+  });
+
+  return redisSubscriberInit;
+}
+
+async function publishToRedis(channel, payload) {
+  if (!redis.isAvailable() || !redis.client || !redisSubscriberReady) return false;
+  try {
+    await redis.client.publish(channel, JSON.stringify(payload));
+    return true;
+  } catch (err) {
+    logger.warn({ err: err.message, channel }, 'Failed to publish WebSocket event to Redis');
+    return false;
+  }
+}
+
 function attach(server) {
+  ensureRedisSubscriber().catch((err) => logger.error({ err: err.message }, 'Redis pub/sub bootstrap failed'));
+
   const wss = new WebSocketServer({ server, path: '/ws' });
 
   // Heartbeat sweep — kill dead sockets
@@ -31,7 +127,7 @@ function attach(server) {
       const token = url.searchParams.get('token');
       if (!token) return ws.close(4001, 'no token');
       const payload = jwt.verify(token, config.jwt.secret);
-      userId = payload.id;
+      userId = normalizeUserId(payload.id);
     } catch (e) {
       return ws.close(4002, 'bad token');
     }
@@ -109,29 +205,29 @@ async function handleReadReceipt(userId, threadId) {
 }
 
 function sendTo(userId, payload) {
-  const s = sockets.get(String(userId));
-  if (!s) return 0;
-  const data = JSON.stringify(payload);
-  let n = 0;
-  for (const ws of s) {
-    if (ws.readyState === 1) { ws.send(data); n++; }
+  const normalizedUserId = normalizeUserId(userId);
+  if (redisSubscriberReady) {
+    publishToRedis(`ws:user:${normalizedUserId}`, payload);
+    return sockets.get(normalizedUserId)?.size || 0;
   }
-  return n;
+  return deliverToLocal(normalizedUserId, payload);
 }
 
 function broadcast(payload) {
-  const data = JSON.stringify(payload);
-  for (const [, set] of sockets) {
-    for (const ws of set) { if (ws.readyState === 1) ws.send(data); }
+  if (redisSubscriberReady) {
+    publishToRedis(REDIS_BROADCAST_CHANNEL, payload);
+    return;
   }
+  deliverBroadcastLocal(payload);
 }
 
 function isOnline(userId) {
-  return sockets.has(String(userId)) && sockets.get(String(userId)).size > 0;
+  const normalizedUserId = normalizeUserId(userId);
+  return sockets.has(normalizedUserId) && sockets.get(normalizedUserId).size > 0;
 }
 
 function getPresence(userId) {
-  const p = presence.get(String(userId));
+  const p = presence.get(normalizeUserId(userId));
   if (!p) return { status: 'offline', lastSeen: null };
   if (isOnline(userId)) return { status: p.status || 'online', lastSeen: p.lastSeen };
   return { status: 'offline', lastSeen: p.lastSeen };

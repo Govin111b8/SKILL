@@ -24,6 +24,25 @@ const BID_STATUS_LABELS = {
   rejected: { label: 'Not Selected', color: '#9ca3af' },
 };
 
+function getBidBadge(bids, bid) {
+  if (!bids || bids.length < 2) return null;
+  const prices = bids
+    .map((b) => parseFloat(b.price || b.quoted_amount || b.amount || 0))
+    .filter((p) => p > 0);
+  const minPrice = Math.min(...prices);
+  const maxRating = Math.max(...bids.map((b) => parseFloat(b.professional_rating || b.avg_rating || 0)));
+  const minResponseTime = Math.min(...bids.map((b) => parseFloat(b.response_time_hours || 999)));
+
+  const myPrice = parseFloat(bid.price || bid.quoted_amount || bid.amount || 0);
+  const myRating = parseFloat(bid.professional_rating || bid.avg_rating || 0);
+  const myResponseTime = parseFloat(bid.response_time_hours || 999);
+
+  if (myPrice === minPrice && prices.length > 0) return { label: '💰 Best Value', color: '#10b981' };
+  if (myRating === maxRating && myRating >= 4.5) return { label: '⭐ Most Trusted', color: '#3b82f6' };
+  if (myResponseTime === minResponseTime && myResponseTime < 999) return { label: '⚡ Fastest Reply', color: '#f59e0b' };
+  return null;
+}
+
 // ── Quote Submission Form ─────────────────────────────────────────────────────
 
 function SubmitQuoteForm({ categories, onSubmit, loading }) {
@@ -162,7 +181,9 @@ function SubmitQuoteForm({ categories, onSubmit, loading }) {
 
 // ── Bid Card ─────────────────────────────────────────────────────────────────
 
-function BidCard({ bid, isAccepted, canAccept, onAccept }) {
+function BidCard({ bid, allBids, isAccepted, canAccept, onAccept }) {
+  const bidBadge = getBidBadge(allBids, bid);
+
   return (
     <div className={`bid-card ${isAccepted ? 'bid-card--accepted' : ''}`}>
       <div className="bid-card-header">
@@ -178,6 +199,21 @@ function BidCard({ bid, isAccepted, canAccept, onAccept }) {
             <div className="bid-pro-meta">
               {bid.avg_rating && <span><FiStar size={13} /> {Number(bid.avg_rating).toFixed(1)} ({bid.total_reviews || 0})</span>}
               {bid.trust_level && <span className={`trust-badge trust-badge--${bid.trust_level}`}>{bid.trust_level.charAt(0).toUpperCase() + bid.trust_level.slice(1)}</span>}
+              {bidBadge ? (
+                <span
+                  style={{
+                    backgroundColor: bidBadge.color,
+                    color: 'white',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    marginLeft: '8px',
+                  }}
+                >
+                  {bidBadge.label}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -285,6 +321,7 @@ function MyQuoteRequests() {
               <BidCard
                 key={bid.id}
                 bid={bid}
+                allBids={detail.bids || []}
                 isAccepted={detail.accepted_bid_id === bid.id}
                 canAccept={['open', 'bidding'].includes(detail.status)}
                 onAccept={(bidId) => handleAcceptBid(detail.id, bidId)}

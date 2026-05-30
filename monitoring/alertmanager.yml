@@ -1,0 +1,85 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Alertmanager Configuration
+# Sends alerts to Slack and PagerDuty based on severity
+#
+# Required env vars (set in K8s secret or .env):
+#   SLACK_WEBHOOK_URL       — Incoming Webhook URL from Slack App config
+#   PAGERDUTY_SERVICE_KEY   — PagerDuty Events API v2 integration key
+# ──────────────────────────────────────────────────────────────────────────────
+
+global:
+  resolve_timeout: 5m
+  # Slack global config
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# ── Routing tree ──────────────────────────────────────────────────────────────
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'slack-general'
+
+  routes:
+    # Critical alerts → PagerDuty + Slack #alerts-critical
+    - matchers:
+        - severity = critical
+      receiver: 'pagerduty-critical'
+      continue: true
+
+    - matchers:
+        - severity = critical
+      receiver: 'slack-critical'
+
+    # Warning alerts → Slack #alerts-warning only
+    - matchers:
+        - severity = warning
+      receiver: 'slack-warnings'
+
+# ── Receivers ─────────────────────────────────────────────────────────────────
+receivers:
+  # General / info alerts
+  - name: 'slack-general'
+    slack_configs:
+      - channel: '#skillconnect-alerts'
+        send_resolved: true
+        icon_emoji: ':bell:'
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        color: '{{ if eq .Status "firing" }}{{ if eq (index .CommonLabels "severity") "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
+
+  # Critical alerts — #alerts-critical channel
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#skillconnect-critical'
+        send_resolved: true
+        icon_emoji: ':rotating_light:'
+        title: ':rotating_light: CRITICAL: {{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        color: 'danger'
+
+  # Warning alerts
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#skillconnect-alerts'
+        send_resolved: true
+        icon_emoji: ':warning:'
+        title: ':warning: WARNING: {{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+        color: 'warning'
+
+  # PagerDuty for critical incidents (payment down, pod crash-loop, DB down)
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        send_resolved: true
+        description: '{{ template "pagerduty.description" . }}'
+        severity: '{{ if eq (index .CommonLabels "severity") "critical" }}critical{{ else }}warning{{ end }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          instance: '{{ range .Alerts }}{{ .Labels.instance }} {{ end }}'
+
+# ── Message Templates ─────────────────────────────────────────────────────────
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

@@ -76,6 +76,8 @@ const FamilyAccount = lazy(() => import('./pages/FamilyAccount'));
 const Marketplace = lazy(() => import('./pages/Marketplace'));
 const SocietyDashboard = lazy(() => import('./pages/SocietyDashboard'));
 const QuoteRequest = lazy(() => import('./pages/QuoteRequest'));
+const ProviderLeaderboard = lazy(() => import('./pages/ProviderLeaderboard'));
+const CityServiceLanding = lazy(() => import('./pages/CityServiceLanding'));
 const HomeProfile = lazy(() => import('./pages/HomeProfile'));
 const JobTracker = lazy(() => import('./pages/JobTracker'));
 const CompareProf = lazy(() => import('./pages/CompareProf'));
@@ -105,6 +107,7 @@ function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/professionals/:id" element={<ProfessionalProfile />} />
           <Route path="/professionals/:id/storefront" element={<Storefront />} />
+          <Route path="/storefront/:id" element={<Storefront />} />
           <Route
             path="/dashboard/storefront"
             element={
@@ -452,6 +455,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/leaderboard" element={<ProviderLeaderboard />} />
+          <Route path="/services/:city/:service" element={<CityServiceLanding />} />
+          <Route path="/pro/:slug" element={<Storefront />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

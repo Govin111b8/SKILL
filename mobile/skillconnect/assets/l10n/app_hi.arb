@@ -135,5 +135,22 @@
   "cancel": "रद्द करें",
   "confirm": "पुष्टि करें",
   "retry": "फिर से",
-  "done": "हो गया"
+  "done": "हो गया",
+  "delivery": "Delivery",
+  "myRide": "MyRide",
+  "food": "Food",
+  "groceries": "Groceries",
+  "shopping": "Shopping",
+  "job": "Job",
+  "scanQr": "Scan QR",
+  "quickActions": "Quick Actions",
+  "promotionsAndUpdates": "Promotions & Updates",
+  "available": "Available",
+  "requests": "Requests",
+  "scan": "Scan",
+  "bookDelivery": "Book Delivery",
+  "requestRide": "Request Ride",
+  "postJob": "Post Job",
+  "browseJobs": "Browse Jobs",
+  "buyForMe": "Buy For Me"
 }

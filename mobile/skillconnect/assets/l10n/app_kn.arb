@@ -37,7 +37,13 @@
   "noConnection": "ಸಂಪರ್ಕ ಇಲ್ಲ",
   "connecting": "ಸಂಪರ್ಕಿಸುತ್ತಿದೆ...",
   "pendingSync": "{count} ಬಾಕಿ ಸಿಂಕ್",
-  "@pendingSync": { "placeholders": { "count": { "type": "int" } } },
+  "@pendingSync": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notificationSettings": "ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
   "bookingUpdates": "ಬುಕಿಂಗ್ ನವೀಕರಣಗಳು",
   "smartSuggestions": "ಸ್ಮಾರ್ಟ್ ಸಲಹೆಗಳು",
@@ -129,5 +135,22 @@
   "b2bEnquiry": "B2B ವಿಚಾರಣೆ",
   "demandForecast": "ಬೇಡಿಕೆ ಮುನ್ಸೂಚನೆ",
   "peakDemandHours": "ಉತ್ತುಂಗ ಬೇಡಿಕೆ ಗಂಟೆಗಳು",
-  "predictedBookings": "ಊಹಿಸಿದ ಬುಕಿಂಗ್‌ಗಳು"
+  "predictedBookings": "ಊಹಿಸಿದ ಬುಕಿಂಗ್‌ಗಳು",
+  "delivery": "Delivery",
+  "myRide": "MyRide",
+  "food": "Food",
+  "groceries": "Groceries",
+  "shopping": "Shopping",
+  "job": "Job",
+  "scanQr": "Scan QR",
+  "quickActions": "Quick Actions",
+  "promotionsAndUpdates": "Promotions & Updates",
+  "available": "Available",
+  "requests": "Requests",
+  "scan": "Scan",
+  "bookDelivery": "Book Delivery",
+  "requestRide": "Request Ride",
+  "postJob": "Post Job",
+  "browseJobs": "Browse Jobs",
+  "buyForMe": "Buy For Me"
 }

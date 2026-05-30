@@ -31,7 +31,7 @@ import '../screens/referrals/referrals_screen.dart';
 import '../screens/subscriptions/subscriptions_screen.dart';
 import '../screens/marketplace/marketplace_screen.dart';
 import '../screens/collections/collections_screen.dart';
-import '../screens/community/community_feed_screen.dart';
+import '../screens/community/community_screen.dart';
 import '../screens/family/family_account_screen.dart';
 import '../screens/analytics/provider_analytics_screen.dart';
 import '../screens/social/followers_screen.dart';
@@ -48,6 +48,11 @@ import '../screens/admin/admin_disputes_screen.dart';
 import '../screens/admin/admin_complaints_screen.dart';
 import '../screens/admin/admin_featured_slots_screen.dart';
 import '../screens/search/map_search_screen.dart';
+// New screens
+import '../screens/trust/neighbourhood_trust_screen.dart';
+import '../screens/quotes/quote_bid_management_screen.dart';
+import '../screens/amc/amc_visits_screen.dart';
+import '../screens/society/society_screen.dart';
 
 /// Application router using go_router.
 ///
@@ -170,7 +175,7 @@ class AppRouter {
         GoRoute(path: '/subscriptions', builder: (_, __) => const SubscriptionsScreen()),
         GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
         GoRoute(path: '/collections', builder: (_, __) => const CollectionsScreen()),
-        GoRoute(path: '/community', builder: (_, __) => const CommunityFeedScreen()),
+        GoRoute(path: '/community', builder: (_, __) => const CommunityScreen()),
         GoRoute(path: '/followers', builder: (_, __) => const FollowersScreen()),
         GoRoute(path: '/stories', builder: (_, state) => StoriesScreen(professionalId: state.uri.queryParameters['professionalId'] ?? '', storyId: state.uri.queryParameters['storyId'])),
         GoRoute(path: '/loyalty', builder: (_, __) => const LoyaltyScreen()),
@@ -186,6 +191,11 @@ class AppRouter {
         GoRoute(path: '/admin/disputes', builder: (_, __) => const AdminDisputesScreen()),
         GoRoute(path: '/admin/complaints', builder: (_, __) => const AdminComplaintsScreen()),
         GoRoute(path: '/admin/featured-slots', builder: (_, __) => const AdminFeaturedSlotsScreen()),
+        // New screens
+        GoRoute(path: '/trust/neighbourhood', builder: (_, __) => const NeighbourhoodTrustScreen()),
+        GoRoute(path: '/quotes/bids', builder: (_, __) => const QuoteBidManagementScreen()),
+        GoRoute(path: '/amc/visits', builder: (_, __) => const AmcVisitsScreen()),
+        GoRoute(path: '/society', builder: (_, __) => const SocietyScreen()),
       ],
     );
   }

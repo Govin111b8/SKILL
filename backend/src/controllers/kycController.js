@@ -3,6 +3,7 @@ const { query } = require('../config/database');
 const v = require('../utils/kycValidators');
 const encryption = require('../utils/encryption');
 const faceMatch = require('../services/faceMatch');
+const aadhaar = require('../services/aadhaar');
 const logger = require('../config/logger');
 
 const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -186,6 +187,124 @@ exports.submit = async (req, res, next) => {
       message: autoVerify ? 'Document verified' : 'Document submitted for review',
       data: { ...ins.rows[0], doc_number: v.maskDocNumber(normalized) },
       aggregates,
+    });
+  } catch (e) { next(e); }
+};
+
+
+exports.initiateAadhaarOtp = async (req, res, next) => {
+  try {
+    const { aadhaar_number } = req.body;
+    if (!aadhaar_number) {
+      return res.status(400).json({ success: false, message: 'aadhaar_number is required' });
+    }
+
+    const check = v.validate('aadhaar', aadhaar_number);
+    if (!check.valid) return res.status(422).json({ success: false, message: check.reason });
+
+    const result = await aadhaar.initiateOtp(check.normalized);
+    res.json({
+      success: true,
+      transactionId: result.transactionId,
+      referenceId: result.referenceId,
+    });
+  } catch (e) { next(e); }
+};
+
+exports.verifyAadhaarOtp = async (req, res, next) => {
+  try {
+    const { transaction_id, otp, aadhaar_number } = req.body;
+    if (!transaction_id || !otp || !aadhaar_number) {
+      return res.status(400).json({ success: false, message: 'transaction_id, otp and aadhaar_number are required' });
+    }
+
+    const check = v.validate('aadhaar', aadhaar_number);
+    if (!check.valid) return res.status(422).json({ success: false, message: check.reason });
+
+    const normalized = check.normalized;
+    const hash = sha256(`aadhaar:${normalized}`);
+    const encryptedDocNumber = encryption.encrypt(normalized);
+
+    const dup = await query(
+      `SELECT user_id FROM verifications WHERE doc_number_hash = $1 AND status = 'verified' AND user_id <> $2 LIMIT 1`,
+      [hash, req.user.id]
+    );
+    if (dup.rows.length) {
+      return res.status(409).json({ success: false, message: 'This Aadhaar number is already verified to another account' });
+    }
+
+    const result = await aadhaar.verifyOtp({
+      transactionId: transaction_id,
+      otp,
+      aadhaarNumber: normalized,
+    });
+
+    if (!result.verified) {
+      return res.status(422).json({ success: false, message: 'OTP verification failed' });
+    }
+
+    const metadata = {
+      referenceId: result.referenceId,
+      transactionId: result.transactionId,
+      address: result.ekycData?.address || null,
+      dob: result.ekycData?.dob || null,
+      gender: result.ekycData?.gender || null,
+      photo: result.ekycData?.photo || null,
+      postal_code: result.ekycData?.postal_code || null,
+      state: result.ekycData?.state || null,
+    };
+
+    const ins = await query(
+      `INSERT INTO verifications
+        (user_id, doc_type, doc_number, doc_number_hash, holder_name, issuing_authority,
+         status, verification_method, verified_at, metadata)
+       VALUES ($1, 'aadhaar'::kyc_doc_type, $2, $3, $4, $5, 'verified'::kyc_status, $6, NOW(), $7::jsonb)
+       ON CONFLICT (user_id, doc_type) DO UPDATE SET
+         doc_number = EXCLUDED.doc_number,
+         doc_number_hash = EXCLUDED.doc_number_hash,
+         holder_name = EXCLUDED.holder_name,
+         issuing_authority = EXCLUDED.issuing_authority,
+         status = EXCLUDED.status,
+         verification_method = EXCLUDED.verification_method,
+         verified_at = EXCLUDED.verified_at,
+         metadata = COALESCE(verifications.metadata, '{}'::jsonb) || EXCLUDED.metadata,
+         rejection_reason = NULL,
+         updated_at = NOW()
+       RETURNING id`,
+      [
+        req.user.id,
+        encryptedDocNumber,
+        hash,
+        result.ekycData?.name || req.user.name || null,
+        'UIDAI',
+        `${result.provider}_otp`,
+        JSON.stringify(metadata),
+      ]
+    );
+
+    await query('UPDATE users SET government_id_verified = TRUE, updated_at = NOW() WHERE id = $1', [req.user.id]);
+    await query(
+      `INSERT INTO verification_audit (verification_id, actor_id, action, note, ip_address, user_agent)
+       VALUES ($1, $2, 'approved', $3, $4::inet, $5)`,
+      [
+        ins.rows[0].id,
+        req.user.id,
+        `aadhaar otp verified via ${result.provider}`,
+        req.ip || null,
+        req.headers['user-agent'] || null,
+      ]
+    );
+
+    const aggregates = await refreshAggregates(req.user.id);
+    res.json({
+      success: true,
+      kyc_level: aggregates.kyc_level,
+      trust_score: aggregates.trust_score,
+      data: {
+        holder_name: result.ekycData?.name || null,
+        masked_aadhaar: v.maskDocNumber(normalized),
+        referenceId: result.referenceId,
+      },
     });
   } catch (e) { next(e); }
 };

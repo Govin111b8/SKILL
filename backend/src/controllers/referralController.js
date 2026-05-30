@@ -171,12 +171,13 @@ async function getReferralStats(req, res, next) {
 async function getLoyaltyHistory(req, res, next) {
   try {
     const userId = req.user.id;
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const offset = (pageNum - 1) * limitNum;
 
     const result = await pool.query(
       'SELECT * FROM loyalty_points WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
-      [userId, limit, offset]
+      [userId, limitNum, offset]
     );
 
     const balance = await pool.query(

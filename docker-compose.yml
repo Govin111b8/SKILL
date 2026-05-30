@@ -144,6 +144,23 @@ services:
       - backend
     restart: unless-stopped
 
+  # ── Alertmanager — routes alerts to Slack / PagerDuty ────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring/templates:/etc/alertmanager/templates:ro
+    environment:
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/REPLACE_ME}
+      PAGERDUTY_SERVICE_KEY: ${PAGERDUTY_SERVICE_KEY:-REPLACE_ME}
+    restart: unless-stopped
+
   # ── Grafana — dashboards ─────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:10.4.2

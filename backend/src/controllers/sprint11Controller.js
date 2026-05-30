@@ -87,6 +87,13 @@ exports.compareProfessionals = async (req, res, next) => {
 
     const professionalIds = ids.split(',').slice(0, 5); // Max 5 at a time
 
+    // Validate each id is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invalidIds = professionalIds.filter(id => !uuidRegex.test(id.trim()));
+    if (invalidIds.length > 0) {
+      return res.status(400).json({ success: false, message: 'Invalid professional id(s) — must be UUIDs' });
+    }
+
     const r = await query(
       `SELECT p.id, p.provider_type, p.company_name, p.team_size, p.experience_years,
               p.pricing_estimate, p.availability_status, p.total_bookings, p.repeat_client_rate,
@@ -125,8 +132,10 @@ exports.compareProfessionals = async (req, res, next) => {
 
 exports.getPaymentHistory = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, from, to, status } = req.query;
-    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const { from, to, status } = req.query;
+    const offset = (pageNum - 1) * limitNum;
     const params = [req.user.id];
     let where = '(pm.payer_id = $1 OR pm.payee_id = $1)';
     let idx = 2;
@@ -135,7 +144,10 @@ exports.getPaymentHistory = async (req, res, next) => {
     if (to) { where += ` AND pm.created_at <= $${idx++}`; params.push(to); }
     if (status) { where += ` AND pm.status = $${idx++}`; params.push(status); }
 
-    params.push(parseInt(limit) || 20);
+    // Capture count params before appending LIMIT/OFFSET
+    const countParams = [...params];
+
+    params.push(limitNum);
     params.push(offset);
 
     const r = await query(
@@ -151,17 +163,17 @@ exports.getPaymentHistory = async (req, res, next) => {
 
     const countR = await query(
       `SELECT COUNT(*) FROM payments pm WHERE ${where}`,
-      params.slice(0, idx - 3)
+      countParams
     );
 
     res.json({
       success: true,
       data: r.rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total: parseInt(countR.rows[0].count),
-        total_pages: Math.ceil(parseInt(countR.rows[0].count) / parseInt(limit))
+        total_pages: Math.ceil(parseInt(countR.rows[0].count) / limitNum)
       }
     });
   } catch (e) { next(e); }
@@ -240,7 +252,10 @@ exports.createQuickReply = async (req, res, next) => {
 exports.deleteQuickReply = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await query('DELETE FROM quick_replies WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    const r = await query('DELETE FROM quick_replies WHERE id = $1 AND user_id = $2 RETURNING id', [id, req.user.id]);
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Quick reply not found' });
+    }
     res.json({ success: true, message: 'Deleted' });
   } catch (e) { next(e); }
 };
@@ -372,7 +387,10 @@ exports.updateAddress = async (req, res, next) => {
 exports.deleteAddress = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await query('DELETE FROM user_addresses WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    const r = await query('DELETE FROM user_addresses WHERE id = $1 AND user_id = $2 RETURNING id', [id, req.user.id]);
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Address not found' });
+    }
     res.json({ success: true, message: 'Deleted' });
   } catch (e) { next(e); }
 };

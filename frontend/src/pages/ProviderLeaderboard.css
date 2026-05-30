@@ -1,0 +1,21 @@
+.leaderboard-page { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+.leaderboard-header { text-align: center; margin-bottom: 32px; }
+.leaderboard-header h1 { font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.leaderboard-header p { color: #6b7280; margin-top: 8px; }
+.leaderboard-list { display: flex; flex-direction: column; gap: 12px; }
+.leaderboard-card { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid #f3f4f6; border-radius: 16px; padding: 16px; text-decoration: none; color: inherit; transition: box-shadow 0.2s; }
+.leaderboard-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.leaderboard-rank { min-width: 36px; text-align: center; }
+.medal { font-size: 28px; }
+.rank-num { font-size: 16px; font-weight: 700; color: #9ca3af; }
+.leaderboard-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+.leaderboard-info { flex: 1; }
+.leaderboard-name { font-weight: 700; font-size: 16px; }
+.leaderboard-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.trust-badge { color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.leaderboard-city, .leaderboard-rating { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 3px; }
+.leaderboard-category { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.leaderboard-points { text-align: center; }
+.points-value { display: block; font-size: 22px; font-weight: 800; color: #6366f1; }
+.points-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; }
+.empty-state { text-align: center; padding: 40px; color: #6b7280; }

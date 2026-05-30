@@ -12,6 +12,10 @@ import '../profile/edit_professional_profile_screen.dart';
 import '../schedule/schedule_management_screen.dart';
 import '../earnings/earnings_screen.dart';
 import '../../widgets/availability_toggle.dart';
+import '../quotes/quote_bid_management_screen.dart';
+import '../amc/amc_visits_screen.dart';
+import '../society/society_screen.dart';
+import '../analytics/provider_analytics_screen.dart';
 
 /// Home tab specifically for professionals — shows their incoming requests,
 /// active bookings, today's schedule and quick earnings snapshot.
@@ -70,88 +74,218 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
     final user = auth.user;
     final cs = Theme.of(context).colorScheme;
 
+    final proName = (user?['name'] ?? 'Pro').toString().split(' ').first;
+    final todayEarnings = (_dash?['earnings']?['last7d'] as num?)?.toDouble() ?? 0;
+    final availStatus = _dash?['profile']?['availability_status']?.toString() ?? 'offline';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.handyman_rounded, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 10),
-          const Text('SkillConnect', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -0.5)),
-        ]),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
-          const SizedBox(width: 40), // space for floating notification bell
-        ],
-      ),
+      backgroundColor: const Color(0xFFF1F5F9),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Greeting header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  colors: [Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFF6366F1)],
+        color: const Color(0xFF6366F1),
+        child: CustomScrollView(
+          slivers: [
+            // ── Dark gradient hero header ─────────────────────────────
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF1E1B4B)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(28),
+                    bottomRight: Radius.circular(28),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withAlpha(80), blurRadius: 24, offset: const Offset(0, 10))],
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top bar
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.handyman_rounded,
+                                      color: Colors.white, size: 18),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('SkillConnect Pro',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 16)),
+                              ],
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+                              onPressed: _load,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Greeting + status badge
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Good ${_greeting()} 👋',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(160), fontSize: 13),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    proName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _availBadge(availStatus),
+                                ],
+                              ),
+                            ),
+                            // Today earnings pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(12),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                    color: Colors.white.withAlpha(20)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Today',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(140),
+                                        fontSize: 10),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₹${_fmt(todayEarnings)}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Earned',
+                                    style: TextStyle(
+                                        color: Colors.white.withAlpha(140),
+                                        fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Good ${_greeting()}, ${(user?['name'] ?? 'Pro').toString().split(' ').first}!',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    const Text('Your business today', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 12),
-                    _availBadge(_dash?['profile']?['availability_status']?.toString() ?? 'offline'),
-                  ]),
-                ),
-                _earningsPill(),
-              ]),
             ),
 
-            const SizedBox(height: 20),
-
-            if (_loading)
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
-            else if (_error != null)
-              _errorCard()
-            else ...[
+            // ── Body content ─────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+              if (_loading)
+                const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+              else if (_error != null)
+                _errorCard()
+              else ...[
 
               // Availability toggle
               const AvailabilityToggle(),
               const SizedBox(height: 16),
 
-              // Quick action buttons
+              // Quick action buttons — first row
               Row(children: [
                 Expanded(child: _QuickAction(
-                  icon: Icons.calendar_month,
+                  icon: Icons.calendar_month_rounded,
                   label: 'Schedule',
+                  gradient: const [Color(0xFF6366F1), Color(0xFF818CF8)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleManagementScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.account_balance_wallet,
+                  icon: Icons.account_balance_wallet_rounded,
                   label: 'Earnings',
+                  gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EarningsScreen())),
                 )),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(child: _QuickAction(
-                  icon: Icons.emergency,
+                  icon: Icons.gavel_rounded,
+                  label: 'Quotes',
+                  gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuoteBidManagementScreen())),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _QuickAction(
+                  icon: Icons.event_repeat_rounded,
+                  label: 'AMC',
+                  gradient: const [Color(0xFF0288D1), Color(0xFF29B6F6)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AmcVisitsScreen())),
+                )),
+              ]),
+              const SizedBox(height: 10),
+              // Quick action buttons — second row
+              Row(children: [
+                Expanded(child: _QuickAction(
+                  icon: Icons.apartment_rounded,
+                  label: 'Society',
+                  gradient: const [Color(0xFF7B1FA2), Color(0xFFAB47BC)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SocietyScreen())),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _QuickAction(
+                  icon: Icons.analytics_rounded,
+                  label: 'Analytics',
+                  gradient: const [Color(0xFF00796B), Color(0xFF4DB6AC)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProviderAnalyticsScreen())),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _QuickAction(
+                  icon: Icons.emergency_rounded,
                   label: 'Emergency',
+                  gradient: const [Color(0xFFEF4444), Color(0xFFF87171)],
                   onTap: () => Navigator.pushNamed(context, '/emergency'),
                 )),
+                const SizedBox(width: 10),
+                const Expanded(child: SizedBox()),
               ]),
               const SizedBox(height: 20),
 
@@ -190,7 +324,12 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
               // Profile completeness nudge
               if ((_dash?['completeness'] ?? 0) < 80)
                 _completenessNudge(context, cs, (_dash?['completeness'] ?? 0) as int),
+              const SizedBox(height: 32),
             ],
+          ],
+        ),
+      ),
+    ),
           ],
         ),
       ),
@@ -249,17 +388,54 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
   Widget _quickStats(ColorScheme cs) {
     final stats = _dash?['stats'] ?? {};
     final funnel = _dash?['funnel'] ?? {};
-    return Row(children: [
-      _pill('Rating', '${stats['rating'] ?? '–'}', Icons.star_rounded, Colors.amber),
-      const SizedBox(width: 8),
-      _pill('Reviews', '${stats['reviews'] ?? 0}', Icons.rate_review_rounded, Colors.pink),
-      const SizedBox(width: 8),
-      _pill('Jobs done', '${funnel['completed'] ?? stats['completedJobs'] ?? 0}', Icons.check_circle_rounded, Colors.green),
-      const SizedBox(width: 8),
-      _pill('Pending', '${_pending.length}', Icons.pending_actions_rounded, Colors.orange),
+    final earnings = _dash?['earnings'];
+    final todayEarnings = (earnings?['last7d'] as num?)?.toDouble() ?? 0;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Primary KPI row
+      Row(children: [
+        _kpiCard('Today\'s ₹', '₹${_fmt(todayEarnings)}', Icons.account_balance_wallet_rounded,
+            const [Color(0xFF10B981), Color(0xFF34D399)]),
+        const SizedBox(width: 10),
+        _kpiCard('Pending', '${_pending.length}', Icons.pending_actions_rounded,
+            const [Color(0xFFF59E0B), Color(0xFFFBBF24)]),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        _kpiCard('Rating', '${stats['rating'] ?? '–'}', Icons.star_rounded,
+            const [Color(0xFF6366F1), Color(0xFF818CF8)]),
+        const SizedBox(width: 10),
+        _kpiCard('Jobs Done', '${funnel['completed'] ?? stats['completedJobs'] ?? 0}',
+            Icons.check_circle_rounded, const [Color(0xFF0288D1), Color(0xFF29B6F6)]),
+      ]),
     ]);
   }
 
+  Widget _kpiCard(String label, String val, IconData icon, List<Color> gradient) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: gradient.first.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(val, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text(label, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11, fontWeight: FontWeight.w600)),
+          ])),
+        ]),
+      ),
+    );
+  }
+
+  // Keep _pill for possible usage elsewhere
   Widget _pill(String label, String val, IconData icon, Color color) {
     return Expanded(
       child: Container(
@@ -426,25 +602,41 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final List<Color>? gradient;
 
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction({required this.icon, required this.label, required this.onTap, this.gradient});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final grad = gradient ?? [cs.primaryContainer, cs.primaryContainer];
+    final useGrad = gradient != null;
     return Material(
-      color: cs.surfaceContainerHighest,
+      color: useGrad ? Colors.transparent : cs.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: cs.primary, size: 24),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurface)),
-          ]),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: useGrad
+                ? LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: grad)
+                : null,
+            color: useGrad ? null : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, color: useGrad ? Colors.white : cs.primary, size: 24),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: useGrad ? Colors.white : cs.onSurface,
+              ), textAlign: TextAlign.center),
+            ]),
+          ),
         ),
       ),
     );

@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/availability_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/professional_card.dart';
-import '../../widgets/review_prompt.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/nearby_providers_section.dart';
 import '../../widgets/promotions_banner.dart';
@@ -14,7 +14,12 @@ import '../../widgets/app_components.dart';
 import '../../data/services_catalog.dart';
 import 'service_hub_screen.dart';
 import 'category_detail_screen.dart';
-import '../search/search_screen.dart';
+import '../delivery/delivery_screen.dart';
+import '../rides/my_ride_screen.dart';
+import '../food/food_screen.dart';
+import '../groceries/groceries_screen.dart';
+import '../shopping/shopping_screen.dart';
+import '../jobs/job_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,11 +32,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<Professional> _topProfessionals = [];
   bool _loading = true;
   String? _error;
+  bool _available = false;
+  bool _updatingAvailability = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadAvailability();
+  }
+
+  Future<void> _loadAvailability() async {
+    try {
+      final status = await AvailabilityService.getStatus();
+      if (mounted) setState(() => _available = status == 'available');
+    } catch (_) {}
+  }
+
+  Future<void> _toggleAvailability(bool val) async {
+    if (_updatingAvailability) return;
+    HapticFeedback.mediumImpact();
+    setState(() { _updatingAvailability = true; _available = val; });
+    try {
+      await AvailabilityService.setAvailable(val);
+    } catch (_) {
+      // Revert on failure
+      if (mounted) setState(() => _available = !val);
+    }
+    if (mounted) setState(() => _updatingAvailability = false);
   }
 
   Future<void> _load() async {
@@ -81,18 +109,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       body: RefreshIndicator(
-        color: AppColors.primary,
+        color: AppColors.superBlue,
         onRefresh: _load,
         child: CustomScrollView(
           slivers: [
-            // ── Personalized Header (like sample image) ─────────────
+            // ── Personalized Header (Grab/Gojek-style) ──────────────
             SliverToBoxAdapter(
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                    colors: AppColors.superAppGradient,
                   ),
                 ),
                 child: SafeArea(
@@ -102,44 +130,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Greeting + Avatar row
+                        // ── Top bar: greeting + notification + avatar ──
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(children: [
-                                    Text(
-                                      '${_getGreeting()} ${_getGreetingEmoji()}',
-                                      style: TextStyle(
-                                        color: Colors.white.withAlpha(200),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  Text(
+                                    '${_getGreeting()} ${_getGreetingEmoji()}',
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha(180),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    const SizedBox(width: 12),
-                                    // Available badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.success.withAlpha(40),
-                                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                                        border: Border.all(color: AppColors.success.withAlpha(80)),
-                                      ),
-                                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                                        Icon(Icons.circle, size: 6, color: AppColors.success),
-                                        SizedBox(width: 4),
-                                        Text('Online', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
-                                      ]),
-                                    ),
-                                  ]),
-                                  const SizedBox(height: 4),
+                                  ),
+                                  const SizedBox(height: 2),
                                   Text(
                                     userName,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 28,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: -0.5,
                                     ),
@@ -147,58 +159,178 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ],
                               ),
                             ),
+                            // Notification bell
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(20),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.notifications_rounded,
+                                      color: Colors.white, size: 22),
+                                ),
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: const Color(0xFF1B6EF3), width: 1.5),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 10),
                             // User Avatar
                             Container(
-                              width: 52,
-                              height: 52,
+                              width: 42,
+                              height: 42,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withAlpha(80), width: 3),
+                                border: Border.all(color: Colors.white.withAlpha(100), width: 2.5),
                                 gradient: const LinearGradient(colors: AppColors.primaryGradient),
                               ),
                               child: Center(
                                 child: Text(
                                   userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.xl),
-                        // Search bar
+
+                        const SizedBox(height: 16),
+
+                        // ── Location pill ──
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_rounded, color: Colors.white.withAlpha(200), size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Hyderabad, Telangana',
+                              style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withAlpha(160), size: 16),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Hero Search Bar ──
                         GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
-                          },
+                          onTap: () => Navigator.pushNamed(context, '/search'),
                           child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            height: 50,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              boxShadow: AppShadows.md(Colors.black),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Search services or professionals...',
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(30),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
-                                child: const Text('Go', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                              ),
-                            ]),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 14),
+                                const Icon(Icons.search_rounded, color: Color(0xFF1B6EF3), size: 22),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Search for services, pros...',
+                                  style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  margin: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                        colors: [Color(0xFF1B6EF3), Color(0xFF4F46E5)]),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.tune_rounded, color: Colors.white, size: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Suggestion Pills ──
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _SuggestionPill(label: '🔧 Plumbing', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '⚡ Electrician', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '🏠 Cleaning', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '💇 Salon', onTap: () {}),
+                              const SizedBox(width: 8),
+                              _SuggestionPill(label: '🎓 Tutor', onTap: () {}),
+                            ],
+                          ),
+                        ),
+
+                        // ── Availability toggle (only for professionals) ──
+                        if (auth.isProfessional)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withAlpha(30)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: _available ? const Color(0xFF10B981) : Colors.grey,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _available ? 'You\'re available for bookings' : 'You\'re offline',
+                                    style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12, fontWeight: FontWeight.w500),
+                                  ),
+                                  const Spacer(),
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: Switch(
+                                      value: _available,
+                                      onChanged: _updatingAvailability ? null : _toggleAvailability,
+                                      activeColor: Colors.white,
+                                      activeTrackColor: AppColors.success,
+                                      inactiveThumbColor: Colors.white,
+                                      inactiveTrackColor: Colors.white.withAlpha(40),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -209,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             // ── Promotions Banner Carousel ──────────────────────────
             const SliverToBoxAdapter(child: PromotionsBanner()),
 
-            // ── Quick Actions (expanded 8-icon grid) ────────────────
+            // ── Quick Actions (8-icon super-app grid) ────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
@@ -227,52 +359,60 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       childAspectRatio: 0.85,
                       children: [
                         _QuickActionIcon(
+                          icon: Icons.local_shipping_rounded,
+                          label: 'Delivery',
+                          color: AppColors.tileDelivery,
+                          colorEnd: const Color(0xFFFF6D00),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.directions_car_rounded,
+                          label: 'MyRide',
+                          color: AppColors.tileRide,
+                          colorEnd: const Color(0xFF01579B),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyRideScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.restaurant_rounded,
+                          label: 'Food',
+                          color: AppColors.tileFood,
+                          colorEnd: const Color(0xFFE64A19),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FoodScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.shopping_cart_rounded,
+                          label: 'Groceries',
+                          color: AppColors.tileGroceries,
+                          colorEnd: const Color(0xFF1B5E20),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GroceriesScreen())),
+                        ),
+                        _QuickActionIcon(
+                          icon: Icons.shopping_bag_rounded,
+                          label: 'Shopping',
+                          color: AppColors.tileShopping,
+                          colorEnd: const Color(0xFFB71C1C),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingScreen())),
+                        ),
+                        _QuickActionIcon(
                           icon: Icons.home_repair_service_rounded,
                           label: 'Services',
-                          color: const Color(0xFF6366F1),
+                          color: AppColors.tileServices,
+                          colorEnd: const Color(0xFF4A148C),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceHubScreen())),
                         ),
                         _QuickActionIcon(
-                          icon: Icons.emergency_rounded,
-                          label: 'Emergency',
-                          color: const Color(0xFFEF4444),
-                          onTap: () => Navigator.pushNamed(context, '/emergency'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.event_note_rounded,
-                          label: 'Bookings',
-                          color: const Color(0xFFF59E0B),
-                          onTap: () {}, // Navigate handled by bottom nav
+                          icon: Icons.work_rounded,
+                          label: 'Job',
+                          color: AppColors.tileJob,
+                          colorEnd: const Color(0xFF004D40),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobScreen())),
                         ),
                         _QuickActionIcon(
                           icon: Icons.account_balance_wallet_rounded,
                           label: 'Wallet',
-                          color: const Color(0xFF10B981),
+                          color: AppColors.tileWallet,
+                          colorEnd: const Color(0xFF00695C),
                           onTap: () => Navigator.pushNamed(context, '/earnings'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.camera_alt_rounded,
-                          label: 'Photo Quote',
-                          color: const Color(0xFF06B6D4),
-                          onTap: () => Navigator.pushNamed(context, '/instant-quote'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.people_rounded,
-                          label: 'Referrals',
-                          color: const Color(0xFF8B5CF6),
-                          onTap: () => Navigator.pushNamed(context, '/contacts'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.verified_user_rounded,
-                          label: 'Warranty',
-                          color: const Color(0xFF059669),
-                          onTap: () => Navigator.pushNamed(context, '/warranty'),
-                        ),
-                        _QuickActionIcon(
-                          icon: Icons.local_offer_rounded,
-                          label: 'Offers',
-                          color: const Color(0xFFEC4899),
-                          onTap: () {}, // Placeholder for offers
                         ),
                       ],
                     ),
@@ -281,13 +421,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
 
-            // ── Review prompt (only if pending) ──────────────────
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
-                child: ReviewPromptBanner(),
-              ),
-            ),
+            // ── Flash Deals ───────────────────────────────────────
+            const SliverToBoxAdapter(child: _FlashDealsSection()),
 
             // ── Service hubs ──────────────────────────────────────
             SliverToBoxAdapter(
@@ -421,54 +556,191 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-// ─── Quick Action Icon (grid item) ──────────────────────────────────────────
+// ─── Quick Action Icon (grid item) — gradient tile with scale-on-tap ────────
 
-class _QuickActionIcon extends StatelessWidget {
+class _QuickActionIcon extends StatefulWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+  /// Optional second gradient stop; defaults to darkened primary.
+  final Color? colorEnd;
 
   const _QuickActionIcon({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
+    this.colorEnd,
   });
 
   @override
+  State<_QuickActionIcon> createState() => _QuickActionIconState();
+}
+
+class _QuickActionIconState extends State<_QuickActionIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween<double>(begin: 1, end: 0.88).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _ctrl.forward();
+  void _onTapUp(TapUpDetails _) {
+    _ctrl.reverse();
+    HapticFeedback.selectionClick();
+    widget.onTap();
+  }
+  void _onTapCancel() => _ctrl.reverse();
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color.withAlpha(25),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: color.withAlpha(50)),
+    final end = widget.colorEnd ?? HSLColor.fromColor(widget.color).withLightness(
+      (HSLColor.fromColor(widget.color).lightness - 0.12).clamp(0.0, 1.0),
+    ).toColor();
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [widget.color, end],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withAlpha(80),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: Colors.white, size: 28),
             ),
-            child: Icon(icon, color: color, size: 26),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 7),
+            Text(
+              widget.label,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+// ─── Flash Deals horizontal carousel ────────────────────────────────────────
+
+class _FlashDealsSection extends StatelessWidget {
+  const _FlashDealsSection();
+
+  static const _deals = [
+    _Deal('AC Service', '40% OFF', 'Book today only', [Color(0xFF1B6EF3), Color(0xFF06B6D4)], Icons.ac_unit_rounded),
+    _Deal('Home Cleaning', '₹199 Flat', 'First booking', [Color(0xFF7B1FA2), Color(0xFFE91E63)], Icons.cleaning_services_rounded),
+    _Deal('Electrician', '₹99 Visit', 'Any time slot', [Color(0xFFFF6D00), Color(0xFFFFA000)], Icons.electrical_services_rounded),
+    _Deal('Plumber', 'Free Inspection', 'Limited slots', [Color(0xFF2E7D32), Color(0xFF66BB6A)], Icons.plumbing_rounded),
+    _Deal('Tutor', '1st Class Free', 'All subjects', [Color(0xFF00796B), Color(0xFF26C6DA)], Icons.school_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFF97316)]),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: const Text('⚡ FLASH DEALS', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+            ),
+            const SizedBox(width: 8),
+            Text('Today only', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+          ]),
+        ),
+        SizedBox(
+          height: 130,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            scrollDirection: Axis.horizontal,
+            itemCount: _deals.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final d = _deals[i];
+              return GestureDetector(
+                onTap: () => HapticFeedback.selectionClick(),
+                child: Container(
+                  width: 155,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: d.gradient),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    boxShadow: [BoxShadow(color: d.gradient.first.withAlpha(80), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(10)),
+                        child: Icon(d.icon, color: Colors.white, size: 18),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(20)),
+                        child: Text(d.badge, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+                      ),
+                    ]),
+                    const Spacer(),
+                    Text(d.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                    const SizedBox(height: 3),
+                    Text(d.sub, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11)),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Deal {
+  final String title, badge, sub;
+  final List<Color> gradient;
+  final IconData icon;
+  const _Deal(this.title, this.badge, this.sub, this.gradient, this.icon);
 }
 
 // ─── Error State Widget ─────────────────────────────────────────────────────
@@ -501,6 +773,41 @@ class _ErrorWidget extends StatelessWidget {
           label: const Text('Try again'),
         ),
       ]),
+    );
+  }
+}
+
+// ─── Suggestion Pill ─────────────────────────────────────────────────────────
+
+class _SuggestionPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SuggestionPill({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(20),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withAlpha(40)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withAlpha(220),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 }

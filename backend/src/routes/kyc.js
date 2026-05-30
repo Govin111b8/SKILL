@@ -6,6 +6,8 @@ const c = require('../controllers/kycController');
 router.get('/me', authenticate, c.listMine);
 router.get('/allowed-types', authenticate, c.allowedTypes);
 router.post('/submit', authenticate, c.submit);
+router.post('/aadhaar/initiate', authenticate, c.initiateAadhaarOtp);
+router.post('/aadhaar/verify', authenticate, c.verifyAadhaarOtp);
 router.delete('/:id', authenticate, c.remove);
 
 // Public (any authenticated user can read another user's non-PII summary)
