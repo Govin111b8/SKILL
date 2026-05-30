@@ -1,422 +1,305 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../theme/design_tokens.dart';
 import '../../services/api_service.dart';
-import '../../widgets/skeleton_loader.dart';
+import '../../widgets/premium_ui.dart';
 
 class ProviderAnalyticsScreen extends StatefulWidget {
   const ProviderAnalyticsScreen({super.key});
-
   @override
   State<ProviderAnalyticsScreen> createState() => _ProviderAnalyticsScreenState();
 }
 
 class _ProviderAnalyticsScreenState extends State<ProviderAnalyticsScreen> {
-  Map<String, dynamic>? _analytics;
-  bool _loading = true;
-  String? _error;
   String _period = 'week';
+  Map<String, dynamic> _data = _demoAnalytics;
+  bool _loading = true;
 
-  // Demo analytics data
   static const _demoAnalytics = {
-    'total_bookings': 42,
-    'completion_rate': 94,
-    'avg_rating': 4.8,
-    'total_earned': 38500,
-    'customer_return_rate': 61,
-    'daily_bookings': [
-      {'label': 'Mon', 'count': 5},
-      {'label': 'Tue', 'count': 8},
-      {'label': 'Wed', 'count': 6},
-      {'label': 'Thu', 'count': 9},
-      {'label': 'Fri', 'count': 7},
-      {'label': 'Sat', 'count': 11},
-      {'label': 'Sun', 'count': 6},
+    'bookings': 24, 'completion_rate': 91.7, 'avg_rating': 4.8, 'revenue': 18400,
+    'bar_data': [3.0, 5.0, 2.0, 7.0, 4.0, 6.0, 8.0],
+    'categories': [
+      {'name': 'Plumbing', 'percent': 45},
+      {'name': 'Electrical', 'percent': 30},
+      {'name': 'Carpentry', 'percent': 25},
     ],
-    'top_categories': [
-      {'name': 'AC Service', 'share': 52},
-      {'name': 'Deep Cleaning', 'share': 28},
-      {'name': 'Appliance Repair', 'share': 20},
+    'demand_slots': [3, 7, 9, 8, 6, 4, 2, 1, 3, 5, 7, 9, 8, 6, 4, 2],
+    'competitors': [
+      {'name': 'You', 'rating': 4.8, 'bookings': 24, 'response': '18m'},
+      {'name': 'Area Avg', 'rating': 4.3, 'bookings': 15, 'response': '42m'},
+      {'name': 'Top Pro', 'rating': 4.9, 'bookings': 38, 'response': '8m'},
     ],
-    'demand_heatmap': [
-      // day 0=Mon..6=Sun, hour 8..20
-      {'day': 0, 'hour': 9, 'score': 7},
-      {'day': 0, 'hour': 10, 'score': 8},
-      {'day': 0, 'hour': 11, 'score': 5},
-      {'day': 0, 'hour': 14, 'score': 6},
-      {'day': 1, 'hour': 9, 'score': 9},
-      {'day': 1, 'hour': 10, 'score': 10},
-      {'day': 1, 'hour': 11, 'score': 8},
-      {'day': 1, 'hour': 16, 'score': 7},
-      {'day': 2, 'hour': 10, 'score': 6},
-      {'day': 2, 'hour': 11, 'score': 9},
-      {'day': 2, 'hour': 15, 'score': 5},
-      {'day': 3, 'hour': 9, 'score': 8},
-      {'day': 3, 'hour': 10, 'score': 10},
-      {'day': 3, 'hour': 11, 'score': 9},
-      {'day': 4, 'hour': 9, 'score': 7},
-      {'day': 4, 'hour': 10, 'score': 9},
-      {'day': 4, 'hour': 16, 'score': 8},
-      {'day': 4, 'hour': 17, 'score': 7},
-      {'day': 5, 'hour': 9, 'score': 10},
-      {'day': 5, 'hour': 10, 'score': 10},
-      {'day': 5, 'hour': 11, 'score': 9},
-      {'day': 5, 'hour': 14, 'score': 8},
-      {'day': 5, 'hour': 15, 'score': 9},
-      {'day': 5, 'hour': 16, 'score': 8},
-      {'day': 6, 'hour': 10, 'score': 7},
-      {'day': 6, 'hour': 11, 'score': 8},
-      {'day': 6, 'hour': 15, 'score': 6},
-    ],
-    'competitor_avg_price': 1850,
-    'my_avg_price': 1700,
-    'competitor_avg_rating': 4.6,
-    'boost_suggestions': [
-      'Enable Saturday & Sunday slots — demand is 40% higher on weekends in your area',
-      'Add "Washing Machine Repair" to expand to 18% more customer searches',
-      'Expand service radius to 8 km — 23 more customers would find you',
-      'Respond to requests within 30 min — your current response time is 2.1 hrs',
+    'boosts': [
+      'Add portfolio photos to increase views by 60%',
+      'Enable quick responses to rank higher in search',
+      'Ask satisfied customers to leave a review',
     ],
   };
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _loading = true);
     try {
-      final res = await ApiService.get('/professionals/me/analytics', auth: true, queryParams: {'period': _period});
-      _analytics = Map<String, dynamic>.from((res['data'] as Map?) ?? const {});
-      if ((_analytics!['total_bookings'] ?? 0) == 0) _analytics = Map<String, dynamic>.from(_demoAnalytics);
-    } catch (e) {
-      _analytics = Map<String, dynamic>.from(_demoAnalytics);
+      final res = await ApiService.get('/analytics/professional?period=$_period', auth: true);
+      if (mounted && res is Map<String, dynamic>) setState(() => _data = res);
+    } catch (_) {
+      if (mounted) setState(() => _data = _demoAnalytics);
     }
     if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final analytics = _analytics ?? Map<String, dynamic>.from(_demoAnalytics);
-    final daily = (analytics['daily_bookings'] as List? ?? _demoAnalytics['daily_bookings'] as List);
-    final categories = (analytics['top_categories'] as List? ?? analytics['category_breakdown'] as List? ?? _demoAnalytics['top_categories'] as List);
-    final heatmap = (analytics['demand_heatmap'] as List? ?? _demoAnalytics['demand_heatmap'] as List);
-    final suggestions = (analytics['boost_suggestions'] as List? ?? _demoAnalytics['boost_suggestions'] as List);
+    final barData = (_data['bar_data'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
+    final categories = (_data['categories'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final boosts = (_data['boosts'] as List?)?.cast<String>() ?? [];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Provider Analytics')),
-      body: RefreshIndicator(
-        onRefresh: _load,
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      body: PremiumBackground(
         child: _loading
-            ? ListView(children: const [SizedBox(height: 260, child: Center(child: CircularProgressIndicator()))])
-            : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ChoiceChip(label: const Text('This Week'), selected: _period == 'week', onSelected: (_) { setState(() => _period = 'week'); _load(); }),
-                      ChoiceChip(label: const Text('This Month'), selected: _period == 'month', onSelected: (_) { setState(() => _period = 'month'); _load(); }),
-                      ChoiceChip(label: const Text('This Quarter'), selected: _period == 'quarter', onSelected: (_) { setState(() => _period = 'quarter'); _load(); }),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.18,
-                    children: [
-                      _MetricCard(label: 'Total bookings', value: '${analytics['total_bookings'] ?? 0}'),
-                      _MetricCard(label: 'Completion rate', value: '${analytics['completion_rate'] ?? 0}%'),
-                      _MetricCard(label: 'Avg rating', value: '${analytics['avg_rating'] ?? 0} ⭐'),
-                      _MetricCard(label: 'Total earned', value: '₹${analytics['total_earned'] ?? 0}'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Daily bookings', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 200,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-                    child: BarChart(
-                      BarChartData(
-                        gridData: const FlGridData(show: false),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                final index = value.toInt();
-                                final label = index >= 0 && index < daily.length ? (daily[index] as Map)['label']?.toString() ?? '' : '';
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(label, style: const TextStyle(fontSize: 10)),
-                                );
-                              },
+            ? PremiumLoadingList(itemCount: 5)
+            : SafeArea(
+                bottom: false,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: PremiumHeroHeader(
+                        title: 'Analytics',
+                        subtitle: 'Your business performance at a glance',
+                        icon: Icons.bar_chart_rounded,
+                        gradient: AppColors.primaryGradient,
+                        chips: [
+                          PremiumStatChip(label: '📦 ${_data['bookings'] ?? 0} Bookings', color: Colors.white),
+                          PremiumStatChip(label: '✅ ${_data['completion_rate'] ?? 0}% Done', color: Colors.white),
+                        ],
+                      ),
+                    ),
+
+                    // Period selector
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        child: PremiumGlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: Row(children: [
+                            for (final p in ['week', 'month', 'year'])
+                              Expanded(child: GestureDetector(
+                                onTap: () { HapticFeedback.selectionClick(); setState(() => _period = p); _load(); },
+                                child: AnimatedContainer(
+                                  duration: AppDurations.normal,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    gradient: _period == p ? const LinearGradient(colors: [Color(0xFF6C47FF), Color(0xFF4A28D4)]) : null,
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                  ),
+                                  child: Text(p[0].toUpperCase() + p.substring(1), textAlign: TextAlign.center,
+                                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: _period == p ? Colors.white : Colors.grey)),
+                                ),
+                              )),
+                          ]),
+                        ),
+                      ),
+                    ),
+
+                    // Metrics
+                    SliverPadding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      sliver: SliverGrid(
+                        delegate: SliverChildListDelegate([
+                          PremiumMetricCard(icon: Icons.calendar_today_rounded, label: 'Bookings', value: '${_data['bookings'] ?? 0}', color: AppColors.primaryLight),
+                          PremiumMetricCard(icon: Icons.check_circle_rounded, label: 'Completion', value: '${_data['completion_rate'] ?? 0}%', color: AppColors.success),
+                          PremiumMetricCard(icon: Icons.star_rounded, label: 'Avg Rating', value: '${_data['avg_rating'] ?? 0}', color: AppColors.warning),
+                          PremiumMetricCard(icon: Icons.currency_rupee_rounded, label: 'Revenue', value: '₹${_data['revenue'] ?? 0}', color: AppColors.tileJob),
+                        ]),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1.4, mainAxisSpacing: 10, crossAxisSpacing: 10),
+                      ),
+                    ),
+
+                    // Bar chart
+                    if (barData.isNotEmpty) ...[
+                      SliverToBoxAdapter(child: PremiumSectionTitle(title: 'Bookings Trend', subtitle: 'Daily breakdown for this $_period')),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                          child: PremiumGlassCard(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: SizedBox(
+                              height: 180,
+                              child: BarChart(BarChartData(
+                                alignment: BarChartAlignment.spaceAround,
+                                maxY: barData.reduce((a, b) => a > b ? a : b) + 2,
+                                barTouchData: BarTouchData(enabled: true),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 24, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(fontSize: 10)))),
+                                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+                                    const days = ['M','T','W','T','F','S','S'];
+                                    final i = v.toInt();
+                                    return i < days.length ? Text(days[i], style: const TextStyle(fontSize: 10)) : const SizedBox.shrink();
+                                  })),
+                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                ),
+                                gridData: const FlGridData(show: false),
+                                borderData: FlBorderData(show: false),
+                                barGroups: barData.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
+                                  BarChartRodData(toY: e.value, width: 16,
+                                    gradient: const LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0xFF4A28D4), Color(0xFF6C47FF)])),
+                                ])).toList(),
+                              )),
                             ),
                           ),
                         ),
-                        barGroups: daily.asMap().entries.map((entry) {
-                          final item = Map<String, dynamic>.from(entry.value as Map);
-                          return BarChartGroupData(x: entry.key, barRods: [BarChartRodData(toY: ((item['count'] ?? 0) as num).toDouble(), color: Theme.of(context).colorScheme.primary, width: 18, borderRadius: BorderRadius.circular(6))]);
-                        }).toList(),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Top service categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
-                  ...categories.map((item) {
-                    final row = Map<String, dynamic>.from(item as Map);
-                    final share = (((row['share'] ?? row['percentage'] ?? 0) as num).toDouble() / 100).clamp(0.0, 1.0).toDouble();
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [
-                          Text(row['name']?.toString() ?? row['category']?.toString() ?? 'Category', style: const TextStyle(fontWeight: FontWeight.w700)),
-                          const Spacer(),
-                          Text('${(share * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
-                        ]),
-                        const SizedBox(height: 10),
-                        LinearProgressIndicator(value: share, minHeight: 8, borderRadius: BorderRadius.circular(999)),
-                      ]),
-                    );
-                  }),
-                  const SizedBox(height: 20),
-                  // Demand heatmap section
-                  _DemandHeatmap(heatmapData: heatmap),
-                  const SizedBox(height: 20),
-                  // Competitor benchmarking
-                  _CompetitorBenchmark(analytics: analytics),
-                  const SizedBox(height: 20),
-                  // Boost suggestions
-                  _BoostSuggestions(suggestions: suggestions),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Customer return rate', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      Text('${analytics['customer_return_rate'] ?? 61}% of customers booked you again.'),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(value: ((analytics['customer_return_rate'] ?? 61) as num) / 100, minHeight: 10, borderRadius: BorderRadius.circular(8)),
-                    ]),
-                  ),
-                ],
+                    ],
+
+                    // Category breakdown
+                    if (categories.isNotEmpty) ...[
+                      SliverToBoxAdapter(child: PremiumSectionTitle(title: 'Service Breakdown')),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        sliver: SliverList(delegate: SliverChildBuilderDelegate((_, i) {
+                          final cat = categories[i];
+                          final pct = (cat['percent'] as num).toInt();
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: PremiumGlassCard(
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Row(children: [
+                                  Text(cat['name'] as String, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  const Spacer(),
+                                  Text('$pct%', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryLight)),
+                                ]),
+                                const SizedBox(height: 8),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  child: LinearProgressIndicator(
+                                    value: pct / 100,
+                                    minHeight: 8,
+                                    backgroundColor: AppColors.borderLight,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          );
+                        }, childCount: categories.length)),
+                      ),
+                    ],
+
+                    SliverToBoxAdapter(child: _DemandHeatmap(data: _data)),
+                    SliverToBoxAdapter(child: _CompetitorBenchmark(data: _data)),
+                    SliverToBoxAdapter(child: _BoostSuggestions(boosts: boosts)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                  ],
+                ),
               ),
       ),
     );
   }
 }
 
-// ── Demand Heatmap ──────────────────────────────────────────────────────────
-
 class _DemandHeatmap extends StatelessWidget {
-  final List heatmapData;
-  const _DemandHeatmap({required this.heatmapData});
-
-  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  static const _hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-
-  double _score(int day, int hour) {
-    for (final item in heatmapData) {
-      final m = item as Map;
-      if ((m['day'] as num?)?.toInt() == day && (m['hour'] as num?)?.toInt() == hour) {
-        return ((m['score'] as num?)?.toDouble() ?? 0) / 10;
-      }
-    }
-    return 0;
-  }
-
+  final Map<String, dynamic> data;
+  const _DemandHeatmap({required this.data});
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Demand Heatmap', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-      const SizedBox(height: 4),
-      Text('When are customers searching for pros in your area?', style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: 12),
-      Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant)),
-        child: Column(children: [
-          // Hour labels
-          Row(children: [
-            const SizedBox(width: 28),
-            ..._hours.map((h) => Expanded(
-              child: Text('${h % 12 == 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 8)),
-            )),
-          ]),
-          const SizedBox(height: 4),
-          ..._days.asMap().entries.map((dayEntry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(children: [
-                SizedBox(width: 28, child: Text(_days[dayEntry.key], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600))),
-                ..._hours.map((hour) {
-                  final intensity = _score(dayEntry.key, hour).clamp(0.0, 1.0);
-                  return Expanded(
-                    child: Container(
-                      height: 22,
-                      margin: const EdgeInsets.symmetric(horizontal: 1),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
-                        color: intensity > 0
-                            ? cs.primary.withAlpha((intensity * 220).round())
-                            : cs.surfaceContainerHighest,
-                      ),
-                    ),
-                  );
-                }),
-              ]),
-            );
-          }),
-          const SizedBox(height: 8),
-          // Legend
-          Row(children: [
-            const SizedBox(width: 28),
-            const Text('Low', style: TextStyle(fontSize: 10)),
-            const SizedBox(width: 4),
-            Expanded(child: LayoutBuilder(builder: (ctx, constraints) {
-              return Container(
-                height: 8,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  gradient: LinearGradient(colors: [cs.surfaceContainerHighest, cs.primary]),
+    final slots = (data['demand_slots'] as List?)?.cast<int>() ?? [];
+    final hours = ['6am','8am','10am','12pm','2pm','4pm','6pm','8pm','10pm','11pm','12am','1am','2am','3am','4am','5am'];
+    final maxV = slots.isEmpty ? 1 : slots.reduce((a, b) => a > b ? a : b);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: PremiumGlassCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const PremiumSectionTitle(title: 'Demand Heatmap', subtitle: 'Best hours to be online'),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6, runSpacing: 6,
+            children: List.generate(slots.length, (i) {
+              final intensity = maxV > 0 ? slots[i] / maxV : 0.0;
+              return Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: Color.lerp(AppColors.borderLight, AppColors.primaryLight, intensity),
+                    borderRadius: BorderRadius.circular(AppRadius.sm)),
                 ),
-              );
-            })),
-            const SizedBox(width: 4),
-            const Text('High', style: TextStyle(fontSize: 10)),
-          ]),
-        ]),
-      ),
-    ]);
-  }
-}
-
-// ── Competitor Benchmarking ─────────────────────────────────────────────────
-
-class _CompetitorBenchmark extends StatelessWidget {
-  final Map<String, dynamic> analytics;
-  const _CompetitorBenchmark({required this.analytics});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final myPrice = (analytics['my_avg_price'] as num?)?.toInt() ?? 1700;
-    final compPrice = (analytics['competitor_avg_price'] as num?)?.toInt() ?? 1850;
-    final myRating = (analytics['avg_rating'] as num?)?.toDouble() ?? 4.8;
-    final compRating = (analytics['competitor_avg_rating'] as num?)?.toDouble() ?? 4.6;
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('vs. Competitors in Your Area', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant)),
-        child: Column(children: [
-          _BenchmarkRow(label: 'Avg price', myValue: '₹$myPrice', compValue: '₹$compPrice', myBetter: myPrice < compPrice),
-          const Divider(height: 20),
-          _BenchmarkRow(label: 'Avg rating', myValue: '$myRating ⭐', compValue: '$compRating ⭐', myBetter: myRating > compRating),
-        ]),
-      ),
-    ]);
-  }
-}
-
-class _BenchmarkRow extends StatelessWidget {
-  final String label;
-  final String myValue;
-  final String compValue;
-  final bool myBetter;
-  const _BenchmarkRow({required this.label, required this.myValue, required this.compValue, required this.myBetter});
-
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Expanded(
-      child: Column(children: [
-        Text(myValue, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: myBetter ? const Color(0xFF22C55E) : Colors.orange.shade700)),
-        const Text('You', style: TextStyle(fontSize: 11)),
-      ]),
-    ),
-    Expanded(child: Text(label, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall)),
-    Expanded(child: Column(children: [
-      Text(compValue, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-      const Text('Avg competitor', style: TextStyle(fontSize: 11)),
-    ])),
-  ]);
-}
-
-// ── Boost Suggestions ───────────────────────────────────────────────────────
-
-class _BoostSuggestions extends StatelessWidget {
-  final List suggestions;
-  const _BoostSuggestions({required this.suggestions});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        const Icon(Icons.rocket_launch_outlined, size: 18, color: Color(0xFFF59E0B)),
-        const SizedBox(width: 6),
-        Text('Boost Your Earnings', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-      ]),
-      const SizedBox(height: 12),
-      ...suggestions.asMap().entries.map((e) => Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF7ED),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFED7AA)),
-        ),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 22, height: 22,
-            margin: const EdgeInsets.only(right: 10, top: 1),
-            decoration: const BoxDecoration(color: Color(0xFFF59E0B), shape: BoxShape.circle),
-            child: Center(child: Text('${e.key + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800))),
+                const SizedBox(height: 2),
+                Text(i < hours.length ? hours[i] : '', style: const TextStyle(fontSize: 9, color: Colors.grey)),
+              ]);
+            }),
           ),
-          Expanded(child: Text(e.value.toString(), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500))),
         ]),
-      )),
-    ]);
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final String label;
-  final String value;
-  const _MetricCard({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const Spacer(),
-        Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-      ]),
+      ),
     );
   }
 }
 
+class _CompetitorBenchmark extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _CompetitorBenchmark({required this.data});
+  @override
+  Widget build(BuildContext context) {
+    final competitors = (data['competitors'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+      child: PremiumGlassCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const PremiumSectionTitle(title: 'Competitor Benchmark'),
+          const SizedBox(height: 8),
+          Table(
+            columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(1), 2: FlexColumnWidth(1), 3: FlexColumnWidth(1)},
+            children: [
+              TableRow(children: [
+                for (final h in ['Name', 'Rating', 'Jobs', 'Resp.'])
+                  Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(h, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+              ]),
+              ...competitors.map((c) => TableRow(children: [
+                Padding(padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(c['name'] as String, style: TextStyle(fontWeight: c['name'] == 'You' ? FontWeight.w800 : FontWeight.w500, color: c['name'] == 'You' ? AppColors.primaryLight : null))),
+                Text('⭐${c['rating']}', style: const TextStyle(fontSize: 13)),
+                Text('${c['bookings']}', style: const TextStyle(fontSize: 13)),
+                Text('${c['response']}', style: const TextStyle(fontSize: 13)),
+              ])),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _BoostSuggestions extends StatelessWidget {
+  final List<String> boosts;
+  const _BoostSuggestions({required this.boosts});
+  @override
+  Widget build(BuildContext context) {
+    if (boosts.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+      child: PremiumGlassCard(
+        gradient: [AppColors.primaryLight.withAlpha(20), AppColors.primaryLight.withAlpha(10)],
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const PremiumSectionTitle(title: '🚀 Growth Tips', subtitle: 'AI-powered suggestions to grow faster'),
+          const SizedBox(height: 8),
+          ...boosts.asMap().entries.map((e) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(width: 24, height: 24, margin: const EdgeInsets.only(right: 10, top: 2),
+                decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF6C47FF), Color(0xFF4A28D4)]), borderRadius: BorderRadius.circular(AppRadius.sm)),
+                child: Center(child: Text('${e.key + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)))),
+              Expanded(child: Text(e.value, style: const TextStyle(fontSize: 13, height: 1.4))),
+            ]),
+          )),
+        ]),
+      ),
+    );
+  }
+}

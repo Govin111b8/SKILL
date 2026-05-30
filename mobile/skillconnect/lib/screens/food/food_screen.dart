@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/design_tokens.dart';
 import '../../services/api_service.dart';
-import '../../widgets/skeleton_loader.dart';
+import '../../widgets/premium_ui.dart';
 
 /// Food screen — browse restaurant / home-chef professionals, order meals.
 class FoodScreen extends StatefulWidget {
@@ -68,243 +68,231 @@ class _FoodScreenState extends State<FoodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = _filteredMenu;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 160,
-            pinned: true,
-            backgroundColor: AppColors.tileFood,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              title: const Text('Food', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFF6D00), Color(0xFFE64A19)],
-                  ),
-                ),
-                child: const Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 24),
-                    child: Text('🍽️', style: TextStyle(fontSize: 72)),
-                  ),
-                ),
-              ),
-            ),
-            actions: [
-              if (_cartTotal > 0)
-                Stack(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
-                      onPressed: () => _showCart(context),
-                    ),
-                    Positioned(
-                      right: 6, top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        child: Text('$_cartTotal', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-
-          // Cuisine filter chips
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 52,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
-                scrollDirection: Axis.horizontal,
-                itemCount: _cuisines.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final selected = i == _selectedCuisine;
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedCuisine = i);
-                    },
-                    child: AnimatedContainer(
-                      duration: AppDurations.normal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: selected ? AppColors.tileFood : (isDark ? AppColors.cardDark : Colors.white),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: selected ? AppColors.tileFood : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                        ),
-                      ),
-                      child: Text(
-                        _cuisines[i],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: selected ? Colors.white : null,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Nearby chefs
-          if (_loading)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(children: List.generate(3, (_) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonProfessionalCard()))),
-              ),
-            )
-          else if (_chefs.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
-                child: Text('Nearby Chefs', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 130,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _chefs.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (_, i) {
-                    final chef = _chefs[i];
-                    final name = chef['name']?.toString() ?? 'Chef';
-                    final rating = (chef['avg_rating'] as num?)?.toDouble() ?? 4.5;
-                    return Container(
-                      width: 110,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                      ),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const Text('👨‍🍳', style: TextStyle(fontSize: 28)),
-                        const SizedBox(height: 6),
-                        Text(name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFA000)),
-                          Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 11)),
-                        ]),
-                      ]),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-
-          // Menu items
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
-              child: Text('Menu', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-            ),
-          ),
-          if (items.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text('No items for this cuisine', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, i) {
-                  final item = items[i];
-                  final inCart = _cart.containsKey(item.name);
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 6),
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: inCart ? AppColors.tileFood : (isDark ? AppColors.borderDark : AppColors.borderLight)),
-                      ),
-                      child: Row(children: [
-                        Text(item.emoji, style: const TextStyle(fontSize: 32)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(item.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                            Text(item.category, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                          ]),
-                        ),
-                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('₹${item.price}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () => _addToCart(item.name, item.price),
-                            child: AnimatedContainer(
-                              duration: AppDurations.normal,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: inCart ? AppColors.tileFood : Colors.transparent,
-                                borderRadius: BorderRadius.circular(AppRadius.md),
-                                border: Border.all(color: AppColors.tileFood),
-                              ),
-                              child: Text(
-                                inCart ? 'Added ✓' : 'Add',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: inCart ? Colors.white : AppColors.tileFood,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ]),
-                      ]),
-                    ),
-                  );
-                },
-                childCount: items.length,
-              ),
-            ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
-      ),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       bottomNavigationBar: _cartTotal > 0
           ? SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: ElevatedButton.icon(
-                  onPressed: () => _showCart(context),
-                  icon: const Icon(Icons.shopping_cart_rounded),
-                  label: Text('View Cart (${_cart.keys.length} items · ₹${_cart.values.fold(0, (a, b) => a + b)})',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.tileFood,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: PremiumGradientButton(
+                    label: 'View Cart (${_cart.keys.length} items · ₹${_cart.values.fold(0, (a, b) => a + b)})',
+                    icon: Icons.shopping_cart_rounded,
+                    colors: const [Color(0xFFFF6D00), Color(0xFFE64A19)],
+                    onPressed: () => _showCart(context),
                   ),
                 ),
               ),
             )
           : null,
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: PremiumHeroHeader(
+                  title: 'Food',
+                  subtitle: 'Home chefs & restaurants near you',
+                  icon: Icons.restaurant_rounded,
+                  gradient: const [Color(0xFFFF6D00), Color(0xFFE64A19)],
+                  trailing: _cartTotal > 0
+                      ? GestureDetector(
+                          onTap: () => _showCart(context),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 48, height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withAlpha(28),
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  border: Border.all(color: Colors.white.withAlpha(50)),
+                                ),
+                                child: const Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 22),
+                              ),
+                              Positioned(
+                                right: 4, top: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  child: Text('$_cartTotal', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+
+              // Cuisine filter chips
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 52,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _cuisines.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (_, i) {
+                      final selected = i == _selectedCuisine;
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedCuisine = i);
+                        },
+                        child: AnimatedContainer(
+                          duration: AppDurations.normal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: selected
+                                ? const LinearGradient(colors: [Color(0xFFFF6D00), Color(0xFFE64A19)])
+                                : null,
+                            color: selected ? null : Colors.white.withAlpha(200),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(color: selected ? Colors.transparent : AppColors.borderLight),
+                            boxShadow: selected ? AppShadows.sm(AppColors.tileFood) : null,
+                          ),
+                          child: Text(
+                            _cuisines[i],
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: selected ? Colors.white : AppColors.surfaceDark,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              // Nearby chefs
+              if (_loading)
+                SliverToBoxAdapter(child: PremiumLoadingList(itemCount: 3, itemHeight: 120))
+              else if (_chefs.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: PremiumSectionTitle(
+                    title: 'Nearby Chefs',
+                    subtitle: 'Home chefs ready to cook for you',
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 140,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _chefs.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (_, i) {
+                        final chef = _chefs[i];
+                        final name = chef['name']?.toString() ?? 'Chef';
+                        final rating = (chef['avg_rating'] as num?)?.toDouble() ?? 4.5;
+                        return PremiumGlassCard(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: SizedBox(
+                            width: 100,
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const Text('👨‍🍳', style: TextStyle(fontSize: 28)),
+                              const SizedBox(height: 6),
+                              Text(name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFA000)),
+                                Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                              ]),
+                            ]),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+
+              // Menu section
+              SliverToBoxAdapter(
+                child: PremiumSectionTitle(
+                  title: 'Menu',
+                  subtitle: _cuisines[_selectedCuisine] == 'All' ? 'All dishes' : '${_cuisines[_selectedCuisine]} cuisine',
+                ),
+              ),
+              if (items.isEmpty)
+                SliverToBoxAdapter(
+                  child: PremiumEmptyState(
+                    icon: Icons.restaurant_menu_rounded,
+                    title: 'No items found',
+                    subtitle: 'No dishes for this cuisine yet.\nTry another category.',
+                    gradient: const [Color(0xFFFF6D00), Color(0xFFE64A19)],
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) {
+                      final item = items[i];
+                      final inCart = _cart.containsKey(item.name);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 6),
+                        child: PremiumGlassCard(
+                          gradient: inCart
+                              ? [AppColors.tileFood.withAlpha(30), AppColors.tileFood.withAlpha(15)]
+                              : null,
+                          child: Row(children: [
+                            Text(item.emoji, style: const TextStyle(fontSize: 36)),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(item.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                Text(item.category, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                              ]),
+                            ),
+                            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                              Text('₹${item.price}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+                              const SizedBox(height: 6),
+                              GestureDetector(
+                                onTap: () => _addToCart(item.name, item.price),
+                                child: AnimatedContainer(
+                                  duration: AppDurations.normal,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    gradient: inCart ? const LinearGradient(colors: [Color(0xFFFF6D00), Color(0xFFE64A19)]) : null,
+                                    color: inCart ? null : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    border: Border.all(
+                                      color: inCart ? Colors.transparent : AppColors.tileFood,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    inCart ? 'Added ✓' : 'Add',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: inCart ? Colors.white : AppColors.tileFood,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ]),
+                          ]),
+                        ),
+                      );
+                    },
+                    childCount: items.length,
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -313,17 +301,33 @@ class _FoodScreenState extends State<FoodScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (_) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Your Cart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFFF6D00), Color(0xFFE64A19)]),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text('Your Cart', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              ]),
+              const SizedBox(height: AppSpacing.lg),
               ..._cart.entries.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(children: [
@@ -336,12 +340,14 @@ class _FoodScreenState extends State<FoodScreen> {
                 const Text('Total', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                 const Spacer(),
                 Text('₹${_cart.values.fold(0, (a, b) => a + b)}',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.tileFood)),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: AppColors.tileFood)),
               ]),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PremiumGradientButton(
+                  label: 'Checkout',
+                  colors: const [Color(0xFFFF6D00), Color(0xFFE64A19)],
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/payment', arguments: {
@@ -350,13 +356,6 @@ class _FoodScreenState extends State<FoodScreen> {
                       'professionalName': 'Food Order',
                     });
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.tileFood,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-                  ),
-                  child: const Text('Checkout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
